@@ -6,9 +6,10 @@
 		public $action;
 		public $view;
 		
-		protected $data;
+		protected $data=array();
 		
 		function render($view=null){
+			// determine view;
 			if($view==null) 
 				$this->view=$this->action;
 			else

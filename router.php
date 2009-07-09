@@ -7,7 +7,7 @@
 		
 		public $controller;
 		public $action;
-		public $query;
+		public $param;
 		
 		function __construct($cpos, $apos){
 			$this->cp=$cpos;
@@ -27,15 +27,19 @@
 			// strip query from uri
 			if(($p=strpos($uri, '?'))!==FALSE){
 				$uri=substr($uri, 0, $p);
-				$this->query=$_GET;
 			}
-					
+			
+			// explode path and do mapping.
 			$p=explode('/', $uri);
 
-			if(isset($p[$this->cp]))
-				$this->controller=$p[$this->cp];
-			if(isset($p[$this->ap]))
-				$this->action=$p[$this->ap];
+			for($i=0; $i<count($p); $i++){
+				if($i==$this->cp)
+					$this->controller=$p[$this->cp];
+				else if($i==$this->ap)
+					$this->action=$p[$this->ap];
+				else
+					$this->param[]=$p[$i];
+			}
 				
 			// Default controller and action
 			if(empty($this->controller)) $this->controller='Index';
@@ -51,22 +55,22 @@
 			$this->map=new Clue_RouteMap(0, 1);
 		}
 		
-		function route($controller, $action){
+		function route($controller, $action, $param=null){
 			// load controller
 			$class="{$controller}Controller";
-			require 'controller'.DS."{$class}.php";
+			require "controller/{$class}.php";
 			
 			$obj=new $class;
 			
 			// invoke action
 			$obj->controller=$controller;
 			$obj->action=$action;
-			$obj->$action();
+			call_user_func_array(array($obj, $action), $param);
 		}
 		
 		function dispatch(){
 			$this->map->resolve($_SERVER['REQUEST_URI']);
-			$this->route($this->map->controller, $this->map->action);
+			$this->route($this->map->controller, $this->map->action, $this->map->param);
 		}
 	}
 ?>
