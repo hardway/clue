@@ -6,22 +6,33 @@
 		public $action;
 		public $view;
 		
-		protected $data=array();
+		protected $view_data=array();
 		
 		function render($view=null){
 			// determine view;
-			if($view==null) 
-				$this->view=$this->action;
-			else
-				$this->view=$view;
+			if($view!=null) $this->view=$view;
 			
-			extract($this->data);
+			extract($this->view_data);
 			
 			require_once "view/{$this->controller}/{$this->view}.tpl";
 		}
 		
+		function redirect_route($controller, $action='index', $param=null){			
+			// TODO: use application instance
+			$router=new Clue_Router();
+			$uri=$router->uri_for($controller, $action, $param);
+			
+			$this->redirect($uri);
+		}
+		
+		function redirect($url){
+			header("Status: 200");
+			header("Location: $url");
+			exit();
+		}
+		
 		function set($name, $value){
-			$this->data[$name]=$value;
+			$this->view_data[$name]=$value;
 		}
 	}
 ?>

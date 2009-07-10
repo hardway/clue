@@ -1,7 +1,9 @@
 <?php
 	require_once 'clue/core.php';
+	require_once 'clue/controller.php';
 	
 	class Clue_RouteMap{
+		protected $appbase;
 		protected $cp;
 		protected $ap;
 		
@@ -12,13 +14,19 @@
 		function __construct($cpos, $apos){
 			$this->cp=$cpos;
 			$this->ap=$apos;
+			$this->appbase=dirname($_SERVER['SCRIPT_NAME']);
+		}
+		
+		function reform($controller, $action, $params){
+			// TODO: reform using mapping rules
+			return "{$this->appbase}/$controller/$action";
 		}
 		
 		function resolve($uri){
 			// strip app base
-			$appbase=dirname($_SERVER['SCRIPT_NAME']);
-			if(strpos($uri, $appbase)==0){
-				$uri=substr($uri, strlen($appbase)+1);
+			
+			if(strpos($uri, $this->appbase)==0){
+				$uri=substr($uri, strlen($this->appbase)+1);
 			}
 			else{
 				throw new Exception('Error in route map, wront app base.');
@@ -55,6 +63,10 @@
 			$this->map=new Clue_RouteMap(0, 1);
 		}
 		
+		function uri_for($controller, $action, $param=null){
+			return $this->map->reform($controller, $action, $param);
+		}
+		
 		function route($controller, $action, $param=null){
 			// load controller
 			$class="{$controller}Controller";
@@ -64,8 +76,14 @@
 			
 			// invoke action
 			$obj->controller=$controller;
-			$obj->action=$action;
-			call_user_func_array(array($obj, $action), $param);
+			$obj->view=$action;
+			
+			if($_SERVER['REQUEST_METHOD']=='POST')
+				$obj->action="_$action";
+			else
+				$obj->action=$action;			
+			
+			call_user_func_array(array($obj, $obj->action), $param);
 		}
 		
 		function dispatch(){

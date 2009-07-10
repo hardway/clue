@@ -7,8 +7,9 @@
 		static public $_meta=array(
 			/* Example
 			 * "table"=>"blog",
-			 * "primarykey"=>"id",
+			 * "pkey"=>"id",
 			 * "columns"=>array(
+			 *		"id"=>array("name"=>"id", "type"=>"number"),
 			 * 		"title"=>array("name"=>"title", "type"=>"string"),
 			 * 		"body"=>array("name"=>"content", "type"=>"string"),
 			 * 		"author"=>array("name"=>"author", "type"=>"string")
@@ -16,9 +17,10 @@
 			*/
 		);
 		
-		public $id;
 		protected $_db;
-		protected $_sync;
+
+		protected $_snap;
+		
 		protected $_errors;
 
 		// FUTURE: more complicated constructor
@@ -26,45 +28,67 @@
 		function __construct($id=null, $db=null){
 			self::__rebuildMeta();
 			
-			if($db==null) $db=self::$default_database;
+			// TODO: link with application
+			if($db==null) $db=&self::$default_database;
+			$this->_db=&$db;
 			
-			$this->_db=$db;
-			$this->id=$id;
-			$this->_sync=false;
 			$this->_errors=array();
 
-			if($this->id!=null)
+			if($id!=null){
+				$meta=$this->getMeta(); $pk=$meta['pkey'];
+				$this->$pk=$id;
 				$this->sync();
-			else
+			}
+			else{
 				$this->init();
+			}
+			
+			$this->_snap_shot();
 		}
 		
 		protected function init(){
 			// Empty.
 		}
 		
+		protected function _snap_dirty(){
+			$meta=$this->getMeta();
+			
+			foreach(array_keys($meta['columns']) as $f){
+				if($this->_snap[$f]!=$this->$f) return true;
+			}
+			
+			return false;
+		}
+		
+		protected function _snap_shot(){
+			$meta=$this->getMeta();
+			
+			foreach(array_keys($meta['columns']) as $f){
+				$this->_snap[$f]=$this->$f;
+			}
+		}
+		
 		protected function __rebuildMeta(){
 			$class=get_class($this);
 			// echo "Rebulding $class<br />";
 
-			$SCV=get_class_vars(get_class($this));
+			$SCV=get_class_vars($class);
 			
-			// build meta automatically
+			// build meta only first time.
 			if(isset($SCV['_meta']['built'])) return;
 			
 			$SCV['_meta']['built']=true;
-			
 			// write back SCV["_meta"], first time
 			$rx=new ReflectionClass(get_class($this));
 			$rx->setStaticPropertyValue("_meta", $SCV["_meta"]);
 
-			if(!isset($SCV["_meta"]["table"])) $SCV["_meta"]["table"]=strtolower(get_class($this));
+			if(!isset($SCV["_meta"]["table"])) $SCV["_meta"]["table"]=strtolower($class);
 			if(!isset($SCV["_meta"]["pkey"])) $SCV["_meta"]["pkey"]="id";
 			if(!isset($SCV["_meta"]["columns"])) $SCV["_meta"]["columns"]=array();
 			$columns=&$SCV["_meta"]["columns"];
 			
 			foreach(array_keys(get_object_vars($this)) as $col){
-				if($col[0]=="_" || $col=='id' || $col==$SCV["_meta"]["pkey"]) continue;
+				if($col[0]=="_") continue;
 				$default=array("name"=>$col, "type"=>"string");	// FUTURE: auto determine by convention
 				$columns[$col]=isset($columns[$col]) ? array_merge($default, $columns[$col]) : $default;
 			}
@@ -81,17 +105,27 @@
 									
 			// write back SCV["_meta"], second time
 			$rx->setStaticPropertyValue("_meta", $SCV["_meta"]);
-			
 		}
 		
-		protected function getMeta(){
+		function &getMeta(){
 			$SCV=get_class_vars(get_class($this));
 			return $SCV['_meta'];
 		}
 		
+		function &getTable(){
+			$meta=$this->getMeta();
+			return $meta['table'];
+		}
+		
+		function &getPK(){
+			$meta=$this->getMeta();
+			return $meta['pkey'];
+		}
+		
 		function __toString(){
 			// FUTURE: display data in a more decent format, like krumo
-			return $this->id . "(".($this->_sync ? "SYNC" : "N/A").")";
+			$pk=$this->getPK();
+			return $this->$pk . "(".($this->_snap_dirty() ? "DIRTY" : "SYNC").")";
 		}
 		
 		function __get($prop){
@@ -169,7 +203,7 @@
 		 * @return mixed number or string (that's the only types database will accept)
 		 */
 		function dbcast($name, $value){
-			$meta=&$this->getMeta();
+			$meta=$this->getMeta();
 			$db=&$this->_db;
 			// Name will be ignored in this base class.
 			
@@ -212,7 +246,7 @@
 		 */
 		function webbind($name, $value){
 			// Name will be ignored in this base class.
-			$meta=&$this->getMeta();
+			$meta=$this->getMeta();
 			
 			switch($meta['columns'][$name]['type']){
 				case 'time':
@@ -235,7 +269,7 @@
 		function sync(){
 			$meta=$this->getMeta();
 			
-			if($this->_sync!=true){
+			if($this->_snap_dirty()){
 				$sql="select * from `".$meta["table"]."` where `".$meta["pkey"]."`='$this->id'";
 
 				$r=$this->_db->get_row($sql, ARRAY_A);
@@ -247,16 +281,13 @@
 					foreach($meta["columns"] as $c=>&$m){
 						$this->$c=$this->dbbind($c, $r[$m["name"]], $m['type']);
 					}
-					
-					$this->_sync=true;
-				}				
+				}
 			}
-			
-			return $this->_sync;
+			return true;
 		}
 		
 		function bind(array $data){
-			$meta=&$this->getMeta();
+			$meta=$this->getMeta();
 			foreach($meta['columns'] as $c=>$m){
 				if(array_key_exists($c, $data)){
 					try{
@@ -274,58 +305,75 @@
 			return true;
 		}
 		
+		function isNew(){
+			$meta=$this->getMeta();
+			return empty($this->_snap[$meta['pkey']]);
+		}
+		
 		function save(){
 			if($this->check()===false){
 				return false;
 			}
 			
 			// FUTURE: use prepared statement to improve security and code clearance
-			$meta=&$this->getMeta();
+			$meta=$this->getMeta();
+			$table=$meta['table'];
+			$pk=$meta['pkey'];
 			
-			if($this->id==null){	// Insert New
+			if($this->isNew()){	// Insert New
 				$collist=array();
 				$vallist=array();
 				foreach($meta['columns'] as $c=>$m){
 					if(isset($m['readonly'])) continue;
+					if($this->_snap[$c]==$this->$c) continue;
 					$collist[]="`".$m['name']."`";
 					$vallist[]=$this->dbcast($c, $this->$c, $m['type']);
 				}
-				$sql="insert into {$meta["table"]} (".join(", ", $collist).") values(".join(",", $vallist).")";
+				$sql="insert into $table (".join(", ", $collist).") values(".join(",", $vallist).")";
 			}
 			else{ // Update Value
 				$list=array();
-				// TODO: use _data cache to update modified data only.
 				foreach($meta['columns'] as $c=>$m){
 					if(isset($m['readonly'])) continue;
+					if($this->_snap[$c]==$this->$c) continue;
 					$list[]="`".$m['name']."`=".$this->dbcast($c, $this->$c, $m['type']);
 				}
-				$sql="update {$meta["table"]} set ".join(",", $list)." where `{$meta["pkey"]}`='$this->id'";
+				$sql="update $table set ".join(",", $list)." where `$pk`='".$this->$pk."'";
 			}
 			
 			$ret=$this->_db->exec($sql);
 			if($ret===false){
-				$this->setDBError($sql, $this->_db->errorInfo());
+				$this->setDBError($sql, $this->_db->errors);
 			}
 			else{
 				// Update or Insert is successful.
 				// Update the primary key if new record inserted.
-				if($this->id==null) $this->id=$this->_db->lastInsertId();
+				if(empty($this->$pk)) $this->$pk=$this->_db->insertId();
 			}
+			
+			$this->_snap_shot();
+			
 			return $ret;
 		}
 		
 		function destroy($option=""){
-			$meta=&$this->getMeta();
-			$sql="delete from {$meta["table"]} where `{$meta["pkey"]}`='{$this->id}'";
+			$meta=$this->getMeta();
+			$pk=$meta['pkey'];
+			
+			$sql="delete from {$meta["table"]} where `$pk`='".$this->$pk."'";
 			$ret=$this->_db->exec($sql);
 			if($ret===false){
 				$this->setDBError($sql, $this->_db->errorInfo());
 			}
+			
+			$this->init();
+			$this->_snap_shot();
+			
 			return $ret;
 		}
 		
 		public function countAll(){
-			$meta=&$this->getMeta();
+			$meta=$this->getMeta();
 			return $this->_db->get_var("select count(*) from `{$meta["table"]}`");
 		}
 		
@@ -415,14 +463,6 @@
 					}
 					break;
 			}			
-		}
-		
-		function isEmpty(){ return $this->isNull(); }
-		function isNull(){ return $this->id==null; }
-		
-		static function getConnection(){
-			global $db;
-			return $db;
 		}
 	}
 ?>

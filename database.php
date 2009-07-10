@@ -37,6 +37,18 @@
 			$this->errors=null;
 		}
 		
+		function quote($str){
+			return "'".$this->escape($str)."'";
+		}
+		
+		function escape($str){
+			return addslashes($str);
+		}
+		
+		function insertId(){
+			return 0;
+		}
+		
 		function exec($sql){
 			$this->lastquery=$sql;
 			// TODO: log sql query statement and results
@@ -45,7 +57,7 @@
 		function query($sql){
 			$this->exec($sql);
 		}
-						
+		
 		function get_var($sql){}
 		
 		function get_col($sql){}
@@ -87,6 +99,10 @@
 				$this->_result->close();
 				$this->_result=null;
 			}
+		}
+		
+		function insertId(){
+			return mysql_insert_id($this->dbh);
 		}
 		
 		function exec($sql){
