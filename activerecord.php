@@ -28,8 +28,11 @@
 		function __construct($id=null, $db=null){
 			self::__rebuildMeta();
 			
-			// TODO: link with application
-			if($db==null) $db=&self::$default_database;
+			if(self::$default_database==null && Clue_Application::initialized()){
+				self::$default_database=Clue_Application::db();
+			}
+			
+			if($db==null)$db=&self::$default_database;
 			$this->_db=&$db;
 			
 			$this->_errors=array();
@@ -429,7 +432,7 @@
 				$limit=$end-$begin;
 				$sql.= " limit {$limit} offset {$begin}";
 			}
-			
+
 			switch(strtolower($range)){
 				default:
 					$range='all';
@@ -445,16 +448,15 @@
 						return $objects;
 					}
 					else{
-						$this->setDBError($sql, $this->_db->errorInfo());
+						$this->setDBError($sql, $this->_db->lasterror);
 						return false;
 					}
-										
 					break;
 					
 				case 'one':
 					$ret=$this->_db->get_var($sql);
 					if($ret==false){
-						$this->setDBError($sql, $this->_db->errorInfo());
+						$this->setDBError($sql, $this->_db->lasterror);
 						return false;
 					}
 					else{

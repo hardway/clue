@@ -19,7 +19,10 @@
 		
 		function reform($controller, $action, $params){
 			// TODO: reform using mapping rules
-			return "{$this->appbase}/$controller/$action";
+			if($action=='index')
+				return "{$this->appbase}/$controller";
+			else
+				return "{$this->appbase}/$controller/$action";
 		}
 		
 		function resolve($uri){
@@ -61,16 +64,49 @@
 		function __construct(){
 			// Determine controller and action by default map
 			$this->map=new Clue_RouteMap(0, 1);
+			$this->map->resolve($_SERVER['REQUEST_URI']);
+		}
+		
+		function controller(){
+			return $this->map->controller;
 		}
 		
 		function uri_for($controller, $action, $param=null){
 			return $this->map->reform($controller, $action, $param);
 		}
 		
+		function redirect_route($controller, $action='index', $param=null){
+			$uri=$this->uri_for($controller, $action, $param);
+			$this->redirect($uri);
+		}
+		
+		function redirect($url){
+			header("Status: 200");
+			header("Location: $url");
+			exit();
+		}
+		
 		function route($controller, $action, $param=null){
 			// load controller
 			$class="{$controller}Controller";
-			require "controller/{$class}.php";
+			$path="controller/".strtolower($class).".php";
+			
+			if(file_exists($path)){
+				require $path;
+				// Action not detected
+				if(!in_array($action, get_class_methods($class))){
+					$class='ErrorController';
+					$action='noAction';
+					require "controller/errorcontroller.php";
+				}
+			}
+			else{
+				// Controller not detected.
+				// TODO: better implementation
+				$class='ErrorController';
+				$action='noController';
+				require "controller/errorcontroller.php";
+			}
 			
 			$obj=new $class;
 			
@@ -81,13 +117,12 @@
 			if($_SERVER['REQUEST_METHOD']=='POST')
 				$obj->action="_$action";
 			else
-				$obj->action=$action;			
+				$obj->action=$action;
 			
 			call_user_func_array(array($obj, $obj->action), $param);
 		}
 		
 		function dispatch(){
-			$this->map->resolve($_SERVER['REQUEST_URI']);
 			$this->route($this->map->controller, $this->map->action, $this->map->param);
 		}
 	}

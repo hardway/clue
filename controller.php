@@ -18,17 +18,11 @@
 		}
 		
 		function redirect_route($controller, $action='index', $param=null){			
-			// TODO: use application instance
-			$router=new Clue_Router();
-			$uri=$router->uri_for($controller, $action, $param);
-			
-			$this->redirect($uri);
+			Clue_Application::router()->redirect_route($controller, $action, $param);
 		}
 		
 		function redirect($url){
-			header("Status: 200");
-			header("Location: $url");
-			exit();
+			Clue_Application::router()->redirect($url);
 		}
 		
 		function set($name, $value){
