@@ -16,7 +16,7 @@
 		}
 		
 		// Convert array to object recursively
-		function array_to_obj(array &$a){
+		function array_to_obj(array $a){
 			$o=(object)$a;
 			foreach($a as $n=>$v){
 				if(is_array($v))

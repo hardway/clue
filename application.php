@@ -19,6 +19,11 @@
 				'password'=>$this->config->database->password
 			));
 			
+			// throw exception if database is not connectable
+			if($this->db->errors){
+				throw new Exception($this->db->lasterror['error']);
+			}
+			
 			$this->router=new Clue_Router();
 		}
 		

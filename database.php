@@ -88,7 +88,7 @@
 			// echo "Closing MySQL Connection.\n";
 			$this->free_result();
 			
-			if(!$this->dbh){
+			if($this->dbh){
 				mysqli_close($this->dbh);
 				$this->dbh=null;
 			}

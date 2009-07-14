@@ -92,12 +92,12 @@
 			$path="controller/".strtolower($class).".php";
 			
 			if(file_exists($path)){
-				require $path;
+				require_once $path;
 				// Action not detected
 				if(!in_array($action, get_class_methods($class))){
 					$class='ErrorController';
 					$action='noAction';
-					require "controller/errorcontroller.php";
+					require_once "controller/errorcontroller.php";
 				}
 			}
 			else{
@@ -105,7 +105,7 @@
 				// TODO: better implementation
 				$class='ErrorController';
 				$action='noController';
-				require "controller/errorcontroller.php";
+				require_once "controller/errorcontroller.php";
 			}
 			
 			$obj=new $class;
