@@ -102,7 +102,7 @@
 		}
 		
 		function insertId(){
-			return mysql_insert_id($this->dbh);
+			return mysqli_insert_id($this->dbh);
 		}
 		
 		function exec($sql){

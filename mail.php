@@ -11,6 +11,8 @@
 			
 			// TODO: error check and logging
 			$ret=mail($recipient, $this->subject, $this->body, $header);
+			
+			return $ret;
 		}
 		
 		static function broadcast($recipient, $subject, $body, $reply='noreply', $undisclosed=true){
@@ -21,13 +23,15 @@
 			$mail->subject=$subject;
 			$mail->body=$body;
 			
+			$mail->header[]='Content-type: text/html; charset=UTF-8';
+			
 			if($undisclosed){
 				$mail->header[]='To: Undisclosed Recipients';
 				$mail->header[]='BCC: '.implode(', ', $mail->recipient);
 				$mail->recipient=null;
 			}
 			
-			$mail->send();
+			return $mail->send();
 		}
 		
 		static function broadcast_with_attachment(){
