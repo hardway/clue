@@ -9,6 +9,20 @@
 			header( 'Cache-Control: post-check=0, pre-check=0', false );
 			header( 'Pragma: no-cache' );
 		}
+		
+		static function format2HTML($comment, $preservSpace=false){
+			$str=$comment;
+			
+			$str=str_replace(
+				array("&", "<", ">", "\n", "\""),
+				array("&amp;", "&lt;", "&gt", "<br/>", "&quot;"),
+				$str);
+				
+			if($preservSpace){
+				$str=str_replace(" ", "&nbsp;", $str);
+			}
+			return $str;
+		}
 	}
 	
 	function REQ($name, $default=false){
@@ -21,6 +35,11 @@
 	
 	function GET($name, $default=false){
 		return isset($_GET[$name]) ? $_REQUEST[$name] : $default;
+	}
+	
+	function SESSION($name, $default=false){
+		@session_start();
+		return isset($_SESSION[$name]) ? $_SESSION[$name] : $default;
 	}
 	
 	function REQS(){
