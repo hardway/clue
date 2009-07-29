@@ -29,11 +29,15 @@
 		return isset($_REQUEST[$name]) ? $_REQUEST[$name] : $default;
 	}
 	
-	function POST($name, $default=false){
+	function POST($name=null, $default=false){
+		if(! isset($name)) return ($_SERVER['REQUEST_METHOD']=='POST');
+
 		return isset($_POST[$name]) ? $_REQUEST[$name] : $default;
 	}
 	
-	function GET($name, $default=false){
+	function GET($name=null, $default=false){
+		if(! isset($name)) return ($_SERVER['REQUEST_METHOD']=='GET');
+		
 		return isset($_GET[$name]) ? $_REQUEST[$name] : $default;
 	}
 	
