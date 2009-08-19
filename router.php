@@ -90,6 +90,9 @@
 			// load controller
 			$class="{$controller}Controller";
 			$path="controller/".strtolower($class).".php";
+
+			if($_SERVER['REQUEST_METHOD']=='POST')
+				$action="_$action";				
 			
 			if(file_exists($path)){
 				require_once $path;
@@ -113,11 +116,7 @@
 			// invoke action
 			$obj->controller=$controller;
 			$obj->view=$action;
-			
-			if($_SERVER['REQUEST_METHOD']=='POST')
-				$obj->action="_$action";
-			else
-				$obj->action=$action;
+			$obj->action=$action;
 			
 			call_user_func_array(array($obj, $obj->action), $param);
 		}

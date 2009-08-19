@@ -23,16 +23,20 @@
 		
 		protected $_errors;
 
+		static function dbo(){
+			if(self::$default_database==null && Clue_Application::initialized()){
+				return self::$default_database=Clue_Application::db();
+			}
+			else
+				return self::$default_database;
+		}
+		
 		// FUTURE: more complicated constructor
 		//	such as new R(array('name'=>'tom', 'age'=>12))
 		function __construct($id=null, $db=null){
 			self::__rebuildMeta();
-			
-			if(self::$default_database==null && Clue_Application::initialized()){
-				self::$default_database=Clue_Application::db();
-			}
-			
-			if($db==null)$db=&self::$default_database;
+						
+			if($db==null)$db=self::dbo();
 			$this->_db=&$db;
 			
 			$this->_errors=array();
