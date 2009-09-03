@@ -363,7 +363,7 @@
 			return $ret;
 		}
 		
-		function destroy($option=""){
+		function destroy(){
 			$meta=$this->getMeta();
 			$pk=$meta['pkey'];
 			
