@@ -1,6 +1,9 @@
 <?php  
 	define('CLUE_VERSION', '0.1');
 	
+	// common defination
+	define("DS", DIRECTORY_SEPARATOR);
+
 	function autoload_load($path){
 		if(file_exists($path))
 			require_once $path;
