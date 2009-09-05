@@ -8,8 +8,11 @@
 		public $config;
 		public $db;
 		public $router;
+		public $options=array(
+			"url_rewrite"=>true
+		);
 		
-		function __construct($appbase='.'){
+		function __construct($appbase='.', $options=null){
 			$this->base=$appbase;
 			$this->config=new Clue_Config("$appbase/config/config.ini");
 			$this->db=Clue_Database::create($this->config->database->type, array(
@@ -24,12 +27,17 @@
 				throw new Exception($this->db->lasterror['error']);
 			}
 			
-			$this->router=new Clue_Router();
+			// Extend options
+			if(is_array($options)) foreach($options as $o=>$v){
+				$this->options[$o]=$v;
+			}
+			
+			$this->router=new Clue_Router($this->options["url_rewrite"]);
 		}
 		
 		static protected $instance;
-		static function init($appbase='.'){
-			self::$instance=new Clue_Application($appbase);
+		static function init($appbase='.', $options=null){
+			self::$instance=new Clue_Application($appbase, $options);
 			
 			session_start();			
 		}
@@ -47,5 +55,13 @@
 		static function config(){ return self::getInstance()->config; }
 		static function db(){ return self::getInstance()->db; }
 		static function router(){ return self::getInstance()->router; }
+	}
+	// global short cut
+	function url_for($controller, $action='index', $params=null){
+		return Clue_Application::router()->uri_for($controller, $action, $params);
+	}
+	
+	function app(){
+		return Clue_Application::getInstance();
 	}
 ?>

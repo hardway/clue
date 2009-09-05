@@ -19,10 +19,22 @@
 		
 		function reform($controller, $action, $params){
 			// TODO: reform using mapping rules
+			$url="";
+						
 			if($action=='index')
-				return "{$this->appbase}/$controller";
+				$url="{$this->appbase}/$controller";
 			else
-				return "{$this->appbase}/$controller/$action";
+				$url="{$this->appbase}/$controller/$action";
+			
+			$ps=array();
+			if(is_array($params)){
+				foreach($params as $n=>$v){
+					$ps[]="$n=$v";
+				}
+				$url.="?".implode("&", $ps);
+			}
+			
+			return $url;
 		}
 		
 		function resolve($uri){
@@ -58,12 +70,33 @@
 		}
 	}
 	
+	class Clue_QueryRouteMap extends Clue_RouteMap{
+		function __construct(){
+			$this->appbase=dirname($_SERVER['SCRIPT_NAME']);
+		}
+		
+		function resolve($uri){
+			if(isset($_GET["_c"])) {$this->controller=$_GET["_c"]; unset($_GET["_c"]);} else {$this->controller="index";}
+			if(isset($_GET["_a"])) {$this->action=$_GET["_a"]; unset($_GET["_a"]);} else {$this->action="index";}
+		}
+		
+		function reform($controller, $action, $params){
+			// TODO: reform using mapping rules
+			$ps=array();
+			if(is_array($params)) foreach($params as $n=>$v){
+				$ps[]="&$n=$v";
+			}
+			return "$this->appbase/index.php?_c=$controller&_a=$action" . implode("", $ps);
+		}
+	}
+	
 	class Clue_Router{
 		protected $map;
 		
-		function __construct(){
+		function __construct($url_rewrite){
 			// Determine controller and action by default map
-			$this->map=new Clue_RouteMap(0, 1);
+			$this->map=$url_rewrite ? new Clue_RouteMap(0, 1) : new Clue_QueryRouteMap();
+			
 			$this->map->resolve($_SERVER['REQUEST_URI']);
 		}
 		
@@ -71,7 +104,7 @@
 			return $this->map->controller;
 		}
 		
-		function uri_for($controller, $action, $param=null){
+		function uri_for($controller, $action='index', $param=null){
 			return $this->map->reform($controller, $action, $param);
 		}
 		
