@@ -3,10 +3,10 @@
 	require_once 'clue/controller.php';
 	
 	class Clue_RouteMap{
-		protected $appbase;
 		protected $cp;
 		protected $ap;
 		
+		public $appbase;
 		public $controller;
 		public $action;
 		public $param;
@@ -26,12 +26,19 @@
 			else
 				$url="{$this->appbase}/$controller/$action";
 			
-			$ps=array();
 			if(is_array($params)){
+				$np=array();
+				$sp=array();
 				foreach($params as $n=>$v){
-					$ps[]="$n=$v";
+					if(is_numeric($n)){
+						$np[]=$v;
+					}
+					else{
+						$sp[]="$n=$v";
+					}
 				}
-				$url.="?".implode("&", $ps);
+				if(count($np)>0) $url .= "/".implode('/', $np);
+				if(count($sp)>0) $url .= "?".implode('&', $sp);
 			}
 			
 			return $url;
@@ -63,7 +70,7 @@
 				else
 					$this->param[]=$p[$i];
 			}
-				
+			
 			// Default controller and action
 			if(empty($this->controller)) $this->controller='Index';
 			if(empty($this->action)) $this->action='index';
@@ -102,6 +109,11 @@
 		
 		function controller(){
 			return $this->map->controller;
+		}
+		
+		// URL Base for the application, which is defined in route-map
+		function base(){
+			return $this->map->appbase;
 		}
 		
 		function uri_for($controller, $action='index', $param=null){

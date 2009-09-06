@@ -64,4 +64,7 @@
 	function app(){
 		return Clue_Application::getInstance();
 	}
+	function appbase(){
+		return Clue_Application::getInstance()->router->base();
+	}
 ?>
