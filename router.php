@@ -26,6 +26,9 @@
 			else
 				$url="{$this->appbase}/$controller/$action";
 			
+			// 防止controller为index，出现"//"
+			if(strpos($url, "//")!==FALSE) $url=str_replace("//", "/", $url);
+			
 			if(is_array($params)){
 				$np=array();
 				$sp=array();
@@ -137,7 +140,7 @@
 			$path="controller/".strtolower($class).".php";
 
 			if($_SERVER['REQUEST_METHOD']=='POST')
-				$action="_$action";				
+				$action="_$action";
 			
 			if(file_exists($path)){
 				require_once $path;
@@ -156,7 +159,7 @@
 				require_once "controller/errorcontroller.php";
 			}
 			
-			$obj=new $class;
+			$obj=new $class($controller, $action);
 			
 			// invoke action
 			$obj->controller=$controller;

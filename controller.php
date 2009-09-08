@@ -8,6 +8,11 @@
 		
 		protected $view_data=array();
 		
+		function __construct($controller=null, $action=null){
+			$this->controller=$controller;
+			$this->action=$action;
+		}
+		
 		function render($view=null){
 			// determine view;
 			if($view!=null) $this->view=$view;
