@@ -5,8 +5,9 @@
 	define("DS", DIRECTORY_SEPARATOR);
 
 	function autoload_load($path){
-		if(file_exists($path))
+		if(file_exists($path)){
 			require_once $path;
+		}
 		else if(file_exists(strtolower($path)))
 			require_once strtolower($path);
 		else
@@ -25,5 +26,14 @@
 		}
 	}
 	
+	// register Clue library class auto loader
+	function autoload_clue($class){
+		if(substr($class, 0, 4)=="Clue"){
+			$clue_root=dirname(dirname(__FILE__));
+			autoload_load($clue_root . DS . str_replace("_", DS, strtolower($class)). ".php");
+		}
+	}
+	
+	spl_autoload_register("autoload_clue");
 	spl_autoload_register("autoload_application");
 ?>

@@ -53,9 +53,9 @@
 		}
 	}
 	
-	class Clue_Base62{
-		private $alpha = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
-		private $alen = 62;
+	class Clue_BaseCoder{
+		protected $alpha="0123456789";
+		protected $alen = 10;
 		
 		function decode($s){			
 			$rv=$pos=0;
@@ -76,7 +76,17 @@
 				$num = floor($num/$this->alen);
 			}
 			return $rv;
-		}
+		}		
+	}
+	
+	class Clue_Base36 extends Clue_BaseCoder{
+		protected $alpha = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+		protected $alen = 36;
+	}
+	
+	class Clue_Base62 extends Clue_BaseCoder{
+		protected $alpha = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+		protected $alen = 62;
 	}
 	
 	function REQ($name, $default=false){

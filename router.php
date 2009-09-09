@@ -15,6 +15,7 @@
 			$this->cp=$cpos;
 			$this->ap=$apos;
 			$this->appbase=dirname($_SERVER['SCRIPT_NAME']);
+			$this->param=array();
 		}
 		
 		function reform($controller, $action, $params){
@@ -80,11 +81,7 @@
 		}
 	}
 	
-	class Clue_QueryRouteMap extends Clue_RouteMap{
-		function __construct(){
-			$this->appbase=dirname($_SERVER['SCRIPT_NAME']);
-		}
-		
+	class Clue_QueryRouteMap extends Clue_RouteMap{		
 		function resolve($uri){
 			if(isset($_GET["_c"])) {$this->controller=$_GET["_c"]; unset($_GET["_c"]);} else {$this->controller="index";}
 			if(isset($_GET["_a"])) {$this->action=$_GET["_a"]; unset($_GET["_a"]);} else {$this->action="index";}
@@ -134,7 +131,7 @@
 			exit();
 		}
 		
-		function route($controller, $action, $param=null){
+		function route($controller, $action, $param=array()){
 			// load controller
 			$class="{$controller}Controller";
 			$path="controller/".strtolower($class).".php";
@@ -145,10 +142,20 @@
 			if(file_exists($path)){
 				require_once $path;
 				// Action not detected
-				if(!in_array($action, get_class_methods($class))){
-					$class='ErrorController';
-					$action='noAction';
-					require_once "controller/errorcontroller.php";
+				if(!in_array($action, get_class_methods($class))){					
+					$try_param=POST() ? substr($action, 1) : $action;
+					$try_action=POST() ? "_index" : "index";
+					
+					// fallback to default action - "index"					
+					if(in_array($try_action, get_class_methods($class))){
+						array_unshift($param, urldecode($try_param));
+						$action=$try_action;
+					}
+					else{
+						$class='ErrorController';
+						$action='noAction';
+						require_once "controller/errorcontroller.php";
+					}
 				}
 			}
 			else{
