@@ -58,13 +58,12 @@
 			$this->exec($sql);
 		}
 		
-		function get_var($sql){}
-		
-		function get_col($sql){}
-		
-		function get_row($sql, $mode=OBJECT){}
-		
+		function get_var($sql){}		
+		function get_col($sql){}		
+		function get_row($sql, $mode=OBJECT){}		
 		function get_results($sql, $mode=OBJECT){}
+		
+		function has_table($table){return false;}
 	}
 	
 	class Clue_Database_Mysql extends Clue_Database{
@@ -183,6 +182,47 @@
 			$this->free_result();
 			return $result;
 		}
+		
+		function has_table($table){
+			$table=strtolower($table);
+			$tables=$this->get_col("show tables");
+			return in_array($table, $tables);
+		}
+
+		protected function map_ddl_type($type, $length, $precision){
+			switch($type){
+				case "char":
+					return "char($length)";
+				case "varchar2":
+					return "varchar($length)";
+				case "datetime":
+					return "datetime";
+				case "timestamp":
+					return "timestamp";
+				case "number":
+					return $precision > 10 ? "bigint($precision)" : "int($precision)";
+				default:
+					throw new Exception("Don't know how to map this ddl type: ($type, $length, $precision)");
+			}
+		}
+		
+		function DDL_CREATE($schema){
+			$cols=array();
+			foreach($schema['column'] as $c){
+				$type=$this->map_ddl_type($c["type"], $c["length"], $c["precision"]);
+				$nul=$c['nullable'] ? "" : " not null";
+				$default=empty($c['default']) ? "" : " default {$c['default']}";
+				$cols[]="`{$c["name"]}` ".$type.$nul.$default;
+			}
+			$sql="create {$schema['type']} {$schema['name']}(\n";
+			$sql.=implode(", \n", $cols)."\n";
+			if(count($schema['pkey'])>0){
+				$sql.=", primary key(".implode(',', $schema['pkey']).")\n";
+			}
+			$sql.=")";
+			
+			return $sql;
+		}
 	}
 	
 	/**
@@ -279,6 +319,64 @@
 				oci_fetch_all($this->_stmt, $result);
 			
 			return $result;
+		}
+		
+		function has_table($table){
+			$table=strtoupper($table);
+			$cnt=$this->get_var("select count(*) from user_tables where table_name='$table'");
+			return $cnt==1;
+		}
+		
+		protected function map_datatype_to_sql92($type){
+			$type=strtolower($type);
+			switch($type){
+				case "date": 
+					return "datetime";
+				default: 
+					return $type;
+			}
+		}
+		
+		function get_schema($table){
+			$table=strtoupper($table);	// Oracle table names are always upper case.
+			
+			$schema=array(
+				'type'=>'table',
+				'name'=>$table,
+				'column'=>array(),	// array style
+				'col'=>array(),	// hash map style
+				'pkey'=>array()
+			);
+			
+			$cols=$this->get_results("
+				select 	column_id, column_name, data_type, data_default, 
+						data_length, data_precision, nullable
+				from user_tab_cols where table_name='$table'
+				order by column_id
+			");
+			
+			foreach($cols as $c){
+				$schema['column'][]=array(
+					"name"=>$c->COLUMN_NAME,
+					"type"=>$this->map_datatype_to_sql92($c->DATA_TYPE),
+					"default"=>$c->DATA_DEFAULT,
+					"length"=>$c->DATA_LENGTH,
+					"precision"=>$c->DATA_PRECISION,
+					"nullable"=> $c->NULLABLE=='Y'
+				);
+				$schema['col'][$c->COLUMN_NAME]=array(
+					"idx"=>$c->COLUMN_ID - 1
+				);
+			}
+			
+			$schema['pkey']=$this->get_col("
+				select column_name from user_cons_columns c 
+					join user_constraints t on c.table_name=t.table_name and c.constraint_name=t.constraint_name 
+				where t.constraint_type='P' and t.table_name='$table'
+				order by position
+			");
+			
+			return $schema;
 		}
 	}
 ?>
