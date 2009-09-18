@@ -81,6 +81,12 @@
 			if(!$this->dbh){
 				$this->setError(array('code'=>mysqli_connect_errno(), 'error'=>mysqli_connect_error()));
 			}
+			
+			// set default client encoding
+			if(isset($param['encoding'])){
+				$encoding=$param['encoding'];
+				$this->exec("set names $encoding");
+			}
 		}
 		
 		function __destruct(){
@@ -200,7 +206,10 @@
 				case "timestamp":
 					return "timestamp";
 				case "number":
-					return $precision > 10 ? "bigint($precision)" : "int($precision)";
+					if(empty($precision))
+						return "int";
+					else
+						return $precision > 10 ? "bigint($precision)" : "int($precision)";
 				default:
 					throw new Exception("Don't know how to map this ddl type: ($type, $length, $precision)");
 			}
