@@ -18,6 +18,7 @@
 			$this->db=Clue_Database::create($this->config->database->type, array(
 				'host'=>$this->config->database->host, 
 				'db'=>$this->config->database->db, 
+				'encoding'=>$this->config->database->encoding,
 				'username'=>$this->config->database->username, 
 				'password'=>$this->config->database->password
 			));
