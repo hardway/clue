@@ -27,8 +27,12 @@
 	
 	class Clue_Upload{
 		protected $file;
+		
+		public $name;
+		
 		function __construct($name){
 			$this->file=isset($_FILES[$name]) ? $_FILES[$name] : false;
+			$this->name=is_array($this->file) ? $this->file['name'] : false;
 		}
 		
 		function isValid(){
