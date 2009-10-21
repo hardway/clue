@@ -15,13 +15,17 @@
 		function __construct($appbase='.', $options=null){
 			$this->base=$appbase;
 			$this->config=new Clue_Config("$appbase/config/config.ini");
-			$this->db=Clue_Database::create($this->config->database->type, array(
+			
+			$param=array(
 				'host'=>$this->config->database->host, 
 				'db'=>$this->config->database->db, 
-				'encoding'=>$this->config->database->encoding,
 				'username'=>$this->config->database->username, 
 				'password'=>$this->config->database->password
-			));
+			);
+			if(isset($this->config->database->encoding))
+				$param['encoding']=$this->config->database->encoding;
+
+			$this->db=Clue_Database::create($this->config->database->type, $param);
 			
 			// throw exception if database is not connectable
 			if($this->db->errors){
