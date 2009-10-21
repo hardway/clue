@@ -14,12 +14,32 @@
 		}
 		
 		function render($view=null){
+			$content=false;
+			ob_start();
+			$this->render_raw($view);
+			$content = ob_get_contents();
+			ob_end_clean();
+			
+			if(!function_exists('skin') || skin()==null){
+				echo $content;
+			}
+			else{
+				skin()->buffer->component=$content;
+				skin()->render();
+			}
+		}
+		
+		function render_raw($view=null){
 			// determine view;
 			if($view!=null) $this->view=$view;
+			$view=strtolower("view/".str_replace('_','/',$this->controller)."/{$this->view}.tpl");
 			
-			extract($this->view_data);
-			
-			require_once "view/{$this->controller}/{$this->view}.tpl";
+			if(file_exists($view)){
+				extract($this->view_data);
+				require_once $view;
+			}
+			else
+				throw new Exception("View didn't exists: $view");
 		}
 		
 		function redirect_route($controller, $action='index', $param=null){			
@@ -28,6 +48,10 @@
 		
 		function redirect($url){
 			Clue_Application::router()->redirect($url);
+		}
+		
+		function goback(){
+			$this->redirect($_SERVER['HTTP_REFERER']);
 		}
 		
 		function set($name, $value){

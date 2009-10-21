@@ -32,17 +32,29 @@
 				$this->options[$o]=$v;
 			}
 			
-			$this->router=new Clue_Router($this->options["url_rewrite"]);
+			$this->router=new Clue_Router(array(
+				'url_rewrite'=>$this->options["url_rewrite"],
+				'map'=>array(
+					// translate controller name
+					'^admin/?'=>'Admin_'
+				)
+			));
 		}
 		
 		static protected $instance;
 		static function init($appbase='.', $options=null){
 			self::$instance=new Clue_Application($appbase, $options);
 			
-			session_start();			
+			session_start();
 		}
 		static function run(){
-			self::router()->dispatch();
+			try{
+				self::router()->dispatch();
+			}
+			catch(Exception $e){
+				// TODO: route to error controller, which must exist.
+				echo $e->getMessage();
+			}
 		}
 		static function initialized(){ return is_object(self::$instance); }
 		

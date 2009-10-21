@@ -22,6 +22,8 @@
 		protected $_snap;
 		
 		protected $_errors;
+		
+		protected $_change;
 
 		static function dbo(){
 			if(self::$default_database==null && Clue_Application::initialized()){
@@ -290,6 +292,8 @@
 					}
 				}
 			}
+			
+			$this->_change=array();
 			return true;
 		}
 		
@@ -317,8 +321,42 @@
 			return empty($this->_snap[$meta['pkey']]);
 		}
 		
+		function changelog($name=null){
+			if($name==null) $name=get_class($this);
+			
+			$log=array();
+			
+						
+			if(isset($this->_change['insert'])){
+				foreach($this->_change as $n=>$v){
+					if($n=='insert') continue;
+					$log[]="$n :=> \"$v\"";
+				}
+				return "Created new {$name}[".$this->_change['insert']."] with {". implode(", ", $log)."}";
+			}
+			else if(isset($this->_change['update'])){
+				foreach($this->_change as $n=>$v){
+					if($n=='update') continue;
+					$log[]="$n :=> \"$v\"";
+				}
+				return "Update {$name}[".$this->_change['update']."] with {". implode(", ", $log)."}";
+			}
+			else if(isset($this->_change['delete'])){
+				foreach($this->_change as $n=>$v){
+					if($n=='delete') continue;
+					$log[]="$n :=> \"$v\"";
+				}
+				return "Delete {$name}[".$this->_change['delete']."] with {". implode(", ", $log)."}";
+			}
+			else{
+				// NO change detected.
+				return false;
+			}
+		}
+		
 		function save(){
 			if($this->check()===false){
+				var_dump($this->errors());
 				return false;
 			}
 			
@@ -335,6 +373,9 @@
 					if($this->_snap[$c]==$this->$c) continue;
 					$collist[]="`".$m['name']."`";
 					$vallist[]=$this->dbcast($c, $this->$c, $m['type']);
+					
+					// Record change
+					$this->_change[$c]=$this->$c;
 				}
 				$sql="insert into $table (".join(", ", $collist).") values(".join(",", $vallist).")";
 			}
@@ -344,28 +385,50 @@
 					if(isset($m['readonly'])) continue;
 					if($this->_snap[$c]==$this->$c) continue;
 					$list[]="`".$m['name']."`=".$this->dbcast($c, $this->$c, $m['type']);
+					
+					// Record change
+					$this->_change[$c]=$this->$c;
 				}
-				$sql="update $table set ".join(",", $list)." where `$pk`='".$this->$pk."'";
+				if(count($list)>0)
+					$sql="update $table set ".join(",", $list)." where `$pk`='".$this->$pk."'";
+				else
+					$sql=false;
 			}
 			
-			$ret=$this->_db->exec($sql);
-			if($ret===false){
-				$this->setDBError($sql, $this->_db->errors);
+			if($sql){
+				$ret=$this->_db->exec($sql);
+				if($ret===false){
+					$this->setDBError($sql, $this->_db->errors);
+				}
+				else{
+					// Update or Insert is successful.
+					// Update the primary key if new record inserted.
+					if(empty($this->$pk)){
+						$this->$pk=$this->_db->insertId();
+						$this->_change['insert']=$this->$pk;
+					}
+					else{
+						$this->_change['update']=$this->$pk;
+					}
+				}
+				
+				$this->_snap_shot();
+				return $ret;
 			}
-			else{
-				// Update or Insert is successful.
-				// Update the primary key if new record inserted.
-				if(empty($this->$pk)) $this->$pk=$this->_db->insertId();
-			}
-			
-			$this->_snap_shot();
-			
-			return $ret;
+			return true;			
 		}
 		
 		function destroy(){
 			$meta=$this->getMeta();
 			$pk=$meta['pkey'];
+			
+			// Record changes.
+			$this->_change['delete']=$this->$pk;
+			foreach($meta['columns'] as $c=>$m){
+				if(isset($m['readonly'])) continue;
+				// Record change
+				$this->_change[$c]=$this->$c;
+			}
 			
 			$sql="delete from {$meta["table"]} where `$pk`='".$this->$pk."'";
 			$ret=$this->_db->exec($sql);

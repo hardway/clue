@@ -1,19 +1,24 @@
 <?php
 	require_once 'clue/core.php';
 	require_once 'clue/controller.php';
+	require_once 'clue/tool.php';
 	
 	class Clue_RouteMap{
 		protected $cp;
 		protected $ap;
+		protected $map;
 		
 		public $appbase;
 		public $controller;
 		public $action;
 		public $param;
 		
-		function __construct($cpos, $apos){
-			$this->cp=$cpos;
-			$this->ap=$apos;
+		function __construct($map=array()){
+			$this->map=$map;
+			
+			$this->cp=0;
+			$this->ap=1;
+			
 			$this->appbase=dirname($_SERVER['SCRIPT_NAME']);
 			$this->param=array();
 		}
@@ -21,7 +26,11 @@
 		function reform($controller, $action, $params){
 			// TODO: reform using mapping rules
 			$url="";
-						
+
+			// convert namespace
+			// TODO: according to route map
+			$controller=str_replace('_','/',$controller);
+			
 			if($action=='index')
 				$url="{$this->appbase}/$controller";
 			else
@@ -55,12 +64,22 @@
 				$uri=substr($uri, strlen($this->appbase)+1);
 			}
 			else{
-				throw new Exception('Error in route map, wront app base.');
+				throw new Exception('Error in route map, wrong app base.');
 			}
 			
 			// strip query from uri
 			if(($p=strpos($uri, '?'))!==FALSE){
 				$uri=substr($uri, 0, $p);
+			}
+			
+			// Apply map translate
+			$namespace="";
+			foreach($this->map as $pattern=>$replace){
+				if(preg_match("|$pattern|", $uri)){
+					$uri=preg_replace("|$pattern|", '', $uri);
+					$namespace=$replace;
+					break;
+				}
 			}
 			
 			// explode path and do mapping.
@@ -78,10 +97,12 @@
 			// Default controller and action
 			if(empty($this->controller)) $this->controller='Index';
 			if(empty($this->action)) $this->action='index';
+			
+			$this->controller=$namespace.$this->controller;
 		}
 	}
 	
-	class Clue_QueryRouteMap extends Clue_RouteMap{		
+	class Clue_QueryRouteMap extends Clue_RouteMap{	
 		function resolve($uri){
 			if(isset($_GET["_c"])) {$this->controller=$_GET["_c"]; unset($_GET["_c"]);} else {$this->controller="index";}
 			if(isset($_GET["_a"])) {$this->action=$_GET["_a"]; unset($_GET["_a"]);} else {$this->action="index";}
@@ -100,9 +121,11 @@
 	class Clue_Router{
 		protected $map;
 		
-		function __construct($url_rewrite){
+		function __construct($option){
 			// Determine controller and action by default map
-			$this->map=$url_rewrite ? new Clue_RouteMap(0, 1) : new Clue_QueryRouteMap();
+			$this->map=@$option['url_rewrite'] ? 
+				new Clue_RouteMap($option['map']) : 
+				new Clue_QueryRouteMap();
 			
 			$this->map->resolve($_SERVER['REQUEST_URI']);
 		}
@@ -133,8 +156,8 @@
 		
 		function route($controller, $action, $param=array()){
 			// load controller
-			$class="{$controller}Controller";
-			$path="controller/".strtolower($class).".php";
+			$class="{$controller}Controller";		
+			$path="controller/".strtolower(str_replace('_','/',$class)).".php";
 
 			if($_SERVER['REQUEST_METHOD']=='POST')
 				$action="_$action";
