@@ -56,14 +56,22 @@
 					echo "Cache file missing, record removed($id)\n";
 				}
 			}
+			
+			return false;	// Cache missed
 		}
 		
 		function put($url, $content){
 			$url=$this->db->quote($url);
 			$last_fetch=time();
 			
-			$this->db->exec("insert into cache(url, last_fetch) values($url, $last_fetch)");
-			$id=$this->db->insertId();
+			$id=$this->db->get_var("select id from cache where url=$url");
+			if(!$id){
+				$this->db->exec("insert into cache(url, last_fetch) values($url, $last_fetch)");
+				$id=$this->db->insertId();
+			}
+			else{
+				$this->db->exec("update cache set last_fetch=$last_fetch where id=$id");
+			}
 			
 			//echo "Caching $url to $id ";
 			$file=$this->cache_file($id, true);
@@ -79,6 +87,7 @@
 		private $cachedb;
 		
 		private $curl;
+		private $history=array();
 		
 		function __construct($option=array()){
 			if(isset($option['cache'])) $this->cache=new Clue_Creeper_Cache($option['cache']);
@@ -97,16 +106,54 @@
 			curl_close($this->curl);
 		}
 		
-		function open($url){
+		private function follow_url($base, $url){
+			// TODO: unittest			
+			if(preg_match('|(http://[^/]+)([^?#]*)|i', $base, $root)){
+				$path=dirname($root[2])."/";
+				$root=$root[1];
+				if(substr($url, 0, 1)=='/'){
+					return $root.$url;
+				}
+				else if(substr($url, 0, 2)=='..'){
+					exit("Don't know how to handle url like ../../, $url");
+				}
+				else{
+					return $root.$path.$url;
+				}
+			}			
+		}
+		
+		private function visit($url, $save=true){
+			// TODO: better way to tell if it's absolute and relative url
+			if(substr($url, 0, 7)!='http://'){
+				$url=$this->follow_url(end($this->history), $url);
+			}
+			
+			if($save) $this->history[]=$url;
+			return $url;
+		}
+		
+		function open($url, $force_download=false){
+			$url=$this->visit($url);
+			
 			// check cache
 			$this->content= $this->cache ? $this->cache->get($url) : false;
-			if(!$this->content){				
+			if(!$this->content || $force_download){
 				// echo "Creeping $url\n";
 				curl_setopt($this->curl, CURLOPT_URL, $url);
 				$this->content=curl_exec($this->curl);
 				
 				if($this->cache) $this->cache->put($url, $this->content);	// save cache
 			}
+		}
+		
+		function save($url, $path){
+			$url=$this->visit($url, false);
+			
+			echo "Saving $url to $path\n";
+			curl_setopt($this->curl, CURLOPT_URL, $url);
+			curl_setopt($this->curl, CURLOPT_REFERER, end($this->history));
+			file_put_contents($path, curl_exec($this->curl));
 		}
 	}
 	
@@ -141,7 +188,7 @@
 			$this->dom->formatOutput=false;
 			
 			if($type=='html'){
-				@$this->dom->loadHTML($html);
+				@$this->dom->loadHTML($this->_filterContent($html));
 			}
 			else if($type='xml'){
 				@$this->dom->loadXML($html);
@@ -151,6 +198,13 @@
 			}
 			
 			$this->xp=new DOMXPath($this->dom);
+		}
+		
+		private function _filterContent($html){
+			return preg_replace(array(
+				'|<script.+?<\/script>|is',
+				'|<!--.+?-->|is'
+			), null, $html);
 		}
 		
 		function getElements($xpath, $context=null){
@@ -165,6 +219,14 @@
 		function getText($xpath, $context=null){
 			$node=$this->getElement($xpath, $context);
 			return $node ? $node->nodeValue : "";
+		}
+		
+		function removeElement($xpath, $context=null){
+			$node=$this->getElement($xpath, $context);
+			if($node)
+				$node->parentNode->removeChild($node);
+			else
+				echo $xpath;
 		}
 	}
 ?>
