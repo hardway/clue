@@ -95,7 +95,7 @@
 			$this->curl=curl_init();
 			curl_setopt($this->curl, CURLOPT_RETURNTRANSFER, true);
 			
-			if(isset($option['proxy'])){
+			if(isset($option['proxy']) && strpos($option['proxy'], ':')>0){
 				list($proxy, $port)=explode(":", $option['proxy']);
 				curl_setopt($this->curl, CURLOPT_PROXY, $proxy);
 				curl_setopt($this->curl, CURLOPT_PROXYPORT, $port);
