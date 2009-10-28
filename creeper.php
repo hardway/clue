@@ -94,6 +94,7 @@
 			
 			$this->curl=curl_init();
 			curl_setopt($this->curl, CURLOPT_RETURNTRANSFER, true);
+			curl_setopt($this->curl, CURLOPT_FOLLOWLOCATION, true);
 			
 			if(isset($option['proxy']) && strpos($option['proxy'], ':')>0){
 				list($proxy, $port)=explode(":", $option['proxy']);
@@ -123,13 +124,15 @@
 			}			
 		}
 		
-		private function visit($url, $save=true){
+		private function visit($url, $save_history=true){
+			$url=trim($url);
+						
 			// TODO: better way to tell if it's absolute and relative url
 			if(substr($url, 0, 7)!='http://'){
 				$url=$this->follow_url(end($this->history), $url);
 			}
 			
-			if($save) $this->history[]=$url;
+			if($save_history) $this->history[]=$url;
 			return $url;
 		}
 		
@@ -154,6 +157,10 @@
 			curl_setopt($this->curl, CURLOPT_URL, $url);
 			curl_setopt($this->curl, CURLOPT_REFERER, end($this->history));
 			file_put_contents($path, curl_exec($this->curl));
+		}
+		
+		protected function _http_get($url){
+			
 		}
 	}
 	
