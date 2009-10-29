@@ -126,7 +126,11 @@
 		
 		private function visit($url, $save_history=true){
 			$url=trim($url);
-						
+
+			// TODO: refactor into method
+			// Encode url
+			$url=str_replace(" ", "%20", $url);
+			
 			// TODO: better way to tell if it's absolute and relative url
 			if(substr($url, 0, 7)!='http://'){
 				$url=$this->follow_url(end($this->history), $url);
