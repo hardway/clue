@@ -41,7 +41,8 @@
 				'url_rewrite'=>$this->options["url_rewrite"],
 				'map'=>array(
 					// translate controller name
-					'^admin/?'=>'Admin_'
+					// TODO: this should appear as application configuration
+					// '^admin/?'=>'Admin_'
 				)
 			));
 		}
