@@ -195,7 +195,7 @@
 			return in_array($table, $tables);
 		}
 
-		protected function map_ddl_type($type, $length, $precision){
+		function map_ddl_type($type, $length, $precision){
 			switch($type){
 				case "char":
 					return "char($length)";
@@ -231,6 +231,51 @@
 			$sql.=")";
 			
 			return $sql;
+		}
+		
+		private function get_schema_field_type($text){
+			if(($p=strpos($text, '('))>0)
+				return substr($text, 0, $p);
+			else
+				return $text;
+		}
+		
+		private function get_schema_field_length($text){
+			if(($p=strpos($text, '('))>0)
+				return intval(substr($text, $p+1, strpos($text, ')')-$p));
+			else
+				return 0;			
+		}
+		
+		function get_schema($table){	
+			$schema=array(
+				'type'=>'table',
+				'name'=>$table,
+				'column'=>array(),	// array style
+				'col'=>array(),	// hash map style
+				'pkey'=>array()
+			);
+			
+			$cols=$this->get_results("desc $table");
+			$idx=0;
+			foreach($cols as $c){
+				$column=array(
+					"name"=>$c->Field,
+					"type"=>$this->get_schema_field_type($c->Type),
+					"default"=>$c->Default,
+					"length"=>$this->get_schema_field_length($c->Type),
+					"precision"=>null,
+					"nullable"=> strtoupper($c->Null)=='YES',
+					"idx"=>$idx
+				);
+				$schema['column'][]=$column;
+				$schema['col'][$c->Field]=$column;
+				
+				if(strtoupper($c->Key)=='PRI')
+					$schema['pkey'][]=$c->Field;
+			}
+			
+			return $schema;
 		}
 	}
 	
@@ -365,7 +410,8 @@
 			");
 			
 			foreach($cols as $c){
-				$schema['column'][]=array(
+				$column=array(
+					"idx"=>$c->COLUMN_ID - 1,
 					"name"=>$c->COLUMN_NAME,
 					"type"=>$this->map_datatype_to_sql92($c->DATA_TYPE),
 					"default"=>$c->DATA_DEFAULT,
@@ -373,9 +419,8 @@
 					"precision"=>$c->DATA_PRECISION,
 					"nullable"=> $c->NULLABLE=='Y'
 				);
-				$schema['col'][$c->COLUMN_NAME]=array(
-					"idx"=>$c->COLUMN_ID - 1
-				);
+				$schema['column'][]=$column;
+				$schema['col'][$c->COLUMN_NAME]=$column;
 			}
 			
 			$schema['pkey']=$this->get_col("
