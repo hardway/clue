@@ -198,7 +198,7 @@
 		static function soundex($utf){
 			$sound="";
 			
-			$gb=iconv("UTF-8", "GB2312", $utf);
+			$gb=mb_convert_encoding($utf, "GB2312", "UTF-8");
 			if($gb===FALSE) return FALSE;	// Invalid encoding
 			
 			$len=strlen($gb);
