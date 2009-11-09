@@ -93,6 +93,15 @@
 		protected $alen = 62;
 	}
 	
+	class Clue_Browser{
+		static function is_ie(){
+			return strpos($_SERVER['HTTP_USER_AGENT'], 'MSIE')!==false;
+		}
+	}
+	
+	//////////////////////////////////////
+	// Shortcuts
+	//////////////////////////////////////
 	function REQ($name, $default=false){
 		return isset($_REQUEST[$name]) ? $_REQUEST[$name] : $default;
 	}
