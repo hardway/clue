@@ -211,6 +211,12 @@
 			$this->xp=new DOMXPath($this->dom);
 		}
 		
+		function __destruct(){
+			$this->html=null;
+			$this->dom=null;
+			$this->xp=null;
+		}
+		
 		private function _filterContent($html){
 			return preg_replace(array(
 				'|<script.+?<\/script>|is',
