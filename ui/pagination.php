@@ -3,15 +3,15 @@
 		public $page, $pageSize, $size;
 		protected $pageCount;
 		
-		function __construct($options){
+		function __construct($options=array()){
 			$this->page=$options["page"];
-			$this->pageSize=$options["pageSize"];
+			$this->pageSize=isset($options["pageSize"]) ? $options['pageSize'] : 10;
 			$this->size=$options["size"];
 			
 			$this->pageCount=ceil($this->size / $this->pageSize);
 		}
 		
-		// range:String for controller usage
+		// range:String for sql usage
 		// eg. 1-20
 		function limitRange(){
 			$begin=($this->page-1) * $this->pageSize;
@@ -21,6 +21,15 @@
 			$size=$end - $begin;
 			
 			return "limit $begin, $size";
+		}
+		
+		// slice: used for array_slice
+		function sliceOffset(){
+			return ($this->page-1) * $this->pageSize;
+		}
+		
+		function sliceLength(){
+			return $this->pageSize;
 		}
 		
 		function render($urlPattern, $insertPoint="(?)"){
