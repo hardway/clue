@@ -1,5 +1,5 @@
 <?php 
-	class Clue_UI_Skin{
+	abstract class Clue_UI_Skin{
 		protected $header=array(
 			'title'=>array(),
 			'description'=>array(),
@@ -12,6 +12,7 @@
 			'script'=>array(),
 			'custom'=>array()
 		);
+		protected $body='';
 		
 		public $template;
 		public $template_path;
@@ -35,23 +36,40 @@
 			$this->header['scripts'][]="<script type='text/javascript' src='$script' charset='utf-8'></script>";
 		}
 		
+		function addScript($script){
+			$this->header['script'][]=$script;
+		}
+		
 		function addStyleSheet($css){
 			$this->header['styleSheets'][]="<link rel='stylesheet' href='$css' type='text/css' media='screen' charset='utf-8'>";
 		}
 		
+		function addStyle($style){
+			$this->header['style'][]=$style;
+		}
+		
 		function setHeader($header){
 			$this->header=$header;
-		}		
+		}
+		
+		function setBody($body){
+			$this->body=$body;
+		}
+		
+		abstract function render();
 		
 		///---------------------------------------------------------------
 		static $instance=null;
 				
 		static function load($application, $options=null){
-			if(strtolower($application)=="joomla"){
-				self::$instance=new Clue_UI_JoomlaSkin($options);
+			switch(strtolower($application)){
+				case 'joomla':
+					self::$instance=new Clue_UI_JoomlaSkin($options);
+					break;
+				case 'simple':
+				default:
+					self::$instance=new Clue_UI_SimpleSkin($options);
 			}
-			else
-				exit("No skin loader for $application");
 				
 			return self::$instance;
 		}

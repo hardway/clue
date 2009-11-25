@@ -156,6 +156,10 @@
 			$this->setHeader($header);
 		}
 		
+		function setBody($body){
+			$this->buffer->component=$body;
+		}
+		
 		function countModules($condition){
 			$count=0;
 			

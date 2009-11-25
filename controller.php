@@ -24,7 +24,7 @@
 				echo $content;
 			}
 			else{
-				skin()->buffer->component=$content;
+				skin()->setBody($content);
 				skin()->render();
 			}
 		}
