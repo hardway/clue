@@ -33,6 +33,9 @@
 				case "css":
 					header("Content-Type: text/css");
 					break;
+				case 'js':
+					header("Content-Type: application/x-javascript");
+					break;
 				default:
 					header("Content-Type: text/plain");
 					break;
