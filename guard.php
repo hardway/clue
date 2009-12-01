@@ -56,8 +56,14 @@
 			$this->log=$log;
 		}
 		
+		public function mute(){
+			$this->log=null;
+		}
+		
 		public function log($message, $level=Clue_Guard::NOTICE){
-			$this->log->log($message, $level);
+			if(is_object($this->log)){
+				$this->log->log($message, $level);
+			}
 		}
 		
 		public function dump(/*anything*/){

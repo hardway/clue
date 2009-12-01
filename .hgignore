@@ -1,0 +1,5 @@
+syntax: glob
+
+Thumbs.db
+*.orig
+tests\data

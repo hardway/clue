@@ -28,6 +28,7 @@
 		}
 		
 		function test_catch_error_by_default(){
+			Clue_Guard::getDefault()->mute();
 			trigger_error("Sample error that will be catched by guard.");
 			
 			return $this->assertTrue(true);

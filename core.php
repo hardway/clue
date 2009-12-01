@@ -5,11 +5,10 @@
 	define("DS", DIRECTORY_SEPARATOR);
 
 	function autoload_load($path){
-		if(file_exists($path)){
+		$path=strtolower($path);	// Always try lowercase
+		
+		if(file_exists($path))
 			require_once $path;
-		}
-		else if(file_exists(strtolower($path)))
-			require_once strtolower($path);
 		else
 			throw new Exception("Can't load class: $path");	
 	}
