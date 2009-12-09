@@ -11,8 +11,10 @@
 		function __get($name){
 			if(isset($this->$name)) 
 				return $this->$name;
-			else
+			else if(isset($this->config->$name))
 				return $this->config->$name;
+			else
+				return false;
 		}
 		
 		// Convert array to object recursively

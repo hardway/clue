@@ -16,20 +16,8 @@
 			$this->base=$appbase;
 			$this->config=new Clue_Config("$appbase/config/config.ini");
 			
-			$param=array(
-				'host'=>$this->config->database->host, 
-				'db'=>$this->config->database->db, 
-				'username'=>$this->config->database->username, 
-				'password'=>$this->config->database->password
-			);
-			if(isset($this->config->database->encoding))
-				$param['encoding']=$this->config->database->encoding;
-
-			$this->db=Clue_Database::create($this->config->database->type, $param);
-			
-			// throw exception if database is not connectable
-			if($this->db->errors){
-				throw new Exception($this->db->lasterror['error']);
+			if($this->config->database){
+				$this->set_default_database((array)$this->config->database);
 			}
 			
 			// Extend options
@@ -45,6 +33,15 @@
 					// '^admin/?'=>'Admin_'
 				)
 			));
+		}
+		
+		function set_default_database($param){
+			$this->db=Clue_Database::create($param['type'], $param);
+			
+			// throw exception if database is not connectable
+			if($this->db->errors){
+				throw new Exception($this->db->lasterror['error']);
+			}
 		}
 		
 		static protected $instance;
