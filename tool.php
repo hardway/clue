@@ -1,12 +1,17 @@
 <?php  
 	class Clue_Tool{
 		static function os(){
-			$os=strtolower($_SERVER['OS']);
-			if(strpos($os, 'windows')===0){
+			if(isset($_SERVER['OS'])){
+				$os=strtolower($_SERVER['OS']);
+				if(strpos($os, 'windows')===0){
+					return 'windows';
+				}
+			}
+			else if(isset($_SERVER['WINDIR'])){
 				return 'windows';
 			}
-			else
-				return "unknown os: $os";
+			
+			return "unknown";
 		}
 		
 		/**

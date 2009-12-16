@@ -46,12 +46,22 @@
 			if($file==null) $file='default.ini';
 			
 			if(!file_exists($file)){
-				$file=self::get_default_config_path . '/' . $file;
+				$file=self::get_default_config_path() . '/' . $file;
 			}
 			
 			if(!file_exists($file)) throw new Exception("Can't find config file: $file !");
 			
 			$this->config=$this->array_to_obj(parse_ini_file($file, true));
+		}
+		
+		/**
+		 * Merge config with another Clue_Config object
+		 * @return nothing
+		 */
+		function merge(Clue_Config $cfg){
+			foreach($cfg->config as $k=>$v){
+				$this->config->$k=$v;
+			}
 		}
 	}
 ?>
