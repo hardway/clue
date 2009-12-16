@@ -1,5 +1,29 @@
 <?php  
 	class Clue_Tool{
+		static function os(){
+			$os=strtolower($_SERVER['OS']);
+			if(strpos($os, 'windows')===0){
+				return 'windows';
+			}
+			else
+				return "unknown os: $os";
+		}
+		
+		/**
+		 * Create directory recursively, without warning
+		 */
+		static function mkdir($dir){
+			$dir=str_replace("\\", '/', $dir);
+			
+			$ds=null;
+			foreach(explode('/', $dir) as $seg){
+				$ds=empty($ds) ? $seg : $ds.'/'.$seg;
+				if(!file_exists($ds)){
+					mkdir($ds);
+				}
+			}			
+		}
+		
 		static function uuid(){
 			return sha1(getmypid().uniqid(rand()).@$_SERVER['SERVER_NAME']);
 		}
