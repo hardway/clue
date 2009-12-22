@@ -14,15 +14,21 @@
 		
 		function __construct($appbase='.', $options=null){
 			$this->base=$appbase;
-			$this->config=new Clue_Config("$appbase/config/config.ini");
-			
-			if($this->config->database){
-				$this->set_default_database((array)$this->config->database);
-			}
 			
 			// Extend options
 			if(is_array($options)) foreach($options as $o=>$v){
 				$this->options[$o]=$v;
+			}
+			
+			if(isset($this->options['config'])){
+				$this->config=$this->options['config'];
+			}
+			else{
+				$this->config=new Clue_Config("$appbase/config/config.ini");
+			}			
+			
+			if($this->config->database){
+				$this->set_default_database((array)$this->config->database);
 			}
 			
 			$this->router=new Clue_Router(array(
