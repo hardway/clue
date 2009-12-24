@@ -27,21 +27,14 @@
 		
 		protected $setting;
 		
-		protected $errorLog=null;
+		public $lastquery=null;
 		protected $queryLog=null;
 		
 		public $dbh=null;
-		public $lastquery=null;
 		public $lasterror=null;
 		public $errors=null;
 
-		public function enable_error_log(IClue_Log $log){
-			$this->errorLog=$log;
-		}
-		public function disable_error_log(){
-			$this->errorLog=null;
-		}
-		public function enable_query_log(IClue_Log $log){
+		public function enable_query_log(Clue_Database_Log $log){
 			$this->queryLog=$log;
 		}
 		public function disable_query_log(){
@@ -49,15 +42,10 @@
 		}
 	
 		protected function setError($err){
-			if($this->errorLog){
-				$this->errorLog->log("({$err['code']}) {$err['error']}", 'ERROR');
-				$this->errorLog->log($this->lastquery, 'QUERY');
-			}
-			
 			$this->lasterror=$err;
 			$this->errors[]=$err;
-			// TODO: Throw error, let guard handle that.
-			// PREREQ: make sure I can switch back to any version of clue library easily.
+			
+			throw new Clue_Database_Exception($this->lastquery, $err['code'], $err['error']);
 		}
 		
 		protected function clearError(){
@@ -66,13 +54,25 @@
 		}
 		
 		// Basic implementation
-		function quote($str){
-			return "'".$this->escape($str)."'";
+		function quote($data){
+			if(is_null($data))
+				return 'null';
+			elseif(is_string($data)){
+				return "'".addslashes($data)."'";
+			}
+			else
+				return $data;
 		}
 		
 		// Basic implementation
-		function escape($str){
-			return addslashes($str);
+		function escape($data){
+			if(is_null($data))
+				return 'null';
+			elseif(is_string($data)){
+				return addslashes($data);
+			}
+			else
+				return $data;
 		}
 		
 		function insertId(){
@@ -83,7 +83,7 @@
 			$this->lastquery=$sql;
 			
 			if($this->queryLog){
-				$this->queryLog->log($sql, 'QUERY');
+				$this->queryLog->log_query($sql);
 			}
 		}
 		

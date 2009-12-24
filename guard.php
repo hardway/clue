@@ -2,7 +2,7 @@
 	require_once 'clue/log.php';
 	
 	// Shortcut
-	function guard(){ return Clue_Guard::getDefault(); }
+	function guard(){ return Clue_Guard::get_default(); }
 	
 	/**
 	* Acts as Security Guard
@@ -16,19 +16,12 @@
 		
 	class Clue_Guard{
 		public static $default_guard=null;
-		
-		public static function init($log=null){
-			$guard=self::getDefault();
-			
-			$guard->setLogger(empty($log) ? new Clue_Log() : $log);
-			$guard->start();
-		}
-		
-		public static function setDefault(Clue_Guard $guard){
+				
+		public static function set_default(Clue_Guard $guard){
 			self::$default_guard=$guard;
 		}
 		
-		public static function getDefault(){
+		public static function get_default(){
 			if(self::$default_guard==null){
 				self::$default_guard=new Clue_Guard();
 			}
@@ -38,8 +31,14 @@
 		//--------------------------------------------------------
 		
 		protected $log=null;
+		protected $app=null;
+		protected $mute=true;
 		
-		public function __construct(/* TODO: options */){
+		public function __construct($app=null, $log=null){
+			$this->app=$app;
+			$this->log=$log;
+			
+			$this->start();
 		}
 		
 		public function start(){
@@ -52,18 +51,14 @@
 			restore_exception_handler();
 		}
 		
-		public function setLogger($log){
-			$this->log=$log;
-		}
-		
 		public function mute(){
-			$this->log=null;
+			$this->mute=true;
 		}
 		
-		public function log($message, $level=Clue_Guard::NOTICE){
-			if(is_object($this->log)){
-				$this->log->log($message, $level);
-			}
+		public function osd($message){
+			// TODO: use OSD Logger, or other solution
+			if(!$this->mute)
+				echo $message."<br/>\n";
 		}
 		
 		public function dump(/*anything*/){
@@ -74,18 +69,34 @@
 			debug_print_backtrace();
 		}
 		
+		public function log($message, $level=IClue_Log::NOTICE){
+			if($this->log instanceof IClue_Log){
+				$trace=debug_backtrace();
+				if(count($trace)>0)
+					$this->log->log($this->app, $message, $level, $trace[0]['file'], $trace[0]['line']);
+				else
+					$this->log->log($this->app, $message, $level);
+			}
+			$this->osd($message);
+		}
+		
 		public function handleError($errno, $errstr, $errfile=null, $errline=null, array $errcontext=null){
-			$message="($errno) $errstr";
-			if(!empty($errfile)) $message.="@$errfile";
-			if(!empty($errline)) $message.=":$errline";
-			
-			$this->log($message, IClue_Log::ERROR);
+			if($this->log instanceof IClue_Log){
+				$tracing=debug_backtrace();
+				$trace=array();
+				foreach($tracing as $stack){
+					$trace[]=$stack['file'].':'.$stack['line'];
+				}
+				$this->log->log_error($this->app, $errstr, $errno, $errfile, $errline, implode("\n", $trace));
+			}
+			$this->osd($errstr);
 		}
 		
 		public function handleException($e){
-			$message="Exception(".$e->getCode()."): ".$e->getMessage()." @".$e->getFile().":".$e->getLine();
-			
-			$this->log($message, IClue_Log::ERROR);
+			if($this->log instanceof IClue_Log){
+				$this->log->log_exception($this->app, $e);
+			}
+			$this->osd($e->getMessage());
 		}
 	}
 ?>
