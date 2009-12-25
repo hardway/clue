@@ -54,8 +54,12 @@
 		}
 		
 		// Basic implementation
+		/**
+		 * quote means return type is string
+		 * so either it's quoted with ', or it should display null
+		 */
 		function quote($data){
-			if(is_null($data))
+			if(is_null($data) || $data===false)
 				return 'null';
 			elseif(is_string($data)){
 				return "'".addslashes($data)."'";

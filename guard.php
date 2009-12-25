@@ -84,8 +84,11 @@
 			if($this->log instanceof IClue_Log){
 				$tracing=debug_backtrace();
 				$trace=array();
+				
 				foreach($tracing as $stack){
-					$trace[]=$stack['file'].':'.$stack['line'];
+					$file=isset($stack['file']) ? $stack['file'] : "";
+					$line=isset($stack['line']) ? $stack['line'] : "";
+					$trace[]="$file:$line";
 				}
 				$this->log->log_error($this->app, $errstr, $errno, $errfile, $errline, implode("\n", $trace));
 			}
