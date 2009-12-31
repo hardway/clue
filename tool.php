@@ -164,4 +164,14 @@
 		
 		return $ret;
 	}
+	
+	if (!function_exists('lc')) {
+		require_once 'clue/tool/lc.php';
+		
+		function lc($expression, $Data = array()) {
+			return ListComprehension::execute($expression, $Data);
+		}
+	}
+
+
 ?>
