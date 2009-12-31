@@ -2,6 +2,7 @@
 	require_once 'clue/database.php';
 	require_once 'clue/tool.php';
 	
+	// TODO rewrite, use file system as cache
 	class Clue_Creeper_Cache{
 		private $cache;
 		private $db;
@@ -96,8 +97,9 @@
 			curl_setopt($this->curl, CURLOPT_RETURNTRANSFER, true);
 			curl_setopt($this->curl, CURLOPT_FOLLOWLOCATION, true);
 			
-			if(isset($option['proxy']) && strpos($option['proxy'], ':')>0){
-				list($proxy, $port)=explode(":", $option['proxy']);
+			$http_proxy=getenv('http_proxy');
+			if($http_proxy){
+				list($proxy, $port)=explode(":", $http_proxy);
 				curl_setopt($this->curl, CURLOPT_PROXY, $proxy);
 				curl_setopt($this->curl, CURLOPT_PROXYPORT, $port);
 			}
