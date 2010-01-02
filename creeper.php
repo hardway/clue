@@ -2,82 +2,66 @@
 	require_once 'clue/database.php';
 	require_once 'clue/tool.php';
 	
-	// TODO rewrite, use file system as cache
+	// TODO md5 collision in mind
+	// TODO file cache TTL
 	class Clue_Creeper_Cache{
-		private $cache;
-		private $db;
-		private $base36;
+		private $cacheDir;
 		
-		function __construct($cache){
-			$this->base36=new Clue_Base36();
-			
-			if(is_dir($cache) && file_exists($cache)){
-				$this->cache=$cache;
-				$this->db=Clue_Database::create('sqlite', array('db'=>"$cache/cache.db"));
-				
-				// check if cache table exists
-				if(!$this->db->has_table('cache')){
-					$this->db->exec("
-						CREATE TABLE [cache] (
-							[id] INTEGER  NOT NULL PRIMARY KEY,
-							[url] VARCHAR(4096)  UNIQUE NULL,
-							[last_fetch] INTEGER  NULL,
-							[ttl] INTEGER DEFAULT '86400' NULL
-						)
-					");
+		function __construct($cacheDir){
+			// Make sure the cache directory exists
+			if(!file_exists($cacheDir)){
+				mkdir($cacheDir);
+				if(!file_exists($cacheDir)){
+					throw new Exception("Cache directory didn't exist and can't be created: $cacheDir");
 				}
 			}
+			$this->cacheDir=$cacheDir;
 		}
 		
-		function cache_file($id, $writing=false){
-			$enc=$this->base36->encode($id);
-			$folder=strlen($enc)>=2 ? "$this->cache/".substr($enc, 0, 2) : "$this->cache/00";
-			$file="$folder/$enc";
-			
-			if($writing && !file_exists($folder)) mkdir($folder);
-			
-			return $file;
+		private function _cache_folder($hash){
+			$folder=$this->cacheDir;
+			foreach(array(substr($hash, 0, 3), $hash) as $f){
+				$folder=$folder . '/' . $f;
+				if(!file_exists($folder)) mkdir($folder);
+			}
+			return $folder;
 		}
 		
 		function get($url){
-			// TODO: check TTL against last_fetch
+			$folder=$this->_cache_folder(md5($url));
 			
-			$url=$this->db->quote($url);
-			$id=$this->db->get_var("select id from cache where url=$url");
-			if($id){
-				//echo "HIT($id): $url\n";
-				// Try to load content from cache file
-				$file=$this->cache_file($id);
-				if(file_exists($file)){
-					return file_get_contents($file);
-				}
-				else{
-					// Cache file missing, delete record in database.
-					$this->db->exec("delete from cache where id=$id");
-					echo "Cache file missing, record removed($id)\n";
-				}
-			}
+			$file="$folder/raw";
+			
+			if(file_exists($file))
+				return file_get_contents($file);
+			else
+				throw new Exception("Cache file missing: $url");
 			
 			return false;	// Cache missed
 		}
 		
 		function put($url, $content){
-			$url=$this->db->quote($url);
-			$last_fetch=time();
+			$folder=$this->_cache_folder(md5($url));
 			
-			$id=$this->db->get_var("select id from cache where url=$url");
-			if(!$id){
-				$this->db->exec("insert into cache(url, last_fetch) values($url, $last_fetch)");
-				$id=$this->db->insertId();
+			// Save URL infomation
+			if(file_exists("$folder/url")){
+				$urlResidents=explode("\n", trim(file_get_contents("$folder/url")));
+				if(!in_array($url, $urlResidents)){
+					throw new Exception("URL Collision detected! $url");
+				}					
 			}
 			else{
-				$this->db->exec("update cache set last_fetch=$last_fetch where id=$id");
+				file_put_contents("$folder/url", $url);
 			}
 			
-			//echo "Caching $url to $id ";
-			$file=$this->cache_file($id, true);
-			file_put_contents($file, $content);
-			//echo "\n";
+			// Save RAW content
+			file_put_contents("$folder/raw", $content);
+		}
+		
+		function timestamp($url){
+			$file=$this->_cache_folder(md5($url)) . "/raw";
+			
+			return file_exists($file) ? filemtime($file) : 0;
 		}
 	}
 	
@@ -90,12 +74,16 @@
 		private $curl;
 		private $history=array();
 		
-		function __construct($option=array()){
-			if(isset($option['cache'])) $this->cache=new Clue_Creeper_Cache($option['cache']);
-			
+		function __construct(){
 			$this->curl=curl_init();
 			curl_setopt($this->curl, CURLOPT_RETURNTRANSFER, true);
 			curl_setopt($this->curl, CURLOPT_FOLLOWLOCATION, true);
+			curl_setopt($this->curl, CURLOPT_TIMECONDITION, CURL_TIMECOND_IFMODSINCE);
+			
+			//curl_setopt($this->curl, CURLOPT_HEADER, true);
+			
+			$cacheDir=getenv('creeper_cache');
+			if($cacheDir) $this->enable_cache($cacheDir);
 			
 			$http_proxy=getenv('http_proxy');
 			if($http_proxy){
@@ -115,8 +103,16 @@
 			}
 		}
 		
+		function enable_cache($cacheDir){
+			$this->cache=new Clue_Creeper_Cache($cacheDir);
+		}
+		
+		function disable_cache(){
+			$this->cache=null;
+		}
+		
 		private function follow_url($base, $url){
-			// TODO: unittest			
+			// TODO: unittest
 			if(preg_match('|(http://[^/]+)([^?#]*)|i', $base, $root)){
 				$path=dirname($root[2])."/";
 				$root=$root[1];
@@ -148,17 +144,29 @@
 			return $url;
 		}
 		
-		function open($url, $force_download=false){
+		function open($url, $forceRefresh=false){
 			$url=$this->visit($url);
 			
 			// check cache
-			$this->content= $this->cache ? $this->cache->get($url) : false;
-			if(!$this->content || $force_download){
-				// echo "Creeping $url\n";
-				curl_setopt($this->curl, CURLOPT_URL, $url);
-				$this->content=curl_exec($this->curl);
-				
-				if($this->cache) $this->cache->put($url, $this->content);	// save cache
+			if($this->cache){
+				curl_setopt($this->curl, CURLOPT_TIMEVALUE, $this->cache->timestamp($url));
+			}
+			
+			if($forceRefresh){
+				curl_setopt($this->curl, CURLOPT_TIMEVALUE, 0);
+			}
+			
+			//$this->content= $this->cache ? $this->cache->get($url) : false;
+			// echo "Creeping $url\n";
+			curl_setopt($this->curl, CURLOPT_URL, $url);
+			
+			$this->content=curl_exec($this->curl);
+
+			if($this->cache){
+				if($this->status==304)
+					$this->content=$this->cache->get($url);
+				else
+					$this->cache->put($url, $this->content);	// save cache
 			}
 		}
 		
