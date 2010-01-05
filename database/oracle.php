@@ -15,7 +15,7 @@
 			// echo "Creating Oracle Connection.\n";
 			$this->dbh=oci_pconnect($param['username'], $param['password'], $param['db']);
 			if(!$this->dbh){
-				$this->setError(oci_error());
+				$this->setError(array('code'=>-1, 'error'=>oci_error()));
 			}
 		}
 		
@@ -32,12 +32,15 @@
 			
 			$this->_stmt=oci_parse($this->dbh, $sql);
 			if(!$this->_stmt){
-				$this->setError(oci_error($this->dbh));
+				$err=oci_error($this->dbh);
+				$this->setError(array('code'=>$err['code'], 'error'=>$err['message']));
 				return false;
 			}
 			
 			if(!oci_execute($this->_stmt)){
-				$this->setError(oci_error($this->dbh));
+				$err=oci_error($this->_stmt);
+				// NOTE: sometimes there'll be an warning instead of error.
+				$this->setError(array('code'=>$err['code'], 'error'=>$err['message']));
 				return false;
 			}
 			
@@ -48,7 +51,7 @@
 			if(!$this->exec($sql)) return false;
 			
 			if(!oci_fetch($this->_stmt)){
-				$this->setError(oci_error($this->dbh));
+				$this->setError(array('code'=>-1, 'error'=>oci_error($this->dbh)));
 				return false;
 			}
 			
