@@ -42,7 +42,8 @@
 		}
 		
 		public function start(){
-			set_error_handler(array($this, 'handleError'));
+			set_error_handler(array($this, 'handleError'));	// Catch all
+			
 			set_exception_handler(array($this, 'handleException'));
 		}
 		
@@ -51,9 +52,8 @@
 			restore_exception_handler();
 		}
 		
-		public function mute(){
-			$this->mute=true;
-		}
+		public function mute(){ $this->mute=true; }
+		public function unmute(){ $this->mute=false; }
 		
 		public function osd($message){
 			// TODO: use OSD Logger, or other solution
@@ -72,14 +72,20 @@
 		public function log($message, $level=IClue_Log::NOTICE){
 			if($this->log instanceof IClue_Log){
 				$trace=debug_backtrace();
-				if(count($trace)>0)
-					$this->log->log($this->app, $message, $level, $trace[0]['file'], $trace[0]['line']);
-				else
-					$this->log->log($this->app, $message, $level);
+				
+				$context=array();
+				$context['trace']=$this->_flatten_trace($trace);
+				$context['url']=$_SERVER['REQUEST_URI'];
+				if(count($trace)>0){
+					$context['file']=$trace[0]['file'];
+					$context['line']=$trace[0]['line'];
+				}
+				
+				$this->log->log($this->app, $message, $level, $context);					
 			}
 			$this->osd($message);
 		}
-		
+				
 		public function handleError($errno, $errstr, $errfile=null, $errline=null, array $errcontext=null){
 			if($this->log instanceof IClue_Log){
 				$tracing=debug_backtrace();
@@ -90,16 +96,63 @@
 					$line=isset($stack['line']) ? $stack['line'] : "";
 					$trace[]="$file:$line";
 				}
-				$this->log->log_error($this->app, $errstr, $errno, $errfile, $errline, implode("\n", $trace));
+				
+				$context=array(
+					'code'=>$errno,
+					'file'=>$errfile,
+					'line'=>$errline,
+					'trace'=>implode("\n", $trace),
+					'url'=>$_SERVER['REQUEST_URI']
+				);
+				
+				switch($errno){
+					case E_NOTICE:
+					case E_USER_NOTICE:
+					case E_STRICT:
+					case 8192 /* E_DEPRECATED - PHP5.3 */:
+					case 16384 /* E_USER_DEPRECATED - PHP5.3 */:
+						$this->log->log_notice($this->app, $errstr, $context);
+						break;
+						
+					case E_WARNING:
+					case E_CORE_WARNING:
+					case E_COMPILE_WARNING:
+					case E_USER_WARNING:
+						$this->log->log_warning($this->app, $errstr, $context);
+						break;
+						
+					case E_ERROR:
+					case E_PARSE:
+					case E_CORE_ERROR:
+					case E_COMPILE_ERROR:
+					case E_USER_ERROR:
+					default:
+						$this->log->log_error($this->app, $errstr, $errno, $context);
+				}
 			}
 			$this->osd($errstr);
 		}
-		
+			
 		public function handleException($e){
 			if($this->log instanceof IClue_Log){
-				$this->log->log_exception($this->app, $e);
+				$context=array(
+					'url'=>$_SERVER['REQUEST_URI']
+				);				
+				$this->log->log_exception($this->app, $e, $context);
 			}
 			$this->osd($e->getMessage());
+		}
+		
+		//===============================================================
+		private function _flatten_trace($trace){
+			$t=array();
+			foreach($trace as $stack){
+				$file=isset($stack['file']) ? $stack['file'] : "";
+				$line=isset($stack['line']) ? $stack['line'] : "";
+				$t[]="$file:$line";
+			}
+			
+			return implode('\n', $t);
 		}
 	}
 ?>

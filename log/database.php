@@ -32,30 +32,16 @@
 			}
 		}
 		
-		function log($app, $message, $level=self::NOTICE, $file=null, $line=null, $url=null){
+		function log($app, $message, $level=self::NOTICE, $context=array()){
 			$table=strtolower($level)."_log";
 			
 			$app=$this->db->quote($app);
 			$message=$this->db->quote($message);
-			$file=$this->db->quote($file);
-			$url=$this->db->quote($url);
-			$line=$this->db->escape($line);
-			
-			$this->db->exec("
-				insert into $table(app, message, file, line, url)
-				values($app, $message, $file, $line, $url)
-			");
-		}
-		
-		function log_error($app, $message, $code=0, $file=null, $line=null, $trace=null, $url=null){
-			$table="error_log";
-
-			$app=$this->db->quote($app);
-			$message=$this->db->quote($message);
-			$file=$this->db->quote($file);
-			$url=$this->db->quote($url);
-			$line=$this->db->escape($line);
-			$trace=$this->db->quote(substr($trace, 0, 4000));
+			$code=isset($context['code']) ? intval($context['code']) : 'null';
+			$file=isset($context['file']) ? $this->db->quote($context['file']) : 'null';
+			$line=isset($context['line']) ? intval($context['line']) : 'null';
+			$url=isset($context['url']) ? $this->db->quote($context['url']) : 'null';
+			$trace=isset($context['trace']) ? $this->db->quote(substr($context['trace'], 0, 4000)) : 'null';
 			
 			$this->db->exec("
 				insert into $table(app, message, code, file, line, trace, url)
@@ -63,7 +49,26 @@
 			");
 		}
 		
-		function log_exception($app, $exception, $url=null){
+		function log_notice($app, $message, $context=array()){
+			$this->log($app, $message, self::NOTICE, $context);
+		}
+		
+		function log_debug($app, $message, $context=array()){
+			$this->log($app, $message, self::DEBUG, $context);
+		}
+		
+		function log_warning($app, $message, $context=array()){
+			$this->log($app, $message, self::WARNING, $context);
+		}
+		
+		function log_error($app, $message, $code=0, $context=array()){
+			if(is_null($context)) $context=array();
+			$context['code']=$code;
+			
+			$this->log($app, $message, self::ERROR, $context);
+		}
+		
+		function log_exception($app, Exception $exception, $context=array()){
 			$table="exception_log";	
 			
 			$app=$this->db->quote($app);
@@ -72,7 +77,7 @@
 			$file=$this->db->quote($exception->getFile());
 			$line=$this->db->escape($exception->getLine());
 			$trace=$this->db->quote(substr($exception->getTraceAsString(), 0, 4000));
-			$url=$this->db->quote($url);
+			$url=isset($context['url']) ? $this->db->quote($context['url']) : 'null';
 			
 			$x1=$this->db->quote(get_class($exception));
 			$extra=array_values(array_diff(
