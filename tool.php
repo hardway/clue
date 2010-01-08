@@ -148,7 +148,7 @@
 	}
 	
 	function SESSION($name, $default=false){
-		@session_start();
+		if(!session_name()) session_start();
 		return isset($_SESSION[$name]) ? $_SESSION[$name] : $default;
 	}
 	
