@@ -51,7 +51,6 @@
 			if(!$this->exec($sql)) return false;
 			
 			if(!oci_fetch($this->_stmt)){
-				$this->setError(array('code'=>-1, 'error'=>oci_error($this->dbh)));
 				return false;
 			}
 			
