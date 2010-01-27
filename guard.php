@@ -75,7 +75,7 @@
 				
 				$context=array();
 				$context['trace']=$this->_flatten_trace($trace);
-				$context['url']=$_SERVER['REQUEST_URI'];
+				$context['url']=isset($_SERVER['REQUEST_URI']) ? $_SERVER['REQUEST_URI'] : "";
 				if(count($trace)>0){
 					$context['file']=$trace[0]['file'];
 					$context['line']=$trace[0]['line'];
@@ -102,7 +102,7 @@
 					'file'=>$errfile,
 					'line'=>$errline,
 					'trace'=>implode("\n", $trace),
-					'url'=>$_SERVER['REQUEST_URI']
+					'url'=>isset($_SERVER['REQUEST_URI']) ? $_SERVER['REQUEST_URI'] : ""
 				);
 				
 				switch($errno){
@@ -136,8 +136,8 @@
 		public function handleException($e){
 			if($this->log instanceof IClue_Log){
 				$context=array(
-					'url'=>$_SERVER['REQUEST_URI']
-				);				
+					'url'=>isset($_SERVER['REQUEST_URI']) ? $_SERVER['REQUEST_URI'] : ""
+				);
 				$this->log->log_exception($this->app, $e, $context);
 			}
 			$this->osd($e->getMessage());

@@ -17,6 +17,9 @@
 			if(!$this->dbh){
 				$this->setError(array('code'=>-1, 'error'=>oci_error()));
 			}
+			
+			// set default datetime format
+			$this->exec("alter session set nls_date_format='YYYY-MM-DD HH24:MI:SS'");
 		}
 		
 		function __destruct(){

@@ -13,6 +13,8 @@
 			$factory='Clue_Database_'.$dbms;
 			if(!class_exists($factory)) throw new Exception("Database: $dbms is not implemented!");
 			
+			// Make sure the parameter is always in array format
+			if(is_object($param)) $param=(array)$param;
 			return new $factory($param);
 		}
 		

@@ -89,7 +89,7 @@
 			if(count($extra)>0){
 				$x2=call_user_func(array($exception, $extra[0]));
 			}
-			$x2=$this->db->quote($x2);
+			$x2=$this->db->quote(substr($x2, 0, 1024));
 
 			$this->db->exec("
 				insert into $table(app, message, code, file, line, trace, url, x1, x2)
