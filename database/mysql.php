@@ -134,6 +134,8 @@
 					return "char($length)";
 				case "varchar2":
 					return "varchar($length)";
+				case "varbinary":
+					return "varbinary($length)";
 				case "datetime":
 					return "datetime";
 				case "timestamp":
