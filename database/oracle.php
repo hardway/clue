@@ -13,7 +13,7 @@
 			// Check Parameter, TODO
 			
 			// echo "Creating Oracle Connection.\n";
-			$this->dbh=oci_pconnect($param['username'], $param['password'], $param['db']);
+			$this->dbh=oci_connect($param['username'], $param['password'], $param['db']);
 			if(!$this->dbh){
 				$this->setError(array('code'=>-1, 'error'=>oci_error()));
 			}
