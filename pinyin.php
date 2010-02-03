@@ -24,7 +24,7 @@
 					if(strlen($sound)>0) $sound.=' ';
 					$sound.=$py;
 				}
-			}		
+			}
 			
 			return $sound;
 		}
@@ -33,7 +33,9 @@
 		function soundex2($words){
 			$abbr="";
 			foreach(explode(" ", $this->soundex($words)) as $w){
-				$abbr.=$w[0];
+				if(strlen($w)>0){
+					$abbr.=$w[0];
+				}
 			}
 			return $abbr;
 		}
