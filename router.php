@@ -6,15 +6,16 @@
 	class Clue_RouteMap{
 		protected $cp;
 		protected $ap;
-		protected $map;
 		
 		public $appbase;
 		public $controller;
 		public $action;
 		public $param;
 		
-		function __construct($map=array()){
-			$this->map=$map;
+		public $rules;
+		
+		function __construct(){
+			$this->rules=array();
 			
 			$this->cp=0;
 			$this->ap=1;
@@ -57,6 +58,20 @@
 			return $url;
 		}
 		
+		private function replace_with_position($str, $vals){
+			$ret=$str;
+			
+			if(preg_match_all('|\{(\d+)\}|', $str, $match)){
+				foreach($match[1] as $p){
+					if(isset($vals[$p])){
+						$ret=str_replace("{{$p}}", $vals[$p], $ret);
+					}
+				}
+			}
+			
+			return $ret;
+		}
+		
 		function resolve($uri){
 			// strip app base
 			
@@ -72,19 +87,27 @@
 				$uri=substr($uri, 0, $p);
 			}
 			
-			// Apply map translate
-			$namespace="";
-			foreach($this->map as $pattern=>$replace){
-				if(preg_match("|$pattern|", $uri)){
-					$uri=preg_replace("|$pattern|", '', $uri);
-					$namespace=$replace;
-					break;
+			// try to match against rule
+			foreach($this->rules as $m=>$r){
+				$m=str_replace('?', '(.+)', $m);
+				$m=str_replace("\\", "\\\\", $m);
+				$m=str_replace('|', '(\|)', $m);
+				
+				if(preg_match("|$m|i", '/'.$uri, $match)){
+					$this->controller=$this->replace_with_position($r[0], $match);
+					$this->action=$this->replace_with_position($r[1], $match);
+					$this->param=$r[2];
+					foreach($this->param as &$p){
+						$p=$this->replace_with_position($p, $match);
+					}
+					
+					return;
 				}
 			}
 			
 			// explode path and do mapping.
 			$p=explode('/', $uri);
-
+			
 			for($i=0; $i<count($p); $i++){
 				if($i==$this->cp)
 					$this->controller=$p[$this->cp];
@@ -97,8 +120,6 @@
 			// Default controller and action
 			if(empty($this->controller)) $this->controller='Index';
 			if(empty($this->action)) $this->action='index';
-			
-			$this->controller=$namespace.$this->controller;
 		}
 	}
 	
@@ -125,9 +146,11 @@
 			// Determine controller and action by default map
 			$this->map=@$option['url_rewrite'] ? 
 				new Clue_RouteMap($option['map']) : 
-				new Clue_QueryRouteMap();
-			
-			$this->map->resolve($_SERVER['REQUEST_URI']);
+				new Clue_QueryRouteMap();		
+		}
+		
+		function add_rule($pattern, $route){
+			$this->map->rules[$pattern]=$route;
 		}
 		
 		function controller(){
@@ -200,6 +223,8 @@
 		}
 		
 		function dispatch(){
+			$this->map->resolve($_SERVER['REQUEST_URI']);
+			
 			$this->route($this->map->controller, $this->map->action, $this->map->param);
 		}
 	}

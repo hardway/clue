@@ -499,6 +499,10 @@
 				$limit=$end-$begin;
 				$sql.= " limit {$limit} offset {$begin}";
 			}
+			else if(intval($range)>0){
+				$limit=intval($range);
+				$sql.= " limit $limit";
+			}
 
 			switch(strtolower($range)){
 				default:
