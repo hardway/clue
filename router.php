@@ -172,7 +172,7 @@
 		}
 		
 		function redirect($url){
-			header("Status: 200");
+			header("Status: 302 Found");
 			header("Location: $url");
 			exit();
 		}

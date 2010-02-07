@@ -17,11 +17,12 @@
 				else
 					$encoding="utf-8";
 			}
+			
+			$html='<meta http-equiv="Content-Type" content="text/html; charset=utf-8">'.$html;
+			
 			if(strtolower($encoding)!="utf-8"){
 				// Need to insert meta tag at first in case some of the 
-				$html=
-					'<meta http-equiv="Content-Type" content="text/html; charset=utf-8">'.
-					mb_convert_encoding($html, 'utf-8', $encoding);
+				$html=mb_convert_encoding($html, 'utf-8', $encoding);
 			}
 			
 			$this->dom=new DOMDocument();
@@ -30,7 +31,7 @@
 			$this->dom->formatOutput=false;
 			
 			if($type=='html'){
-				@$this->dom->loadHTML($this->_filterContent($html));
+				@$this->dom->loadHTML($this->_filter_content($html));
 			}
 			else if($type='xml'){
 				@$this->dom->loadXML($html);
@@ -48,14 +49,14 @@
 			$this->xp=null;
 		}
 		
-		private function _filterContent($html){
+		private function _filter_content($html){
 			return preg_replace(array(
 				'|<script.+?<\/script>|is',
 				'|<!--.+?-->|is'
 			), null, $html);
 		}
 		
-		function getElements($xpath, $context=null){
+		function get_elements($xpath, $context=null){
 			if($context==null) $context=$this->dom;
 			$nodeList=$this->xp->query($xpath, $context);
 			
@@ -66,21 +67,26 @@
 			return $result;
 		}
 		
-		function getElement($xpath, $context=null){
+		function get_element_by_id($id){
+			$e=$this->dom->getElementById($id);
+			return $e ? new Clue_DOM_Element($e) : null;
+		}
+		
+		function get_element($xpath, $context=null){
 			if($context==null) $context=$this->dom;
 			$nodeList=$this->xp->query($xpath, $context);
 			
 			return $nodeList->length>0 ? new Clue_DOM_Element($nodeList->item(0)) : null;
 		}
 		
-		function getText($xpath, $context=null){
+		function get_text($xpath, $context=null){
 			$node=$this->getElement($xpath, $context);
 
 			return $node ? $node->innerText : "";
 		}
 		
-		function removeElement($xpath, $context=null){
-			$node=$this->getElement($xpath, $context);
+		function remove_element($xpath, $context=null){
+			$node=$this->get_element($xpath, $context);
 			if($node)
 				$node->parentNode->removeChild($node);
 			else
