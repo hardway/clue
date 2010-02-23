@@ -9,8 +9,10 @@
 			
 			// detect file line
 			$trace=$this->getTrace();
-			$this->file=$trace[1]['file'];
-			$this->line=$trace[1]['line'];
+			if(isset($trace[1])){
+				$this->file=$trace[1]['file'];
+				$this->line=$trace[1]['line'];
+			}
 		}
 		
 		function getQuery(){
