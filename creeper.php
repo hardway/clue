@@ -91,6 +91,9 @@
 				curl_setopt($this->curl, CURLOPT_PROXY, $proxy);
 				curl_setopt($this->curl, CURLOPT_PROXYPORT, $port);
 			}
+			
+			curl_setopt($this->curl, CURLOPT_COOKIEJAR, "curl.cookie");
+			//curl_setopt($this->curl, CURLOPT_COOKIEFILE, "curl.cookie");
 		}
 		
 		function __destruct(){
@@ -144,8 +147,38 @@
 			return $url;
 		}
 		
+		function get($url){
+			$this->open($url);
+			return $this->content;
+		}
+		
+		function post($url, $data){
+			curl_setopt($this->curl, CURLOPT_URL, $url);
+			curl_setopt($this->curl, CURLOPT_POST, true);
+			curl_setopt($this->curl, CURLOPT_TIMEVALUE, 0);
+			curl_setopt($this->curl, CURLOPT_RETURNTRANSFER, true);
+			
+			$formData=array();
+			foreach($data as $k=>$v){ $formData[]="$k=$v";}
+			$formData=implode("&", $formData);
+			
+			curl_setopt($this->curl, CURLOPT_POSTFIELDS, $formData);
+			$this->content=curl_exec($this->curl);
+		}
+		
+		function download($url, $dest){
+			$file=fopen($dest, 'w');
+			curl_setopt($this->curl, CURLOPT_FILE, $file);
+			curl_setopt($this->curl, CURLOPT_POST, false);
+			curl_setopt($this->curl, CURLOPT_TIMEVALUE, 0);
+			curl_setopt($this->curl, CURLOPT_URL, $url);
+			curl_exec($this->curl);
+			fclose($file);
+		}
+		
 		function open($url, $forceRefresh=false){
 			$url=$this->visit($url);
+			
 			
 			// check cache
 			if($this->cache){
@@ -159,6 +192,8 @@
 			//$this->content= $this->cache ? $this->cache->get($url) : false;
 			// echo "Creeping $url\n";
 			curl_setopt($this->curl, CURLOPT_URL, $url);
+			curl_setopt($this->curl, CURLOPT_POST, false);
+			curl_setopt($this->curl, CURLOPT_RETURNTRANSFER, true);
 			
 			$this->content=curl_exec($this->curl);
 
