@@ -92,8 +92,9 @@
 				curl_setopt($this->curl, CURLOPT_PROXYPORT, $port);
 			}
 			
-			curl_setopt($this->curl, CURLOPT_COOKIEJAR, "curl.cookie");
-			//curl_setopt($this->curl, CURLOPT_COOKIEFILE, "curl.cookie");
+			// TODO: pick a unique cookie file name
+			curl_setopt($this->curl, CURLOPT_COOKIEJAR, "curl.cookie");	// write
+			curl_setopt($this->curl, CURLOPT_COOKIEFILE, "curl.cookie");// read
 		}
 		
 		function __destruct(){
@@ -147,6 +148,14 @@
 			return $url;
 		}
 		
+		function set_cookie($cookies=array()){
+			$pair=array();
+			foreach($cookies as $k=>$v){
+				$pair[]="$k=$v";
+			}
+			curl_setopt($this->curl, CURLOPT_COOKIE, implode("; ", $pair));
+		}
+		
 		function get($url){
 			$this->open($url);
 			return $this->content;
@@ -178,7 +187,6 @@
 		
 		function open($url, $forceRefresh=false){
 			$url=$this->visit($url);
-			
 			
 			// check cache
 			if($this->cache){

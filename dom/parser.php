@@ -15,15 +15,12 @@
 				else if(preg_match('|encoding="([0-9a-zA-Z\-]+)"|i', $html, $match))
 					$encoding=$match[1];
 				else
-					$encoding="utf-8";
+					$encoding=array("utf-8", "gbk");
 			}
 			
+			// Need to insert meta tag at first in case some of the webpage didn't have that.
 			$html='<meta http-equiv="Content-Type" content="text/html; charset=utf-8">'.$html;
-			
-			if(strtolower($encoding)!="utf-8"){
-				// Need to insert meta tag at first in case some of the 
-				$html=mb_convert_encoding($html, 'utf-8', $encoding);
-			}
+			$html=mb_convert_encoding($html, 'utf-8', $encoding);
 			
 			$this->dom=new DOMDocument();
 			$this->dom->strictErrorChecking=false;			
