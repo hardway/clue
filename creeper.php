@@ -3,7 +3,6 @@
 	require_once 'clue/tool.php';
 	
 	// TODO md5 collision in mind
-	// TODO file cache TTL
 	class Clue_Creeper_Cache{
 		private $cacheDir;
 		
@@ -69,6 +68,7 @@
 		public $response;
 		public $content;
 		private $cache;
+		private $cacheTTL=600;
 		private $cachedb;
 		
 		private $curl;
@@ -78,7 +78,6 @@
 			$this->curl=curl_init();
 			curl_setopt($this->curl, CURLOPT_RETURNTRANSFER, true);
 			curl_setopt($this->curl, CURLOPT_FOLLOWLOCATION, true);
-			curl_setopt($this->curl, CURLOPT_TIMECONDITION, CURL_TIMECOND_IFMODSINCE);
 			
 			//curl_setopt($this->curl, CURLOPT_HEADER, true);
 			
@@ -164,7 +163,6 @@
 		function post($url, $data){
 			curl_setopt($this->curl, CURLOPT_URL, $url);
 			curl_setopt($this->curl, CURLOPT_POST, true);
-			curl_setopt($this->curl, CURLOPT_TIMEVALUE, 0);
 			curl_setopt($this->curl, CURLOPT_RETURNTRANSFER, true);
 			
 			$formData=array();
@@ -179,7 +177,6 @@
 			$file=fopen($dest, 'w');
 			curl_setopt($this->curl, CURLOPT_FILE, $file);
 			curl_setopt($this->curl, CURLOPT_POST, false);
-			curl_setopt($this->curl, CURLOPT_TIMEVALUE, 0);
 			curl_setopt($this->curl, CURLOPT_URL, $url);
 			curl_exec($this->curl);
 			fclose($file);
@@ -189,27 +186,23 @@
 			$url=$this->visit($url);
 			
 			// check cache
-			if($this->cache){
-				curl_setopt($this->curl, CURLOPT_TIMEVALUE, $this->cache->timestamp($url));
+			$t=time();
+			$ct=$this->cache->timestamp($url);
+			
+			if(!$this->cache || $this->cacheTTL < $t-$ct || $forceRefresh){ // cache outdated.
+				//$this->content= $this->cache ? $this->cache->get($url) : false;
+				// echo "Creeping $url\n";
+				curl_setopt($this->curl, CURLOPT_URL, $url);
+				curl_setopt($this->curl, CURLOPT_POST, false);
+				curl_setopt($this->curl, CURLOPT_RETURNTRANSFER, true);
+				
+				$this->content=curl_exec($this->curl);
+				
+				if($this->cache)
+					$this->cache->put($url, $this->content);
 			}
-			
-			if($forceRefresh){
-				curl_setopt($this->curl, CURLOPT_TIMEVALUE, 0);
-			}
-			
-			//$this->content= $this->cache ? $this->cache->get($url) : false;
-			// echo "Creeping $url\n";
-			curl_setopt($this->curl, CURLOPT_URL, $url);
-			curl_setopt($this->curl, CURLOPT_POST, false);
-			curl_setopt($this->curl, CURLOPT_RETURNTRANSFER, true);
-			
-			$this->content=curl_exec($this->curl);
-
-			if($this->cache){
-				if($this->status==304)
-					$this->content=$this->cache->get($url);
-				else
-					$this->cache->put($url, $this->content);	// save cache
+			else{
+				$this->content=$this->cache->get($url);
 			}
 		}
 		
