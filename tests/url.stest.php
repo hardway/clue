@@ -73,5 +73,14 @@
 			
 			return $this->assertTrue(true);
 		}
+		
+		function test_resolve_url_with_too_much_dot_segments(){
+			$u=new Clue_URL("http://www.sina.com");
+			$r=$u->resolve("../main.html");
+			
+			$this->assertEqual($r->get_url(), "http://www.sina.com/main.html");
+			
+			return $this->assertTrue(true);
+		}
 	}
 ?>

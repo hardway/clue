@@ -39,7 +39,7 @@
 			$this->pass=isset($parts['pass']) ? $parts['pass'] : false;
 			$this->host=isset($parts['host']) ? $parts['host'] : false;
 			$this->port=isset($parts['port']) ? $parts['port'] : ( $this->scheme=='http' ? 80 : 443 );
-			$this->path=isset($parts['path']) ? $parts['path'] : false;
+			$this->path=isset($parts['path']) ? $parts['path'] : '/';
 			$this->query=isset($parts['query']) ? $parts['query'] : false;
 			$this->fragment=isset($parts['fragment']) ? $parts['fragment'] : false;
 		}
@@ -81,7 +81,10 @@
 				$target->path=$parts['path'];
 			}
 			else{
-				$target->path=$this->reduce_dotted_segments(dirname($target->path) .'/'. $parts['path']);
+				$dp=strrpos($target->path, '/');
+				$base=substr($target->path, 0, $dp);
+				
+				$target->path=$this->reduce_dotted_segments($base .'/'. $parts['path']);
 			}
 			
 			$target->query=isset($parts['query']) ? $parts['query'] : false;
@@ -93,11 +96,14 @@
 		private function reduce_dotted_segments($path){
 			$segs=explode("/", $path);
 			$path=array();
+			
 			foreach($segs as $s){
 				if($s=='.') 
 					continue;
-				else if($s=='..') 
-					array_pop($path);
+				else if($s=='..'){
+					if(count($path)>1)
+						array_pop($path);
+				}
 				else
 					$path[]=$s;
 			}

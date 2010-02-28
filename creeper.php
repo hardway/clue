@@ -65,10 +65,11 @@
 	}
 	
 	class Clue_Creeper{
-		public $response;
+		public $responseHeader;
 		public $content;
+		
 		private $cache;
-		private $cacheTTL=600;
+		private $cacheTTL=86400;	// Default is 24 Hours
 		private $cachedb;
 		
 		private $curl;
@@ -78,8 +79,6 @@
 			$this->curl=curl_init();
 			curl_setopt($this->curl, CURLOPT_RETURNTRANSFER, true);
 			curl_setopt($this->curl, CURLOPT_FOLLOWLOCATION, true);
-			
-			//curl_setopt($this->curl, CURLOPT_HEADER, true);
 			
 			$cacheDir=getenv('creeper_cache');
 			if($cacheDir) $this->enable_cache($cacheDir);
@@ -163,6 +162,7 @@
 		function post($url, $data){
 			curl_setopt($this->curl, CURLOPT_URL, $url);
 			curl_setopt($this->curl, CURLOPT_POST, true);
+			curl_setopt($this->curl, CURLOPT_HEADER, true);
 			curl_setopt($this->curl, CURLOPT_RETURNTRANSFER, true);
 			
 			$formData=array();
@@ -170,7 +170,7 @@
 			$formData=implode("&", $formData);
 			
 			curl_setopt($this->curl, CURLOPT_POSTFIELDS, $formData);
-			$this->content=curl_exec($this->curl);
+			$this->_parse_response(curl_exec($this->curl));
 		}
 		
 		function download($url, $dest){
@@ -178,7 +178,11 @@
 			curl_setopt($this->curl, CURLOPT_FILE, $file);
 			curl_setopt($this->curl, CURLOPT_POST, false);
 			curl_setopt($this->curl, CURLOPT_URL, $url);
+			curl_setopt($this->curl, CURLOPT_HEADER, false);
+			curl_setopt($this->curl, CURLOPT_REFERER, end($this->history));
+			
 			curl_exec($this->curl);
+			
 			fclose($file);
 		}
 		
@@ -194,9 +198,10 @@
 				// echo "Creeping $url\n";
 				curl_setopt($this->curl, CURLOPT_URL, $url);
 				curl_setopt($this->curl, CURLOPT_POST, false);
+				curl_setopt($this->curl, CURLOPT_HEADER, true);
 				curl_setopt($this->curl, CURLOPT_RETURNTRANSFER, true);
 				
-				$this->content=curl_exec($this->curl);
+				$this->_parse_response(curl_exec($this->curl));
 				
 				if($this->cache)
 					$this->cache->put($url, $this->content);
@@ -206,13 +211,17 @@
 			}
 		}
 		
-		function save($url, $path){
-			$url=$this->visit($url, false);
+		private function _parse_response($response){
+			$sep=strpos($response, "\r\n\r\n");
 			
-			echo "Saving $url to $path\n";
-			curl_setopt($this->curl, CURLOPT_URL, $url);
-			curl_setopt($this->curl, CURLOPT_REFERER, end($this->history));
-			file_put_contents($path, curl_exec($this->curl));
+			if(substr($response, 0, 4)=='HTTP' && $sep>0){
+				$this->responseHeader=substr($response, 0, $sep);
+				$this->content=substr($response, $sep);
+			}
+			else{
+				$this->responseHeader=null;
+				$this->content=$response;
+			}
 		}
 		
 		protected function _http_get($url){
