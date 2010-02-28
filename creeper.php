@@ -67,6 +67,7 @@
 	class Clue_Creeper{
 		public $responseHeader;
 		public $content;
+		public $agent="ClueCreeper";
 		
 		private $cache;
 		private $cacheTTL=86400;	// Default is 24 Hours
@@ -89,6 +90,8 @@
 				curl_setopt($this->curl, CURLOPT_PROXY, $proxy);
 				curl_setopt($this->curl, CURLOPT_PROXYPORT, $port);
 			}
+			
+			curl_setopt($this->curl, CURLOPT_USERAGENT, $this->agent);
 			
 			// TODO: pick a unique cookie file name
 			curl_setopt($this->curl, CURLOPT_COOKIEJAR, "curl.cookie");	// write
@@ -152,6 +155,11 @@
 				$pair[]="$k=$v";
 			}
 			curl_setopt($this->curl, CURLOPT_COOKIE, implode("; ", $pair));
+		}
+		
+		function set_agent($agent){
+			$this->agent=$agent;
+			curl_setopt($this->curl, CURLOPT_USERAGENT, $this->agent);			
 		}
 		
 		function get($url){
