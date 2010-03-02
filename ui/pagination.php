@@ -23,6 +23,12 @@
 			return "limit $begin, $size";
 		}
 		
+		function item_range(){
+			$begin=($this->page-1) * $this->pageSize;
+			$end=($this->page) * $this->pageSize;
+			return range($begin, $end - 1);
+		}
+		
 		// slice: used for array_slice
 		function sliceOffset(){
 			return ($this->page-1) * $this->pageSize;
