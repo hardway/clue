@@ -199,9 +199,8 @@
 			
 			// check cache
 			$t=time();
-			$ct=$this->cache->timestamp($url);
 			
-			if(!$this->cache || $this->cacheTTL < $t-$ct || $forceRefresh){ // cache outdated.
+			if(!$this->cache || $this->cacheTTL < $t - $this->cache->timestamp($url) || $forceRefresh){ // cache outdated.
 				//$this->content= $this->cache ? $this->cache->get($url) : false;
 				// echo "Creeping $url\n";
 				curl_setopt($this->curl, CURLOPT_URL, $url);
