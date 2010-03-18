@@ -12,6 +12,8 @@
 			"url_rewrite"=>true
 		);
 		
+		protected $beforeDispatchHandler=null;
+		
 		function __construct($appbase='.', $options=null){
 			$this->base=$appbase;
 			
@@ -56,15 +58,28 @@
 			
 			session_start();
 		}
-		static function run(){
+		
+		function before_dispatch($callback=null){
+		    $this->beforeDispatchHandler=$callback;
+		}
+		
+		function run(){
 			try{
-				self::router()->dispatch();
+    			$map=$this->router->resolve($_SERVER['REQUEST_URI']);
+    			
+    			// call plugin
+    			if(is_callable($this->beforeDispatchHandler)){
+    			    call_user_func($this->beforeDispatchHandler, $map);
+    			}
+    			
+				$this->router->route($map['controller'], $map['action'], $map['params']);
 			}
 			catch(Exception $e){
 				// TODO: route to error controller, which must exist.
 				echo $e->getMessage();
 			}
 		}
+		
 		static function initialized(){ return is_object(self::$instance); }
 		
 		static function getInstance(){

@@ -267,16 +267,11 @@
 				return $this->route('error', 'noController', array('controller'=>$controller));		
 		}
 		
-		function dispatch(){
-			$uri=$_SERVER['REQUEST_URI'];
-			
+		function resolve($uri){
 			if(strpos($uri, $this->appbase)===0){
 				$uri=substr($uri, strlen($this->appbase));
 			}
-			
-			$map=$this->map->resolve($uri);
-			
-			$this->route($map['controller'], $map['action'], $map['params']);
+		    return $this->map->resolve($uri);
 		}
 	}
 ?>
