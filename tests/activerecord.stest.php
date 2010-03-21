@@ -7,7 +7,14 @@
 	class LateBindClass extends Clue_ActiveRecord{
 	}
 	
-	class SampleEmployee extends Clue_ActiveRecord{	    
+	class ARWithOverrideDB extends Clue_ActiveRecord{
+	    protected static $_db;
+	}
+	class ARWithoutOverrideDB extends Clue_ActiveRecord{
+	    
+	}
+	
+	class Employee extends Clue_ActiveRecord{
 	    public $id;
 	    public $fullname;
 	    public $birthday;
@@ -17,7 +24,7 @@
     	);
 	}
 	
-	class TinyEmployee extends Clue_ActiveRecord{
+	class AlternateEmployee extends Clue_ActiveRecord{
 	    public $name;
 	    
 	    protected static $_model=array(
@@ -35,6 +42,44 @@
 	    protected static $_model=array(
 	        'pkey'=>'name'
         );
+	}
+	
+	class Test_Clue_ActiveRecord_Isolation extends UnitTestCase{
+		function test_static_late_binding(){
+			$lbc=new LateBindClass();
+			$model=$lbc->model();
+			
+			$this->assertEqual("latebindclass", $model['table']);
+		}
+		
+		function test_using_different_database_for_each_subclass(){
+		    $db0=0;
+		    $db1=1;
+		    $db2=2;
+		    
+		    Clue_ActiveRecord::use_database($db0);
+		    // Every sub class follows base one
+		    $this->assertEqual(Clue_ActiveRecord::db(), $db0);
+		    $this->assertEqual(ARWithOverrideDB::db(), $db0);
+		    $this->assertEqual(ARWithoutOverrideDB::db(), $db0);
+		    
+		    ARWithOverrideDB::use_database($db1);
+		    // Sub class with overrided database can have it's own db copy
+		    $this->assertEqual(Clue_ActiveRecord::db(), $db0);
+		    $this->assertEqual(ARWithOverrideDB::db(), $db1);
+		    $this->assertEqual(ARWithoutOverrideDB::db(), $db0);		    
+		    
+		    ARWithoutOverrideDB::use_database($db2);
+		    // Sub classes without override database will also modify the base class
+		    // while the overrided one is not affected.
+		    $this->assertEqual(Clue_ActiveRecord::db(), $db2);
+		    $this->assertEqual(ARWithOverrideDB::db(), $db1);
+		    $this->assertEqual(ARWithoutOverrideDB::db(), $db2);
+		    
+		    ARWithOverrideDB::use_database(null);
+		    // Clear the static property will fallback to inherit from base class.
+		    $this->assertEqual(ARWithOverrideDB::db(), $db2);
+		}
 	}
 	
 	class Test_Clue_ActiveRecord extends UnitTestCase{
@@ -78,16 +123,9 @@
 		function tearDown(){
 		    // Do nothing
 		}
-		
-		function test_static_late_binding(){
-			$lbc=new LateBindClass();
-			$model=$lbc->model();
-			
-			$this->assertEqual("latebindclass", $model['table']);
-		}
-		
+				
 		function test_deduce_model_with_predefined_column(){
-		    $model=TinyEmployee::model();
+		    $model=AlternateEmployee::model();
 		    $this->assertEqual($model['columns']['name']['name'], 'fullname');
 		}
 		
@@ -127,7 +165,7 @@
 		}
 		
 		function test_table_column_as_property(){
-		    $e=new SampleEmployee();
+		    $e=new Employee();
 		    $model=$e->model();
 		    
 		    $this->assertTrue(isset($model['columns']['id']));
@@ -144,10 +182,10 @@
 		}
 		
 		function test_get_record(){
-		    $e=SampleEmployee::get(1);
+		    $e=Employee::get(1);
 		    $this->assertEqual('Jack', $e->fullname);
 		    
-		    $e=SampleEmployee::get(2);
+		    $e=Employee::get(2);
 		    $this->assertEqual('1972-03-08 00:00:00', $e->birthday);
 		}
 		
@@ -169,7 +207,7 @@
 		}
 		
 		function test_find_with_null_condition(){
-		    $e=SampleEmployee::find(array('marriage'=>null));
+		    $e=Employee::find(array('marriage'=>null));
 		    $this->assertEqual(count($e), 2);
 		}
 		
@@ -181,38 +219,46 @@
 		    $this->pass("TODO");
 		}
 		
-		function test_count_all(){
-		    $this->assertEqual(SampleEmployee::count_all(), 3);
-		    $this->assertEqual(Country::count_all(), 3);
+		function test_count(){
+		    $this->assertEqual(Employee::count(), 3);
+		    $this->assertEqual(Country::count(), 3);
 		}
 		
 		function test_save_new(){
-		    $this->assertEqual(Country::count_all(), 3);
+		    $this->assertEqual(Country::count(), 3);
 		    $c=new Country();
 		    $c->name="Japan";
 		    $c->language="Japanese";
 		    $c->capital="Tokyo";
 		    $c->save();
 		    
-		    $this->assertEqual(Country::count_all(), 4);
+		    $this->assertEqual(Country::count(), 4);
 		}
 		
 		function test_save_modified(){
-		    $this->assertEqual(Country::count_all(), 3);
+		    $this->assertEqual(Country::count(), 3);
 		    $c=Country::find_one(array('name'=>'British'));
 		    $this->assertEqual(count(Country::find(array('language'=>'English'))), 2);
 		    
 		    $c->language="English(UK)";
 		    $c->save();
 		    
-		    $this->assertEqual(Country::count_all(), 3);
+		    $this->assertEqual(Country::count(), 3);
 		    $this->assertEqual(count(Country::find(array('language'=>'English'))), 1);
 		}
 		
 		function test_destroy(){
 		    $c=Country::find_one(array("name"=>"America"));
 		    $c->destroy();
-		    $this->assertEqual(Country::count_all(), 2);
+		    $this->assertEqual(Country::count(), 2);
+		}
+		
+		function test_static_magic_find_by(){
+		    $america=Country::find_one_by_name("America");
+		    $this->assertEqual($america->language, 'English');
+		    
+		    $englishSpeaking=Country::count_by_language("English");
+		    $this->assertEqual($englishSpeaking, 2);
 		}
 	}
 ?>

@@ -61,12 +61,19 @@
             static::$_db=$db;
         }
         
-		static protected function db(){
-			if(static::$_db==null && Clue_Application::initialized()){
+		static function db(){
+		    if(static::$_db != null){
+		        return static::$_db;
+		    }
+		    else if(self::$_db !=null){
+		        return self::$_db;
+		    }
+		    // TODO: decouple this extra relationship
+		    else if(Clue_Application::initialized()){
 				return static::$_db=Clue_Application::db();
 			}
 			else
-				return static::$_db;
+				return null;
 		}
 		
 		static function get($id){
@@ -84,32 +91,23 @@
 		        return false;
 		}
 		
-		static function find_one($condition=array()){
-			return self::find($condition, 'one');
+		static function __callStatic($name, array $arguments){
+		    if(preg_match('/(count|find|find_one)_by_(\w+)/', $name, $match)){
+		        $method=$match[1];
+		        $condition=array($match[2]=>$arguments[0]);
+		        return static::$method($condition);
+		    }
+		    else
+		        throw new Exception("Call to undefined static method: $name");
 		}
 		
-		static function count_all(){
-			$model=self::model();
-			return self::db()->get_var("select count(*) from `{$model["table"]}`");
-		}
-
-		/**
-		 * Find records based on condition
-		 *
-		 * @param string $method
-		 * 		one, all, #-#
-		 * @param array $condition
-		 * @return array of objecs
-		 */
-		static function find($condition, $range='all'){
-		    $model=self::model();
-		    $class=get_called_class();
-		    
+		static function _get_where_clause($condition, $range='all'){
+		    $sql="";
+		
+		    // condition
 			if(is_string($condition)) $condition=array($condition);
-			$orderby="";
-						
-			$sql="select * from `{$model["table"]}`";
 			
+			$orderby="";
 			if(count($condition)>0){
 				$list=array();
 				foreach($condition as $col=>$val){
@@ -150,6 +148,24 @@
 			    $sql.= " limit 1";
 			}
 			
+			return $sql;
+		}
+		
+		/**
+		 * Find records based on condition
+		 * eg.  $condition=array("name like 'tom%'", "sex='M'")
+		 *      $condition="age>18"
+    	 *      $condition=array("sex"=>'F', "order by name")
+    	 *      $range="all"
+    	 *      $range='1-20'
+		 */
+		static function find($condition, $range='all'){
+		    $model=self::model();
+		    $class=get_called_class();
+		    
+			$sql="select * from `{$model["table"]}` ";
+			$sql.=self::_get_where_clause($condition, $range);
+						
 			switch(strtolower($range)){
 				default:
 					$range='all';
@@ -178,8 +194,18 @@
 						return new $class($r);
 					}
 					break;
-			}			
+			}
+		}
+		
+		static function find_one($condition=array()){
+			return self::find($condition, 'one');
 		}		
+				
+		static function count($condition=array()){
+			$model=self::model();
+			return intval(self::db()->get_var("select count(*) from `{$model["table"]}` ".self::_get_where_clause($condition)));
+		}
+
 
 		protected $_snap;
 		protected $_errors;		
