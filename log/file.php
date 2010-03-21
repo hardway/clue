@@ -1,7 +1,7 @@
 <?php 
 	require_once 'clue/log.php';
 	
-	class Clue_Log_File implements IClue_Log{
+	class Clue_Log_File extends Clue_Log{
 		protected $logfile;
 		
 		function __construct($filename, $mode='a'){
@@ -34,8 +34,8 @@
 			$this->logfile=null;
 		}
 		
-		function log($message, $level=self::NOTICE){
-			fprintf($this->logfile, "%s [%s] %s\r\n", date('c', time()), $level, $message);
+		function log($app, $message, $level=self::NOTICE, $context=array()){
+			fprintf($this->logfile, "%s [%s] %s: %s\r\n", date('c', time()), $level, $app, $message);
 		}
 	}
 ?>

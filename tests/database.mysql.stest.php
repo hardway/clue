@@ -1,4 +1,6 @@
 <?php  
+    require_once 'simpletest/autorun.php';
+    
 	require_once 'clue/database.php';
 	
 	define('CREATE_TABLE1', "
@@ -11,7 +13,7 @@
 		)
 	");
 	
-	class Test_Database_Mysql extends Snap_UnitTestCase{
+	class Test_Database_Mysql extends UnitTestCase{
 		private $db;
 		
 		function setUp(){
@@ -56,19 +58,6 @@
 			$this->assertEqual($schema['col']['Max']['type'], 'int');
 			
 			$this->db->exec("drop table table1");
-			return $this->assertTrue(true);
-		}
-		
-		function test_error_log(){
-			$this->willError();
-			
-			$logfile=dirname(__FILE__)."/data/database_mysql_test_error_log.log";
-			$this->db->enable_error_log(new Clue_Log_File($logfile, 'w'));
-			
-			$this->db->exec("what a wrong statement");
-			
-			$this->assertTrue(strlen(file_get_contents($logfile))>0);
-			
 			return $this->assertTrue(true);
 		}
 		

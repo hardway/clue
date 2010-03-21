@@ -1,7 +1,8 @@
 <?php  
+    require_once 'simpletest/autorun.php';
 	require_once 'clue/log.php';
 		
-	class Test_Clue_Log extends Snap_UnitTestCase{
+	class Test_Clue_Log extends UnitTestCase{
 		function setUp(){
 			ob_start();
 		}
@@ -35,7 +36,7 @@
 		}		
 	}
 	
-	class Test_Clue_Log_File extends Snap_UnitTestCase{
+	class Test_Clue_Log_File extends UnitTestCase{
 		const templog="templog.log";
 		const pathlog="temp/templog.log";
 		
@@ -43,7 +44,7 @@
 		}
 		
 		function tearDown(){
-			$this->willError();	// Due to filesystem latency, may unlink file twice and one of them will fail.
+			$this->expectError();	// Due to filesystem latency, may unlink file twice and one of them will fail.
 			if(file_exists(self::templog)) unlink(self::templog);
 			if(file_exists(self::pathlog)){
 				unlink(self::pathlog);

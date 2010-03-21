@@ -1,7 +1,8 @@
 <?php  
+    require_once 'simpletest/autorun.php';
 	require_once 'clue/pinyin.php';
 		
-	class Test_Clue_PinYin extends Snap_UnitTestCase{
+	class Test_Clue_PinYin extends UnitTestCase{
 		private $py;
 		
 		function setUp(){

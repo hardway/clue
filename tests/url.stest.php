@@ -1,7 +1,8 @@
 <?php  
+    require_once 'simpletest/autorun.php';
 	require_once 'clue/url.php';
 	
-	class Test_Clue_URL extends Snap_UnitTestCase{
+	class Test_Clue_URL extends UnitTestCase{
 		function setUp(){}
 		function tearDown(){}
 		

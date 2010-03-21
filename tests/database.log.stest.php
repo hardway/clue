@@ -1,7 +1,8 @@
 <?php  
+    require_once 'simpletest/autorun.php';
 	require_once 'clue/core.php';
 		
-	class Test_Log_Database extends Snap_UnitTestCase{
+	class Test_Log_Database extends UnitTestCase{
 		private $db;
 		private $cfg;
 		private $log;

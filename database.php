@@ -36,7 +36,7 @@
 		public $lasterror=null;
 		public $errors=null;
 
-		public function enable_query_log(Clue_Database_Log $log){
+		public function enable_query_log(IClue_Log $log){
 			$this->queryLog=$log;
 		}
 		public function disable_query_log(){
@@ -89,7 +89,8 @@
 			$this->lastquery=$sql;
 			
 			if($this->queryLog){
-				$this->queryLog->log_query($sql);
+			    // TODO.
+				//$this->queryLog->log($sql);
 			}
 		}
 		

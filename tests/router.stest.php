@@ -1,7 +1,8 @@
 <?php  
+    require_once 'simpletest/autorun.php';
 	require_once 'clue/router.php';
 		
-	class Test_Route extends Snap_UnitTestCase{
+	class Test_Route extends UnitTestCase{
 		function setUp(){
 			
 		}
@@ -94,7 +95,7 @@
 			$R=new Clue_RouteMap();
 			$R->connect(':controller/:action/:id');
 			
-			$this->willThrow('Exception');
+			$this->expectException();
 			$url=$R->reform('board', 'show');
 						
 			return $this->assertTrue(true);
@@ -113,7 +114,7 @@
 		function test_reform_without_rule(){
 			$R=new Clue_RouteMap();			
 			
-			$this->willThrow('Exception');
+			$this->expectException();
 			$url=$R->reform('board', 'show');
 						
 			return $this->assertTrue(true);
