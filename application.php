@@ -26,7 +26,12 @@
 				$this->config=$this->options['config'];
 			}
 			else{
-				$this->config=new Clue_Config("$appbase/config/config.ini");
+			    // Make sure the config exists
+			    $cfgFile="$appbase/config/config.ini";
+			    if(file_exists($cfgFile))
+				    $this->config=new Clue_Config($cfgFile);
+				else
+				    $this->config=new Clue_Config();
 			}			
 			
 			if($this->config->database){
