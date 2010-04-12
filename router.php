@@ -230,41 +230,41 @@
 			if($_SERVER['REQUEST_METHOD']=='POST')
 				$action="_$action";
 			
-			if(file_exists($path)){
-				require_once $path;
-				
-				$rfxClass=new ReflectionClass($class);
-				
-				if($rfxClass->hasMethod($action)){
-					$rfxMethod=new ReflectionMethod($class, $action);
-					
-					// detect parameters using reflection
-					$callArgs=array();
-					foreach($rfxMethod->getParameters() as $rfxParam){
-						if(isset($params[$rfxParam->name])){
-							$callArgs[]=$params[$rfxParam->name];
-						}
-						else{
-							$callArgs[]=null;
-						}
-					}
-					
-					$obj=new $class($controller, $action);
-					
-					// invoke action
-					$obj->params=$params;
-					$obj->controller=$controller;
-					$obj->view=$action;
-					$obj->action=$action;
-					
-					call_user_func_array(array($obj, $obj->action), $callArgs);
-				}
-				else{
-					return $this->route('error', 'noAction', array('controller'=>$controller, 'action'=>$action));
-				}
+			if(!class_exists($class)){
+			    if(file_exists($path)) require_once $path;
+			    if(!class_exists($class))
+			        return $this->route('error', 'noController', array('controller'=>$controller));
 			}
-			else
-				return $this->route('error', 'noController', array('controller'=>$controller));		
+			
+			$rfxClass=new ReflectionClass($class);
+			
+			if($rfxClass->hasMethod($action)){
+				$rfxMethod=new ReflectionMethod($class, $action);
+				
+				// detect parameters using reflection
+				$callArgs=array();
+				foreach($rfxMethod->getParameters() as $rfxParam){
+					if(isset($params[$rfxParam->name])){
+						$callArgs[]=$params[$rfxParam->name];
+					}
+					else{
+						$callArgs[]=null;
+					}
+				}
+				
+				$obj=new $class($controller, $action);
+				
+				// invoke action
+				$obj->params=$params;
+				$obj->controller=$controller;
+				$obj->view=$action;
+				$obj->action=$action;
+				
+				call_user_func_array(array($obj, $obj->action), $callArgs);
+			}
+			else{
+				return $this->route('error', 'noAction', array('controller'=>$controller, 'action'=>$action));
+			}
 		}
 		
 		function resolve($uri){

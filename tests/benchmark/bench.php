@@ -7,6 +7,7 @@
         echo <<<END
 Usage:
     -l List all frameworks and their benchmark scripts
+    -b Run specific bench, sould be regexp
     -f Specify which framework to run bench
     -h Help
     
@@ -49,12 +50,15 @@ END;
     }
     
     function benchmark_framework($dir, $listOnly=false){
+        global $opt;
+        
         $framework=basename($dir);
         echo "[$framework]\n";
         
         foreach(scandir($dir) as $n){
             if($n=='.' || $n=='..') continue;
             if(preg_match('/\.(php|htm|html)$/i', $n)){
+                if(isset($opt['b']) && !preg_match("/{$opt['b']}/i", $n)) continue;
                 $url=BENCHMARK_BASE_URL."$framework/$n";
                 
                 if($listOnly){
@@ -72,7 +76,7 @@ END;
     
     if(!isset($argv)) die("This is a CLI program.");
     
-    $opt=getopt("f:hl");
+    $opt=getopt("f:b:hl");
     if(isset($opt['h'])) exit(show_help());
     
     foreach(scan_frameworks(dirname(__FILE__)) as $fw){
