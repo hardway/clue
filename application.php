@@ -32,7 +32,7 @@
 				    $this->config=new Clue_Config($cfgFile);
 				else
 				    $this->config=new Clue_Config();
-			}			
+			}
 			
 			if($this->config->database){
 				$this->set_default_database((array)$this->config->database);

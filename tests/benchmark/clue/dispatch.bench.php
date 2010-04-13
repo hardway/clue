@@ -8,7 +8,7 @@
         }
     }
     
-    Clue_Application::init();
+    Clue_Application::init('.', array('config'=>new Clue_Config("config.php")));
     
     app()->router()->connect('^/did/not/exist/$', array('controller'=>'Did_Not_Exist', 'action'=>'hello_world'));
 	app()->router()->connect('^/another/one$', array('controller'=>'Another_One', 'action'=>'hello_world'));

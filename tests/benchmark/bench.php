@@ -1,8 +1,16 @@
 <?php  
-    require_once 'config.php';
+    require_once 'clue/core.php';
+    
+    function cfg($name){
+        static $cfg=null;
+        if($cfg==null)
+            $cfg=new Clue_Config(dirname(__FILE__).DIRECTORY_SEPARATOR."config.php");
+            
+        return $cfg->get($name);
+    }
     
     function show_help(){
-        $baseURL=BENCHMARK_BASE_URL;
+        $baseURL=cfg('base_url');
         $currentDir=dirname(__FILE__).DIRECTORY_SEPARATOR;
         echo <<<END
 Usage:
@@ -29,7 +37,7 @@ END;
     }
     
     function benchmark($url){
-        exec(BENCHMARK_AB_TOOL." $url 2>&1", $output);
+        exec(cfg('ab_tool')." $url 2>&1", $output);
         foreach($output as $line){
             if(preg_match('/^Complete requests[^0-9]*(\d+)$/i', $line, $match)){
                 return intval($match[1]);
@@ -57,9 +65,9 @@ END;
         
         foreach(scandir($dir) as $n){
             if($n=='.' || $n=='..') continue;
-            if(preg_match('/\.(php|htm|html)$/i', $n)){
+            if(preg_match('/\.bench\.(php|htm|html)$/i', $n)){
                 if(isset($opt['b']) && !preg_match("/{$opt['b']}/i", $n)) continue;
-                $url=BENCHMARK_BASE_URL."$framework/$n";
+                $url=cfg('base_url')."$framework/$n";
                 
                 if($listOnly){
                     echo "\t$url\n";
