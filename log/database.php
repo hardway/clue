@@ -21,7 +21,7 @@
 		private $db;
 		
 		function __construct($config){
-			$config['db']='database_log';	// TODO
+			$config->set('db', 'database_log');	// TODO
 			$this->db=Clue_Database::create('mysql', $config);
 			
 			// Make sure tables are created.

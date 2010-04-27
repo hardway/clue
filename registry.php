@@ -1,43 +1,53 @@
 <?php  
-    class Clue_Registry{
-        protected $_store;  // Storage is an associated array
-        
+    class Clue_Registry{        
         public function __construct($ary=null){
-            $this->_store=is_array($ary) ? $ary : array();
+            if(is_array($ary)) foreach($ary as $k=>$v){
+                $this->$k=is_array($v) ? $this->_ary_to_obj($v) : $v;
+            }
+        }
+        
+        private function _ary_to_obj(array $ary){
+            $obj=new Clue_Registry;
+            foreach($ary as $k=>$v){
+                $obj->$k=is_array($v) ? $this->_ary_to_obj($v) : $v;
+            }
+            
+            return $obj;
+        }
+        
+        public function __clone(){
+            foreach(array_keys((array)$this) as $k){
+                if(is_object($this->$k))
+                    $this->$k=clone $this->$k;
+            }
         }
         
         public function get($path){
-            $store=&$this->_store;
+            $store=&$this;
 
             if(strlen($path)>0) foreach(explode('.', $path) as $k){
-                if(!isset($store[$k])) return null;
-                $store=&$store[$k];
+                if(!isset($store->$k)) return null;
+                $store=&$store->$k;
             }
             
             return $store;
         }
         
         public function set($path, $value){
-            $store=&$this->_store;
+            $store=&$this;
             $change=null;
             
             foreach(explode('.', $path) as $k){
-                if(!is_array($store)) $store=array();
-                if(!isset($store[$k])) $store[$k]=null;
+                if(!$store instanceof Clue_Registry) $store=new Clue_Registry;
+                if(!isset($store->$k)) $store->$k=null;
                 
                 $change=&$store;
-                $store=&$store[$k];
+                $store=&$store->$k;
             }
             
-            $old=$change[$k];
-            $change[$k]=$value;
+            $change->$k=is_array($value) ? $this->_ary_to_obj($value) : $value;
             
-            return $old;
-        }
-        
-        public function __get($path){
-            $r=$this->get($path);
-            return is_array($r) ? new Clue_Registry($r) : $r;
+            return $this;
         }
     }
 ?>
