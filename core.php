@@ -6,7 +6,7 @@
 
 	function autoload_load($path){
 		$path=strtolower($path);	// Always try lowercase
-		
+
 		if(file_exists($path))
 			require_once $path;
 		else

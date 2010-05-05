@@ -229,10 +229,10 @@
 
 			if($_SERVER['REQUEST_METHOD']=='POST')
 				$action="_$action";
-			
-			if(!class_exists($class)){
+
+			if(!class_exists($class, false)){
 			    if(file_exists($path)) require_once $path;
-			    if(!class_exists($class))
+			    if(!class_exists($class, false))
 			        return $this->route('error', 'noController', array('controller'=>$controller));
 			}
 			

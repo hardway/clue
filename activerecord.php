@@ -82,8 +82,7 @@
 		    $row=self::db()->get_row("select * from {$model['table']} where {$model['pkey']}='".self::db()->escape($id)."'", ARRAY_A);
 		    if($row){
 		        $class=get_called_class();
-		        $r=new $class;
-		        $r->bind($row);
+		        $r=new $class($row);
 		        
 		        return $r;
 		    }
@@ -92,7 +91,7 @@
 		}
 		
 		static function __callStatic($name, array $arguments){
-		    if(preg_match('/(count|find|find_one)_by_(\w+)/', $name, $match)){
+		    if(preg_match('/(count|find|find_one|find_all)_by_(\w+)/', $name, $match)){
 		        $method=$match[1];
 		        $condition=array($match[2]=>$arguments[0]);
 		        return static::$method($condition);
@@ -195,6 +194,10 @@
 					}
 					break;
 			}
+		}
+		
+		static function find_all($condition=array()){
+		    return self::find($condition, 'all');
 		}
 		
 		static function find_one($condition=array()){
