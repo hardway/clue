@@ -30,7 +30,7 @@
 			$this->_result=null;
 		}
 		
-		function insertId(){
+		function insert_id(){
 			return sqlite_last_insert_rowid($this->dbh);
 		}
 		

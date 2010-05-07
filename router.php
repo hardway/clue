@@ -1,7 +1,7 @@
 <?php
-	require_once 'clue/core.php';
-	require_once 'clue/controller.php';
-	require_once 'clue/tool.php';
+	require_once __DIR__.'/core.php';
+	require_once __DIR__.'/controller.php';
+	require_once __DIR__.'/tool.php';
 	
 	// TODO: rule order (fallback ?)
 	class Clue_RouteMap{

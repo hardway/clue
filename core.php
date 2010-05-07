@@ -1,5 +1,5 @@
 <?php  
-	define('CLUE_VERSION', '0.1');
+	define('CLUE_VERSION', '5.3.001');
 	
 	// common defination
 	define("DS", DIRECTORY_SEPARATOR);
@@ -20,7 +20,7 @@
 			autoload_load("helper/{$class}.php");
 		}
 		else{
-			require_once 'clue/activerecord.php';
+			require_once __DIR__.'/activerecord.php';
 			autoload_load("model/{$class}.php");
 		}
 	}
@@ -28,7 +28,7 @@
 	// register Clue library class auto loader
 	function autoload_clue($class){
 		if(substr($class, 0, 4)=="Clue"){
-			$clue_root=dirname(dirname(__FILE__));
+			$clue_root=dirname(__DIR__);
 			autoload_load($clue_root . DS . str_replace("_", DS, strtolower($class)). ".php");
 		}
 	}

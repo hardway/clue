@@ -1,5 +1,5 @@
 <?php  
-	require_once 'clue/core.php';
+	require_once __DIR__.'/core.php';
 	
 	class Clue_ActiveRecord{
 		static protected $_db;
@@ -83,6 +83,7 @@
 		    if($row){
 		        $class=get_called_class();
 		        $r=new $class($row);
+		        $r->_snap_shot();
 		        
 		        return $r;
 		    }
@@ -175,7 +176,9 @@
 					
 					if(is_array($rs)){
 						foreach($rs as $r){
-							$objects[]=new $class($r);
+                            $r=new $class($r);
+                            $r->_snap_shot();
+							$objects[]=$r;
 						}
 						return $objects;
 					}
@@ -190,7 +193,9 @@
 						return false;
 					}
 					else{
-						return new $class($r);
+                        $r=new $class($r);
+                        $r->_snap_shot();
+						return $r;
 					}
 					break;
 			}
@@ -223,8 +228,6 @@
 			else{
 				$this->init();
 			}
-			
-			$this->_snap_shot();
 		}
 		
 		function bind(array $data){
@@ -295,17 +298,18 @@
 				}					
 			}
 			
-			// TODO: check affected rows
-			$ret=self::db()->exec($sql);
+			$success=self::db()->exec($sql);
 			
 			// Update or Insert is successful.
 			// Update the primary key if new record inserted.
-			if(empty($this->$pk)){
-				$this->$pk=self::db()->insertId();
+			if($success){
+    			if(empty($this->$pk)){
+    				$this->$pk=self::db()->insert_id();
+    			}
+    			$this->_snap_shot();
 			}
 			
-			$this->_snap_shot();
-			return $ret;		
+			return $success;
 		}
 		
 		function destroy(){

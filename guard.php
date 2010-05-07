@@ -1,5 +1,5 @@
 <?php  
-	require_once 'clue/log.php';
+	require_once __DIR__.'/log.php';
 	
 	// Shortcut
 	function guard(){ return Clue_Guard::get_default(); }

@@ -1,5 +1,5 @@
 <?php 
-	require_once 'clue/log.php';
+	require_once dirname(__DIR__).'/log.php';
 	
 	class Clue_Log_File extends Clue_Log{
 		protected $logfile;

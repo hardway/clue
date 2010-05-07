@@ -1,7 +1,7 @@
 <?php  
-	require_once 'clue/core.php';
-	require_once 'clue/config.php';
-	require_once 'clue/database.php';
+	require_once __DIR__.'/core.php';
+	require_once __DIR__.'/config.php';
+	require_once __DIR__.'/database.php';
 	
 	class Clue_Application{
 		public $base;

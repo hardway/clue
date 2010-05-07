@@ -1,5 +1,5 @@
 <?php	
-	require_once 'clue/core.php';
+	require_once __DIR__.'/core.php';
 	
 	// Constants to indicate how to retrieve data by get_row and get_results
 	if(!defined('OBJECT')) define('OBJECT', 'OBJECT');
@@ -81,8 +81,8 @@
 				return $data;
 		}
 		
-		function insertId(){
-			return 0;
+		function insert_id(){
+			return null;
 		}
 		
 		function exec($sql){

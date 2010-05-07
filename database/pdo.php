@@ -30,7 +30,7 @@
 			$this->_result=null;
 		}
 		
-		function insertId(){
+		function insert_id(){
 			return $this->dbh->lastInsertId();
 		}
 				

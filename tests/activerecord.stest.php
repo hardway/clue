@@ -1,8 +1,8 @@
 <?php  
     require_once 'simpletest/autorun.php';
     
-    require_once 'clue/database.php';
-	require_once 'clue/activerecord.php';
+    require_once '../database.php';
+	require_once '../activerecord.php';
 		
 	class LateBindClass extends Clue_ActiveRecord{
 	}
@@ -122,6 +122,28 @@
 		
 		function tearDown(){
 		    // Do nothing
+		}
+		
+		function test_newly_created_record_will_have_dirty_snapshot(){
+		    $e=new Employee(array('fullname'=>'Lich King', 'birthday'=>'1980-01-01'));
+		    $this->assertTrue($e->is_new());
+		    
+		    $cnt=Employee::count();
+		    $e->save();
+		    $this->assertEqual($cnt+1, Employee::count());
+		    
+		    $e->destroy();
+		    $this->assertEqual($cnt, Employee::count());
+		}
+		
+		function test_record_get_from_database_has_been_snap_shotted(){
+		    $e=Employee::get(2);
+		    $this->assertFalse($e->is_new());
+		    
+		    $cnt=Employee::count();
+		    $e->save();
+		    
+		    $this->assertEqual($cnt, Employee::count());
 		}
 				
 		function test_deduce_model_with_predefined_column(){
@@ -259,6 +281,6 @@
 		    
 		    $englishSpeaking=Country::count_by_language("English");
 		    $this->assertEqual($englishSpeaking, 2);
-		}
+		}		
 	}
 ?>
