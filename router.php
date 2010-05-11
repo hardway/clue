@@ -263,7 +263,7 @@
 				call_user_func_array(array($obj, $obj->action), $callArgs);
 			}
 			else{
-				return $this->route('error', 'noAction', array('controller'=>$controller, 'action'=>$action));
+			    throw new Exception("Can't find action $action of $controller");
 			}
 		}
 		

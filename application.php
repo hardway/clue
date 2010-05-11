@@ -12,6 +12,10 @@
 			"url_rewrite"=>true
 		);
 		
+		public $controller;
+		public $action;
+		public $params;
+		
 		protected $beforeDispatchHandler=null;
 		
 		function __construct($appbase='.', $options=null){
@@ -68,16 +72,28 @@
 		    $this->beforeDispatchHandler=$callback;
 		}
 		
+        function prepare(){
+            $map=$this->router->resolve($_SERVER['REQUEST_URI']);
+                        
+            $this->controller=$map['controller'];
+            $this->action=$map['action'];
+            $this->params=$map['params'];
+        }
+		
+		function dispatch(){
+			$this->router->route($this->controller, $this->action, $this->params);
+		}
+		
 		function run(){
 			try{
-    			$map=$this->router->resolve($_SERVER['REQUEST_URI']);
+    			$this->prepare();
     			
-    			// call plugin
-    			if(is_callable($this->beforeDispatchHandler)){
-    			    call_user_func($this->beforeDispatchHandler, $map);
-    			}
-    			
-				$this->router->route($map['controller'], $map['action'], $map['params']);
+                // call plugin
+                if(is_callable($this->beforeDispatchHandler)){
+                    call_user_func($this->beforeDispatchHandler, $this->controller, $this->action, $this->params);
+                }
+                
+    			$this->dispatch();
 			}
 			catch(Exception $e){
 				// TODO: route to error controller, which must exist.
