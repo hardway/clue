@@ -35,4 +35,11 @@
 	
 	spl_autoload_register("autoload_clue");
 	spl_autoload_register("autoload_application");
+	
+	// Trap Error and Exceptions
+	if(defined('CLUE_DEBUG') && CLUE_DEBUG==true){
+	    require_once __DIR__."/debug.php";
+	    set_exception_handler(array("Clue_Debug","exception_view"));
+	    set_error_handler(array("Clue_Debug", "error_view"));
+    }
 ?>
