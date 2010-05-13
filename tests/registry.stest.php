@@ -1,6 +1,6 @@
 <?php  
     require_once 'simpletest/autorun.php';
-    require_once 'clue/registry.php';
+    require_once dirname(__DIR__).'/registry.php';
 
     class Test_Clue_Registry extends UnitTestCase{
         function setUp(){

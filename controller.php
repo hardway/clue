@@ -42,6 +42,15 @@
 				throw new Exception("View didn't exists: $view");
 		}
 		
+		function render_html_options($options, $selected){
+		    foreach($options as $op){
+		        $name=$op;
+		        $value=$op;
+		        
+		        echo "<option value='$value' ".(in_array($value, $selected) ? "selected='1'":"").">$name</option>";
+		    }
+		}
+		
 		function redirect_route($controller, $action='index', $param=null){			
 			Clue_Application::router()->redirect_route($controller, $action, $param);
 		}
@@ -56,6 +65,19 @@
 		
 		function set($name, $value){
 			$this->view_data[$name]=$value;
+		}
+		
+		protected function make_empty_array($keys){
+		    if(!is_array($keys)) $keys=explode('|', $keys);
+		    $ary=array();
+		    foreach($keys as $k){
+		        if(preg_match('/([^\[\]]+)\[\]$/', $k, $m)){
+		            $ary[trim($m[1])]=array();
+		        }
+		        else
+		            $ary[trim($k)]=null;
+		    }
+		    return $ary;
 		}
 	}
 ?>

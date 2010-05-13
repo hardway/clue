@@ -1,6 +1,6 @@
 <?php  
     require_once 'simpletest/autorun.php';
-    require_once 'clue/config.php';
+    require_once dirname(__DIR__).'/config.php';
     
     class Test_Clue_Config extends UnitTestCase{
         function setUp(){

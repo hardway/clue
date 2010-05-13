@@ -1,8 +1,8 @@
 <?php  
     require_once 'simpletest/autorun.php';
     
-    require_once '../database.php';
-	require_once '../activerecord.php';
+    require_once dirname(__DIR__).'/database.php';
+	require_once dirname(__DIR__).'/activerecord.php';
 		
 	class LateBindClass extends Clue_ActiveRecord{
 	}

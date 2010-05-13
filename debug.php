@@ -21,15 +21,15 @@
             E_USER_ERROR=>'E_USER_ERROR'
 	    );
 	    
-		static function exception_view($e){
+		static function view_exception($e){
 		    self::dump_exception($e);
 		}
 		
-		static function error_view($errno, $errstr, $errfile=null, $errline=null, array $errcontext=null){
+		static function view_error($errno, $errstr, $errfile=null, $errline=null, array $errcontext=null){
 		    if(!self::$cli){
 		        self::dump_html_style();
 				$tracing=debug_backtrace();
-				$pos=0;
+				$pos=0; $trace=array();
 		        foreach($tracing as $stack){
 					$file=isset($stack['file']) ? $stack['file'] : "";
 					$line=isset($stack['line']) ? $stack['line'] : "";

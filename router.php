@@ -26,27 +26,32 @@
 		function connect($urlPattern, $rule=array()){
 			// TODO: check validity of url pattern and mapping rule
 			
-			// decode url pattern into name list
-			$names=array();
-			$pattern=preg_replace_callback('/:([a-zA-Z0-9_]+)/', function($m) use(&$names){
-				$names[]=$m[1];
-				if($m[1]=='controller' || $m[1]=='action')
-					return '([^/]*)';
-				else
-					return '([^/]+)';
-			}, $urlPattern);
-			
-			$pattern="^$pattern\$";
-			
 			// decode mapping string to array
 			$mapping=array();
 			if($rule) foreach($rule as $n=>$v){
-				if(strpos($v, '|')!==FALSE){
-					$v=explode('|', $v);
-				}
 				$mapping[$n]=$v;
 			}
+
+			// decode url pattern into name list
+			$names=array();
+			$pattern=preg_replace_callback('/:([a-zA-Z0-9_]+)/', function($m) use(&$names, $mapping){
+			    $name=$m[1];
+				$names[]=$name;
+
+				if($name=='controller' || $name=='action')
+					return '([^/]*)';
+				else{
+				    if(isset($mapping[$name])){
+				        $p=$mapping[$name];
+				        return "($p)";
+			        }
+			        else
+					    return '([^/]+)';
+				}
+			}, $urlPattern);
 			
+			$pattern="^$pattern\$";
+						
 			$this->rules[]=array(
 				'reformation'=>$urlPattern,
 				'pattern'=>$pattern,
@@ -61,26 +66,33 @@
 			foreach($this->rules as $r){
 				if(
 					isset($r['mapping']['controller']) && 
-					strcasecmp($r['mapping']['controller'], $controller)!=0
+					!preg_match('/'.$r['mapping']['controller'].'/i', $controller)
 				) continue;
 				
 				if(
 					isset($r['mapping']['action']) && 
-					strcasecmp($r['mapping']['action'],$action)!=0
+					!preg_match('/'.$r['mapping']['action'].'/i',$action)
 				) continue;
+
+				$allParamsAreMet=true;
+				foreach(array_keys($params) as $name){
+				    if(isset($r['mapping'][$name]) && !preg_match('/'.$r['mapping'][$name].'/i', $params[$name])) continue;
+				}
 				
 				$params['controller']=$controller;
 				$params['action']=$action;
-				
-				$url=preg_replace_callback('/\:([a-zA-Z0-9_]+)/', function($m) use(&$params){
-					if(isset($params[$m[1]])){
-						$ret=urlencode($params[$m[1]]);
-						unset($params[$m[1]]);
+								
+				$url=preg_replace_callback('/\:([a-zA-Z0-9_]+)/', function($m) use(&$params, $r){
+				    $name=$m[1];
+				    
+					if(isset($params[$name])){
+						$ret=urlencode($params[$name]);
+						unset($params[$name]);
 						return $ret;
 					}
 					else{
 						// TODO: Clue_RouterException
-						throw new Exception("Couldn't found parameter {$m[1]} in mapping rule.");
+						throw new Exception("Couldn't found parameter '$name' in mapping rule.");
 					}
 				}, $r['reformation']);
 
@@ -146,7 +158,7 @@
 				}
 			}
 			
-			throw new Exception("NO MATCH");
+			throw new Exception("No route found.");
 			
 			// explode path and do mapping.
 			$p=explode('/', $uri);
@@ -190,7 +202,7 @@
 			
 			// Determine controller and action by default map
 			$this->map=@$option['url_rewrite'] ? 
-				new Clue_RouteMap($option['map']) : 
+				new Clue_RouteMap() : 
 				new Clue_QueryRouteMap();		
 		}
 		

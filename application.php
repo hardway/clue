@@ -43,13 +43,17 @@
 			}
 			
 			$this->router=new Clue_Router(array(
-				'url_rewrite'=>$this->options["url_rewrite"],
-				'map'=>array(
-					// translate controller name
-					// TODO: this should appear as application configuration
-					// '^admin/?'=>'Admin_'
-				)
+				'url_rewrite'=>$this->options["url_rewrite"]
 			));
+			
+			if(isset($this->config->debug) && $this->config->debug==true){
+			    Clue::enable_debug();
+			}
+			else if(!isset($this->config->log) || $this->config->log!==false){
+			    if(!isset($this->config->log) || !is_string($this->config->log))
+			        $this->config->log=$appbase . DIRECTORY_SEPARATOR . 'log';
+			    Clue::enable_log($this->config->log);
+			}
 		}
 		
 		function set_default_database($param){

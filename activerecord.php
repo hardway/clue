@@ -243,7 +243,8 @@
 			// Empty.
 		}
 		
-		function check(){
+		function validate(){
+		    $this->clear_validation_error();
 			// always true, because root class didn't have any business constraints
 			return true;
 		}
@@ -260,12 +261,9 @@
 			$model=self::model();
 			return empty($this->_snap[$model['pkey']]);
 		}
-				
+		
 		function save(){
-		    // TODO, better organization
-			if($this->check()===false){
-				throw $this->errors();
-			}
+		    if(!$this->validate()) return false;
 			
 			// TODO: use prepared statement to improve security and code clearance
 			$model=self::model();
@@ -326,6 +324,19 @@
 		}
 		
 		// TODO: proper error handling
+		function clear_validation_error(){
+		    $errors=array();
+		    foreach($this->_errors as $err){
+		        if($err['type']=='validation') continue;
+		        $errors[]=$err;
+		    }
+		    $this->_errors=$errors;
+		}
+		
+		function set_validation_error($error){
+		    $this->_errors[]=array('type'=>'validation', 'error'=>$error);
+		}
+		
 		function hasError(){
 			return count($this->_errors)>0;
 		}

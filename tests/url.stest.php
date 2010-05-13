@@ -1,6 +1,6 @@
 <?php  
     require_once 'simpletest/autorun.php';
-	require_once 'clue/url.php';
+	require_once dirname(__DIR__).'/url.php';
 	
 	class Test_Clue_URL extends UnitTestCase{
 		function setUp(){}
