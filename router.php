@@ -137,9 +137,20 @@
 				if(preg_match("|{$r['pattern']}|i", $uri, $match)){
 					array_shift($match);
 					$mapping=$r['mapping'];
+					
+					$candidateViolated=false;
 					for($i=0; $i<count($match); $i++){
-						$mapping[$r['names'][$i]]=$match[$i];
+					    $name=$r['names'][$i];
+					    if(isset($mapping[$name])){
+					        $candidate=$mapping[$name];
+					        if(!preg_match('/'.$candidate.'/', $match[$i])){
+					            $candidateViolated=true;
+					            break;
+				            }
+					    }
+					    $mapping[$name]=$match[$i];
 					}
+					if($candidateViolated) continue; // Try Next Rule
 					
 					// Default controller is Index
 					if(empty($mapping['controller'])) $mapping['controller']='Index';
@@ -219,7 +230,7 @@
 			return $this->appbase;
 		}
 		
-		function uri_for($controller, $action='index', $param=null){
+		function url_for($controller, $action='index', $param=array()){
 			return $this->appbase . $this->map->reform($controller, $action, $param);
 		}
 		

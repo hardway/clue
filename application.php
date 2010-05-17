@@ -118,8 +118,8 @@
 		static function router(){ return self::getInstance()->router; }
 	}
 	// global short cut
-	function url_for($controller, $action='index', $params=null){
-		return Clue_Application::router()->uri_for($controller, $action, $params);
+	function url_for($controller, $action='index', $params=array()){
+		return Clue_Application::router()->url_for($controller, $action, $params);
 	}
 	
 	function app(){
