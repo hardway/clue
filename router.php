@@ -234,8 +234,8 @@
 			return $this->appbase . $this->map->reform($controller, $action, $param);
 		}
 		
-		function redirect_route($controller, $action='index', $param=null){
-			$uri=$this->uri_for($controller, $action, $param);
+		function redirect_route($controller, $action='index', $param=array()){
+			$uri=$this->url_for($controller, $action, $param);
 			$this->redirect($uri);
 		}
 		
