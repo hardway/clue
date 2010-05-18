@@ -66,7 +66,7 @@
 			foreach($this->rules as $r){
 				if(
 					isset($r['mapping']['controller']) && 
-					!preg_match('/'.$r['mapping']['controller'].'/i', $controller)
+					strcasecmp($r['mapping']['controller'], $controller)!=0
 				) continue;
 				
 				if(
@@ -256,7 +256,7 @@
 			if(!class_exists($class, false)){
 			    if(file_exists($path)) require_once $path;
 			    if(!class_exists($class, false))
-			        return $this->route('error', 'noController', array('controller'=>$controller));
+			        throw new Exception("No controller found: $controller");
 			}
 			
 			$rfxClass=new ReflectionClass($class);

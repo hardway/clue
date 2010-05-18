@@ -103,6 +103,16 @@
 		abstract function get_row($sql, $mode=OBJECT);	
 		abstract function get_results($sql, $mode=OBJECT);
 		
+		function get_objects($sql, $class){
+		    $objs=array();
+		    $rs=$this->get_results($sql, ARRAY_A);
+		    if($rs) foreach($rs as $r){
+		        $objs[]=new $class($r);
+		    }
+		    
+		    return $objs;
+		}
+		
 		function has_table($table){return false;}
 	}
 ?>
