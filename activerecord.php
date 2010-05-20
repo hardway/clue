@@ -79,7 +79,7 @@
 		static function get($id){
 		    $model=self::model();
 		    
-		    $row=self::db()->get_row("select * from {$model['table']} where {$model['pkey']}='".self::db()->escape($id)."'", ARRAY_A);
+		    $row=self::db()->get_row("select * from `{$model['table']}` where `{$model['pkey']}`='".self::db()->escape($id)."'", ARRAY_A);
 		    if($row){
 		        $class=get_called_class();
 		        $r=new $class($row);
