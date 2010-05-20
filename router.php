@@ -79,8 +79,8 @@
 				    if(isset($r['mapping'][$name]) && !preg_match('/'.$r['mapping'][$name].'/i', $params[$name])) continue;
 				}
 				
-				$params['controller']=$controller;
-				$params['action']=$action;
+				$params['controller']=$controller=='index' ? '' : $controller;
+				$params['action']=$action=='index' ? '' : $action;
 								
 				$url=preg_replace_callback('/\:([a-zA-Z0-9_]+)/', function($m) use(&$params, $r){
 				    $name=$m[1];
@@ -96,6 +96,8 @@
 					}
 				}, $r['reformation']);
 
+                $url=str_replace('//', '/', $url);
+                
 				$query=array();
 				if($params) foreach($params as $n=>$v){
 					if($n=='controller' || $n=='action') continue;
@@ -143,7 +145,7 @@
 					    $name=$r['names'][$i];
 					    if(isset($mapping[$name])){
 					        $candidate=$mapping[$name];
-					        if(!preg_match('/'.$candidate.'/', $match[$i])){
+					        if(!preg_match('/'.$candidate.'/i', $match[$i])){
 					            $candidateViolated=true;
 					            break;
 				            }
