@@ -61,6 +61,10 @@
 		///---------------------------------------------------------------
 		static $instance=null;
 				
+		static function set(Clue_UI_Skin $skin){
+		    self::$instance=$skin;
+		}
+		
 		static function load($application, $options=null){
 			switch(strtolower($application)){
 				case 'joomla':

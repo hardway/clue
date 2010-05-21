@@ -32,7 +32,7 @@
 		function render_raw($view=null){
 			// determine view;
 			if($view!=null) $this->view=$view;
-			$view=strtolower("view/".str_replace('_','/',$this->controller)."/{$this->view}.tpl");
+			$view=strtolower(APP_ROOT . "/view/".str_replace('_','/',$this->controller)."/{$this->view}.tpl");
 			
 			if(file_exists($view)){
 				extract($this->view_data);

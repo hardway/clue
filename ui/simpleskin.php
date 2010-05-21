@@ -7,7 +7,7 @@
 			else
 				$this->template='skin';
 			
-			$this->template_path="view".DS.$this->template;
+			$this->template_path=APP_ROOT . "/view".DS.$this->template;
 			
 			// check if skin exists.
 			if(!is_dir($this->template_path)) exit("template missing: $this->template_path");

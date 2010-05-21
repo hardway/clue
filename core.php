@@ -3,6 +3,7 @@
 	
 	// common defination
 	define("DS", DIRECTORY_SEPARATOR);
+	if(!defined('APP_ROOT')) define('APP_ROOT' , '.');
 
 	function autoload_load($path){
 		$path=strtolower($path);	// Always try lowercase
@@ -17,11 +18,11 @@
 	function autoload_application($class){
 		// Detect "Helper"
 		if(strtolower(substr($class, -6))=='helper'){
-			autoload_load("helper/{$class}.php");
+			autoload_load(APP_ROOT . "/helper/{$class}.php");
 		}
 		else{
 			require_once __DIR__.'/activerecord.php';
-			autoload_load("model/{$class}.php");
+			autoload_load(APP_ROOT . "/model/{$class}.php");
 		}
 	}
 	

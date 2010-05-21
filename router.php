@@ -250,7 +250,7 @@
 		function route($controller, $action, $params=array()){
 			// load controller
 			$class="{$controller}Controller";
-			$path="controller/".strtolower(str_replace('_','/',$class)).".php";
+			$path=APP_ROOT . "/controller/".strtolower(str_replace('_','/',$class)).".php";
 
 			if($_SERVER['REQUEST_METHOD']=='POST')
 				$action="_$action";
