@@ -43,9 +43,10 @@
 		}
 		
 		function render_html_options($options, $selected){
-		    foreach($options as $op){
-		        $name=$op;
-		        $value=$op;
+		    if(!is_array($selected)) $selected=array($selected);
+		    
+		    foreach($options as $value=>$name){
+		        $value=is_int($value) ? $name : $value;
 		        
 		        echo "<option value='$value' ".(in_array($value, $selected) ? "selected='1'":"").">$name</option>";
 		    }
@@ -65,19 +66,6 @@
 		
 		function set($name, $value){
 			$this->view_data[$name]=$value;
-		}
-		
-		protected function make_empty_array($keys){
-		    if(!is_array($keys)) $keys=explode('|', $keys);
-		    $ary=array();
-		    foreach($keys as $k){
-		        if(preg_match('/([^\[\]]+)\[\]$/', $k, $m)){
-		            $ary[trim($m[1])]=array();
-		        }
-		        else
-		            $ary[trim($k)]=null;
-		    }
-		    return $ary;
 		}
 	}
 ?>
