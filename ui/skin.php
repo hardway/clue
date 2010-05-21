@@ -24,35 +24,35 @@
 			$this->appbase=$options['appbase'];	// TODO;
 		}
 		
-		function getHeader(){
+		function get_header(){
 			return $this->header;
 		}
 		
-		function setTitle($title){
+		function set_title($title){
 			$this->header['title']=array("<title>$title</title>");
 		}
 		
-		function addScripts($script){
-			$this->header['scripts'][]="<script type='text/javascript' src='$script' charset='utf-8'></script>";
+		function add_script_file($scriptFile){
+			$this->header['scripts'][]="<script type='text/javascript' src='$scriptFile' charset='utf-8'></script>";
 		}
 		
-		function addScript($script){
+		function add_script($script){
 			$this->header['script'][]=$script;
 		}
 		
-		function addStyleSheet($css){
+		function add_style_sheet($css){
 			$this->header['styleSheets'][]="<link rel='stylesheet' href='$css' type='text/css' media='screen' charset='utf-8'>";
 		}
 		
-		function addStyle($style){
+		function add_style($style){
 			$this->header['style'][]=$style;
 		}
 		
-		function setHeader($header){
+		function set_header($header){
 			$this->header=$header;
 		}
 		
-		function setBody($body){
+		function set_body($body){
 			$this->body=$body;
 		}
 		

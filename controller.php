@@ -24,7 +24,7 @@
 				echo $content;
 			}
 			else{
-				skin()->setBody($content);
+				skin()->set_body($content);
 				skin()->render();
 			}
 		}
