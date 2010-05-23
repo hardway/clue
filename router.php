@@ -211,7 +211,7 @@
 		protected $map;
 		
 		function __construct($option){
-			$this->appbase=dirname($_SERVER['SCRIPT_NAME']);
+			$this->appbase=str_replace("\\", '/', dirname($_SERVER['SCRIPT_NAME']));
 			
 			// Determine controller and action by default map
 			$this->map=@$option['url_rewrite'] ? 
