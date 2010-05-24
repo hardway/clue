@@ -126,7 +126,7 @@
 			return $ret;
 		}
 		
-		function resolve($uri){			
+		function resolve($uri){
 			$params=array();
 			
 			// strip query from uri
@@ -233,7 +233,10 @@
 		}
 		
 		function url_for($controller, $action='index', $param=array()){
-			return $this->appbase . $this->map->reform($controller, $action, $param);
+		    if($this->appbase=='/')
+		        return $this->map->reform($controller, $action, $param);
+		    else
+			    return $this->appbase . $this->map->reform($controller, $action, $param);
 		}
 		
 		function redirect_route($controller, $action='index', $param=array()){
@@ -293,9 +296,10 @@
 		}
 		
 		function resolve($uri){
-			if(strpos($uri, $this->appbase)===0){
+			if($this->appbase!='/' && strpos($uri, $this->appbase)===0){
 				$uri=substr($uri, strlen($this->appbase));
 			}
+			
 		    return $this->map->resolve($uri);
 		}
 	}
