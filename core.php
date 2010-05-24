@@ -4,6 +4,7 @@
 	// common defination
 	define("DS", DIRECTORY_SEPARATOR);
 	if(!defined('APP_ROOT')) define('APP_ROOT' , '.');
+	if(!defined('CLUE_ROOT')) define('CLUE_ROOT', dirname(__DIR__));
 
 	function autoload_load($path){
 		$path=strtolower($path);	// Always try lowercase
@@ -29,8 +30,7 @@
 	// register Clue library class auto loader
 	function autoload_clue($class){
 		if(substr($class, 0, 4)=="Clue"){
-			$clue_root=dirname(__DIR__);
-			autoload_load($clue_root . DS . str_replace("_", DS, strtolower($class)). ".php");
+			autoload_load(CLUE_ROOT . DS . str_replace("_", DS, strtolower($class)). ".php");
 		}
 	}
 	
