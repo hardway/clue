@@ -89,20 +89,14 @@
 		}
 		
 		function run(){
-			try{
-    			$this->prepare();
-    			
-                // call plugin
-                if(is_callable($this->beforeDispatchHandler)){
-                    call_user_func($this->beforeDispatchHandler, $this->controller, $this->action, $this->params);
-                }
-                
-    			$this->dispatch();
-			}
-			catch(Exception $e){
-				// TODO: route to error controller, which must exist.
-				echo $e->getMessage();
-			}
+			$this->prepare();
+			
+            // call plugin
+            if(is_callable($this->beforeDispatchHandler)){
+                call_user_func($this->beforeDispatchHandler, $this->controller, $this->action, $this->params);
+            }
+            
+			$this->dispatch();
 		}
 		
 		static function initialized(){ return is_object(self::$instance); }
