@@ -52,7 +52,7 @@
 		    }
 		}
 		
-		function redirect_route($controller, $action='index', $param=null){			
+		function redirect_route($controller, $action='index', $param=array()){			
 			Clue_Application::router()->redirect_route($controller, $action, $param);
 		}
 		
