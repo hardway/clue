@@ -41,17 +41,7 @@
 			else
 				throw new Exception("View didn't exists: $view");
 		}
-		
-		function render_html_options($options, $selected){
-		    if(!is_array($selected)) $selected=array($selected);
-		    
-		    foreach($options as $value=>$name){
-		        $value=is_int($value) ? $name : $value;
-		        
-		        echo "<option value='$value' ".(in_array($value, $selected) ? "selected='1'":"").">$name</option>";
-		    }
-		}
-		
+				
 		function redirect_route($controller, $action='index', $param=array()){			
 			Clue_Application::router()->redirect_route($controller, $action, $param);
 		}
@@ -60,7 +50,7 @@
 			Clue_Application::router()->redirect($url);
 		}
 		
-		function goback(){
+		function go_back(){
 			$this->redirect($_SERVER['HTTP_REFERER']);
 		}
 		
