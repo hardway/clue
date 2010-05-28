@@ -7,7 +7,7 @@
 		    foreach($options as $value=>$name){
 		        $value=is_int($value) ? $name : $value;
 		        
-		        $html+="<option value='$value' ".(in_array($value, $selected) ? "selected='1'":"").">$name</option>";
+		        $html.="<option value='$value' ".(in_array($value, $selected) ? "selected='1'":"").">$name</option>";
 		    }
 		    
 		    return $html;
