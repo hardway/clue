@@ -216,8 +216,7 @@
 
 
 		protected $_snap;
-		protected $_errors;		
-		protected $_change;
+		protected $_errors;
 
 		function __construct($data=null){
 			$this->_errors=array();
@@ -228,6 +227,24 @@
 			else{
 				$this->init();
 			}
+		}
+		
+		function __get($key){
+		    if(method_exists($this, "get_$key")){
+		        $method="get_$key";
+		        return $this->$method();
+		    }
+            else
+                return $this->$key;
+		}
+		
+		function __set($key, $val){
+		    if(method_exists($this, "set_$key")){
+		        $method="set_$key";
+		        $this->$method($val);
+		    }
+            else
+                $this->$key=$val;
 		}
 		
 		function bind(array $data){

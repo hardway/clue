@@ -103,6 +103,11 @@
 		abstract function get_row($sql, $mode=OBJECT);	
 		abstract function get_results($sql, $mode=OBJECT);
 		
+		function get_object($sql, $class){
+		    $r=$this->get_row($sql, ARRAY_A);
+		    return empty($r) ? null : new $class($r);
+		}
+		
 		function get_objects($sql, $class){
 		    $objs=array();
 		    $rs=$this->get_results($sql, ARRAY_A);

@@ -18,10 +18,20 @@
 	    public $id;
 	    public $fullname;
 	    public $birthday;
+	    public $bid;
 	    
 	    protected static $_model=array(
 	        'table'=>'employee'
     	);
+    	    	
+    	public function get_boss(){
+    	    return $this->db()->get_object("select * from employee where id=".$this->db()->escape($this->bid), "Employee");
+    	}
+    	
+    	public function set_boss(Employee $boss){
+    	    $this->bid=$boss->id;
+    	    $this->save();
+    	}
 	}
 	
 	class AlternateEmployee extends Clue_ActiveRecord{
@@ -96,12 +106,13 @@
 		            fullname varchar(20) not null,
 		            birthday datetime not null,
 		            marriage int,
+		            bid int,
 		            note varchar(256)
         		) engine=memory;
 		    ");
 		    $this->db->exec("insert into employee(fullname, birthday, marriage) values('Jack', '1970-1-1', 1)");
-		    $this->db->exec("insert into employee(fullname, birthday) values('Rose Mary', '1972-3-8')");
-		    $this->db->exec("insert into employee(fullname, birthday) values('Baby', '2012-6-1')");
+		    $this->db->exec("insert into employee(fullname, birthday, bid) values('Rose Mary', '1972-3-8', 1)");
+		    $this->db->exec("insert into employee(fullname, birthday, bid ) values('Baby', '2012-6-1', 2)");
 		    
 		    $this->db->exec("
 		        drop table if exists country;
@@ -281,6 +292,19 @@
 		    
 		    $englishSpeaking=Country::count_by_language("English");
 		    $this->assertEqual($englishSpeaking, 2);
-		}		
+		}	
+		
+		function test_magic_getter(){
+		    $mary=Employee::get(2);
+		    $shouldBeJack=$mary->boss;
+		    $this->assertEqual($shouldBeJack->id, 1);
+		}	
+		
+		function test_magic_setter(){
+		    $mary=Employee::get(2);
+		    $mary->boss=Employee::get(3);
+		    
+		    $this->assertEqual($mary->bid, 3);
+		}
 	}
 ?>
