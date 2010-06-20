@@ -13,12 +13,17 @@
 			$this->action=$action;
 		}
 		
-		function render($view=null){
+		function render($view=null, $html=false){
 			$content=false;
+			
 			ob_start();
-			$this->render_raw($view);
-			$content = ob_get_contents();
-			ob_end_clean();
+			
+			if($html)
+			    echo $view;
+			else
+			    $this->render_raw($view);
+			    
+			$content = ob_get_contents(); ob_end_clean();
 			
 			if(!function_exists('skin') || skin()==null){
 				echo $content;

@@ -29,7 +29,7 @@
 			
 			$scripts=implode("\n", $this->header['scripts']);
 			if(count($this->header['script'])>0){
-				$styles.='<script type="text/javascript" charset="utf-8">'.implode("\n", $this->header['script']).'</script>';
+				$scripts.='<script type="text/javascript" charset="utf-8">'.implode("\n", $this->header['script']).'</script>';
 			}
 			
 			include($this->template_path . DS . 'header.tpl');

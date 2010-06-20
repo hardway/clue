@@ -266,7 +266,13 @@
 			
 			$rfxClass=new ReflectionClass($class);
 			
-			if($rfxClass->hasMethod($action)){
+			if($rfxClass->hasMethod($action) || $rfxClass->hasMethod('action')){
+			    // Fallback action handler
+			    if(!$rfxClass->hasMethod($action)){
+			        $params['action']=$action;
+			        $action='action';
+			    }
+			    
 				$rfxMethod=new ReflectionMethod($class, $action);
 				
 				// detect parameters using reflection
@@ -291,7 +297,7 @@
 				call_user_func_array(array($obj, $obj->action), $callArgs);
 			}
 			else{
-			    throw new Exception("Can't find action $action of $controller");
+		        throw new Exception("Can't find action $action of $controller");
 			}
 		}
 		
