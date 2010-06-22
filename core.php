@@ -9,10 +9,12 @@
 	function autoload_load($path){
 		$path=strtolower($path);	// Always try lowercase
 
-		if(file_exists($path))
+		if(file_exists($path)){
 			require_once $path;
-		else
-			throw new Exception("Can't load class: $path");	
+			return true;
+		}
+		
+		return false;
 	}
 	
 	// register default auto load path
@@ -23,7 +25,17 @@
 		}
 		else{
 			require_once __DIR__.'/activerecord.php';
-			autoload_load(APP_ROOT . "/model/{$class}.php");
+			$ok=autoload_load(APP_ROOT . "/model/{$class}.php");
+			
+			if(!$ok){
+			    foreach(Clue::$classPath as $path){
+			        $ok=autoload_load($path . "/{$class}.php");
+			        if($ok) break;
+			    }
+			}
+			
+			if(!$ok)
+			    throw new Exception("Can't load class $class.");
 		}
 	}
 	
@@ -38,6 +50,12 @@
 	spl_autoload_register("autoload_application");
 	
 	class Clue{
+	    public static $classPath=array();
+	    
+	    static function add_class_path($path){
+	        self::$classPath[]=$path;
+	    }
+	    
     	static function enable_debug(){
     	    require_once __DIR__."/debug.php";
     	    set_exception_handler(array("Clue_Debug","view_exception"));
