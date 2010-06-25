@@ -59,8 +59,12 @@
 			$this->redirect($_SERVER['HTTP_REFERER']);
 		}
 		
-		function set($name, $value){
-			$this->view_data[$name]=$value;
+		function set($name, $value=null){
+		    if(is_array($name) && is_null($value)){
+		        $this->view_data=array_merge($this->view_data, $name);
+		    }
+		    else
+			    $this->view_data[$name]=$value;
 		}
 	}
 ?>

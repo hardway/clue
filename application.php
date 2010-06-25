@@ -122,4 +122,7 @@
 	function appbase(){
 		return Clue_Application::getInstance()->router->base();
 	}
+	function assets(){
+	    return appbase().'/assets';
+	}
 ?>
