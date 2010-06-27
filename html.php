@@ -1,11 +1,16 @@
 <?php  
     class Clue_HTML{
-        static function html_options($options, $selected){
+        static function html_options($options, $selected=null, $singleOrPair=null){
 		    if(!is_array($selected)) $selected=array($selected);
 		    
 		    $html="";
 		    foreach($options as $value=>$name){
-		        $value=is_int($value) ? $name : $value;
+		        if($singleOrPair=='single')
+		            $value=$name;
+		        else if($singleOrPair=='pair')
+		            $value=$value;
+		        else
+		            $value=is_int($value) ? $name : $value;
 		        
 		        $html.="<option value='$value' ".(in_array($value, $selected) ? "selected='1'":"").">$name</option>";
 		    }

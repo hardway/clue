@@ -123,6 +123,6 @@
 		return Clue_Application::getInstance()->router->base();
 	}
 	function assets(){
-	    return appbase().'/assets';
+	    return appbase()=='/' ? '/assets' : appbase()."/assets";
 	}
 ?>
