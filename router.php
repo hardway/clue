@@ -91,8 +91,9 @@
 						return $ret;
 					}
 					else{
+					    return "";
 						// TODO: Clue_RouterException
-						throw new Exception("Couldn't found parameter '$name' in mapping rule.");
+						// throw new Exception("Couldn't found parameter '$name' in mapping rule.");
 					}
 				}, $r['reformation']);
 

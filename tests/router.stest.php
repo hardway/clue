@@ -95,9 +95,9 @@
 			$R=new Clue_RouteMap();
 			$R->connect(':controller/:action/:id');
 			
-			$this->expectException();
 			$url=$R->reform('board', 'show');
-						
+			$this->assertEqual($url, 'board/show/');
+
 			return $this->assertTrue(true);
 		}
 		
