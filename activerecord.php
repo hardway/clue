@@ -140,6 +140,9 @@
 				$limit=$end-$begin;
 				$sql.= " limit {$limit} offset {$begin}";
 			}
+			else if(preg_match('/limit/', $range, $match)){
+			    $sql.=" $range";
+			}
 			else if(intval($range)>0){
 				$limit=intval($range);
 				$sql.= " limit $limit";
