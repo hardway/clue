@@ -103,6 +103,23 @@
 		abstract function get_row($sql, $mode=OBJECT);	
 		abstract function get_results($sql, $mode=OBJECT);
 		
+		function get_hash($sql, $mode=ARRAY_A){
+		    $hash=($mode==OBJECT) ? new stdClass : array();
+		    $rs=$this->get_results($sql, ARRAY_N);
+		    foreach($rs as $row){
+		        $key=$row[0];
+		        $val=$row[1];
+		        
+		        if(empty($key)) continue;
+		        
+		        if($mode==OBJECT)
+		            $hash->$key=$val;
+		        else
+		            $hash[$key]=$val;
+		    }
+		    return $hash;
+		}
+		
 		function get_object($sql, $class){
 		    $r=$this->get_row($sql, ARRAY_A);
 		    return empty($r) ? null : new $class($r);
