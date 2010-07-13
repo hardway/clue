@@ -31,7 +31,7 @@
 			}
 			else{
 			    // Make sure the config exists
-			    $cfgFile="$appbase/config/config.ini";
+			    $cfgFile="$appbase/config/config.php";
 			    if(file_exists($cfgFile))
 				    $this->config=new Clue_Config($cfgFile);
 				else
@@ -122,7 +122,10 @@
 	function appbase(){
 		return Clue_Application::getInstance()->router->base();
 	}
-	function assets(){
-	    return appbase()=='/' ? '/assets' : appbase()."/assets";
+	function assets($asset=null){
+	    $url=appbase()=='/' ? '/assets' : appbase()."/assets";
+	    if(!empty($asset)) $url.="/$asset";
+	    
+	    return $url;
 	}
 ?>
