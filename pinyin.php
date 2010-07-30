@@ -1,5 +1,5 @@
 <?php
-	require_once 'clue/core.php';
+	require_once __DIR__.'/core.php';
 	
 	class Clue_PinYin{
 		private $db;

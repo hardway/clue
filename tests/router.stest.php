@@ -1,7 +1,8 @@
 <?php  
-	require_once 'clue/router.php';
+    require_once 'simpletest/autorun.php';
+	require_once dirname(__DIR__).'/router.php';
 		
-	class Test_Route extends Snap_UnitTestCase{
+	class Test_Route extends UnitTestCase{
 		function setUp(){
 			
 		}
@@ -94,9 +95,9 @@
 			$R=new Clue_RouteMap();
 			$R->connect(':controller/:action/:id');
 			
-			$this->willThrow('Exception');
 			$url=$R->reform('board', 'show');
-						
+			$this->assertEqual($url, 'board/show/');
+
 			return $this->assertTrue(true);
 		}
 		
@@ -109,18 +110,53 @@
 						
 			return $this->assertTrue(true);
 		}
-
+		
 		function test_reform_without_rule(){
 			$R=new Clue_RouteMap();			
 			
-			$this->willThrow('Exception');
+			$this->expectException();
 			$url=$R->reform('board', 'show');
-						
+
 			return $this->assertTrue(true);
 		}
+		
+		function test_params_with_regexp(){
+			$R=new Clue_RouteMap();
+			
+			$R->connect(':id/post', array('controller'=>'board', 'action'=>'post', 'id'=>'\d+'));
+			$R->connect(':mid/:action', array(
+			    'controller'=>'board', 'action'=>'get|put', 'mid'=>'\d+'
+			));
+			$R->connect(':name/:action', array('controller'=>'board', 'name'=>'[str]+'));
+			
+			$r=$R->resolve('45/post');
+			
+			$this->assertEqual($r['controller'], 'board');
+			$this->assertEqual($r['action'], 'post');
+			$this->assertEqual($r['params']['id'], 45);
+			
+			$r=$R->resolve('45/get');
+			$this->assertEqual($r['action'], 'get');
+			$this->assertEqual($r['params']['mid'], 45);
+			
+			$r=$R->resolve('45/put');
+			$this->assertEqual($r['action'], 'put');
+			$this->assertEqual($r['params']['mid'], 45);
 
-		function test_nothing(){
-			return $this->assertTrue(true);
+			$r=$R->resolve('STR/put');
+			$this->assertEqual($r['action'], 'put');
+			$this->assertEqual($r['params']['name'], 'STR');
+
+            // Reforming
+			$url=$R->reform('board', 'post', array('id'=>123));
+			$this->assertEqual($url, '123/post');
+			
+			$url=$R->reform('board', 'put', array('mid'=>123));
+			$this->assertEqual($url, '123/put');
+
+            // Exception
+			$this->expectException();
+			$r=$R->resolve('string/post');
 		}
 	}
 ?>

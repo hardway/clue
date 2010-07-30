@@ -1,22 +1,15 @@
 <?php 
-	require_once 'clue/router.php';
-	require_once 'clue/activerecord.php';	// TODO: autoload problem, try comment this line to see the error.
-	require_once 'clue/database.php';
-	require_once 'clue/config.php';
-	require_once 'clue/application.php';
+    if(file_exists(__FILE__.".local")) require_once __FILE__.'.local';
+    
+	require_once 'clue/core.php';
 	
-	Clue_Application::init();
+	Clue_Application::init('.', array('config'=>new Clue_Config('C:/config/oa.php')));
+
+	$router=Clue_Application::router();
+
+	$router->connect('/:controller/:action');
+	$router->connect('/:controller');
 	
-	/* Force ACL 
-	
-	if(Clue_Application::router()->controller()=='login'){
-	}
-	else{	
-		$acl=new ACLHelper();
-		$acl->forceLogged();
-	}
-	
-	*/
-	
-	Clue_Application::run();
+	app()->prepare();
+	app()->dispatch();
 ?>

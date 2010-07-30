@@ -39,8 +39,12 @@
 			}
 		}
 		
-		function insertId(){
+		function insert_id(){
 			return mysqli_insert_id($this->dbh);
+		}
+		
+		function affected_rows(){
+		    return mysqli_affected_rows($this->dbh);
 		}
 		
 		function exec($sql){

@@ -1,5 +1,5 @@
 <?php	
-	require_once 'clue/core.php';
+	require_once __DIR__.'/core.php';
 	
 	// Constants to indicate how to retrieve data by get_row and get_results
 	if(!defined('OBJECT')) define('OBJECT', 'OBJECT');
@@ -36,7 +36,7 @@
 		public $lasterror=null;
 		public $errors=null;
 
-		public function enable_query_log(Clue_Database_Log $log){
+		public function enable_query_log(IClue_Log $log){
 			$this->queryLog=$log;
 		}
 		public function disable_query_log(){
@@ -81,15 +81,16 @@
 				return $data;
 		}
 		
-		function insertId(){
-			return 0;
+		function insert_id(){
+			return null;
 		}
 		
 		function exec($sql){
 			$this->lastquery=$sql;
 			
 			if($this->queryLog){
-				$this->queryLog->log_query($sql);
+			    // TODO.
+				//$this->queryLog->log($sql);
 			}
 		}
 		
@@ -101,6 +102,38 @@
 		abstract function get_col($sql);
 		abstract function get_row($sql, $mode=OBJECT);	
 		abstract function get_results($sql, $mode=OBJECT);
+		
+		function get_hash($sql, $mode=ARRAY_A){
+		    $hash=($mode==OBJECT) ? new stdClass : array();
+		    $rs=$this->get_results($sql, ARRAY_N);
+		    foreach($rs as $row){
+		        $key=$row[0];
+		        $val=$row[1];
+		        
+		        if(empty($key)) continue;
+		        
+		        if($mode==OBJECT)
+		            $hash->$key=$val;
+		        else
+		            $hash[$key]=$val;
+		    }
+		    return $hash;
+		}
+		
+		function get_object($sql, $class){
+		    $r=$this->get_row($sql, ARRAY_A);
+		    return empty($r) ? null : new $class($r);
+		}
+		
+		function get_objects($sql, $class){
+		    $objs=array();
+		    $rs=$this->get_results($sql, ARRAY_A);
+		    if($rs) foreach($rs as $r){
+		        $objs[]=new $class($r);
+		    }
+		    
+		    return $objs;
+		}
 		
 		function has_table($table){return false;}
 	}

@@ -1,7 +1,8 @@
 <?php  
+    require_once 'simpletest/autorun.php';
 	require_once 'clue/text/bbcode.php';
 		
-	class Test_Text_BBCode extends Snap_UnitTestCase{
+	class Test_Text_BBCode extends UnitTestCase{
 		private $bbcode;
 		
 		function setUp(){

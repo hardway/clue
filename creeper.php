@@ -1,6 +1,6 @@
 <?php  
-	require_once 'clue/database.php';
-	require_once 'clue/tool.php';
+	require_once __DIR__.'/database.php';
+	require_once __DIR__.'/tool.php';
 	
 	// TODO md5 collision in mind
 	class Clue_Creeper_Cache{

@@ -1,7 +1,7 @@
 <?php
-	require_once 'clue/core.php';
-	require_once 'clue/controller.php';
-	require_once 'clue/tool.php';
+	require_once __DIR__.'/core.php';
+	require_once __DIR__.'/controller.php';
+	require_once __DIR__.'/tool.php';
 	
 	// TODO: rule order (fallback ?)
 	class Clue_RouteMap{
@@ -26,27 +26,32 @@
 		function connect($urlPattern, $rule=array()){
 			// TODO: check validity of url pattern and mapping rule
 			
-			// decode url pattern into name list
-			$names=array();
-			$pattern=preg_replace_callback('/:([a-zA-Z0-9_]+)/', function($m) use(&$names){
-				$names[]=$m[1];
-				if($m[1]=='controller' || $m[1]=='action')
-					return '([^/]*)';
-				else
-					return '([^/]+)';
-			}, $urlPattern);
-			
-			$pattern="^$pattern\$";
-			
 			// decode mapping string to array
 			$mapping=array();
 			if($rule) foreach($rule as $n=>$v){
-				if(strpos($v, '|')!==FALSE){
-					$v=explode('|', $v);
-				}
 				$mapping[$n]=$v;
 			}
+
+			// decode url pattern into name list
+			$names=array();
+			$pattern=preg_replace_callback('/:([a-zA-Z0-9_]+)/', function($m) use(&$names, $mapping){
+			    $name=$m[1];
+				$names[]=$name;
+
+				if($name=='controller' || $name=='action')
+					return '([^/]*)';
+				else{
+				    if(isset($mapping[$name])){
+				        $p=$mapping[$name];
+				        return "($p)";
+			        }
+			        else
+					    return '([^/]+)';
+				}
+			}, $urlPattern);
 			
+			$pattern="^$pattern\$";
+						
 			$this->rules[]=array(
 				'reformation'=>$urlPattern,
 				'pattern'=>$pattern,
@@ -66,24 +71,34 @@
 				
 				if(
 					isset($r['mapping']['action']) && 
-					strcasecmp($r['mapping']['action'],$action)!=0
+					!preg_match('/'.$r['mapping']['action'].'/i',$action)
 				) continue;
+
+				$allParamsAreMet=true;
+				foreach(array_keys($params) as $name){
+				    if(isset($r['mapping'][$name]) && !preg_match('/'.$r['mapping'][$name].'/i', $params[$name])) continue;
+				}
 				
-				$params['controller']=$controller;
-				$params['action']=$action;
-				
-				$url=preg_replace_callback('/\:([a-zA-Z0-9_]+)/', function($m) use(&$params){
-					if(isset($params[$m[1]])){
-						$ret=urlencode($params[$m[1]]);
-						unset($params[$m[1]]);
+				$params['controller']=$controller=='index' ? '' : $controller;
+				$params['action']=$action=='index' ? '' : $action;
+								
+				$url=preg_replace_callback('/\:([a-zA-Z0-9_]+)/', function($m) use(&$params, $r){
+				    $name=$m[1];
+				    
+					if(isset($params[$name])){
+						$ret=urlencode($params[$name]);
+						unset($params[$name]);
 						return $ret;
 					}
 					else{
+					    return "";
 						// TODO: Clue_RouterException
-						throw new Exception("Couldn't found parameter {$m[1]} in mapping rule.");
+						// throw new Exception("Couldn't found parameter '$name' in mapping rule.");
 					}
 				}, $r['reformation']);
 
+                $url=str_replace('//', '/', $url);
+                
 				$query=array();
 				if($params) foreach($params as $n=>$v){
 					if($n=='controller' || $n=='action') continue;
@@ -112,7 +127,7 @@
 			return $ret;
 		}
 		
-		function resolve($uri){			
+		function resolve($uri){
 			$params=array();
 			
 			// strip query from uri
@@ -125,9 +140,20 @@
 				if(preg_match("|{$r['pattern']}|i", $uri, $match)){
 					array_shift($match);
 					$mapping=$r['mapping'];
+					
+					$candidateViolated=false;
 					for($i=0; $i<count($match); $i++){
-						$mapping[$r['names'][$i]]=$match[$i];
+					    $name=$r['names'][$i];
+					    if(isset($mapping[$name])){
+					        $candidate=$mapping[$name];
+					        if(!preg_match('/'.$candidate.'/i', $match[$i])){
+					            $candidateViolated=true;
+					            break;
+				            }
+					    }
+					    $mapping[$name]=$match[$i];
 					}
+					if($candidateViolated) continue; // Try Next Rule
 					
 					// Default controller is Index
 					if(empty($mapping['controller'])) $mapping['controller']='Index';
@@ -146,7 +172,7 @@
 				}
 			}
 			
-			throw new Exception("NO MATCH");
+			throw new Exception("No route found.");
 			
 			// explode path and do mapping.
 			$p=explode('/', $uri);
@@ -186,11 +212,11 @@
 		protected $map;
 		
 		function __construct($option){
-			$this->appbase=dirname($_SERVER['SCRIPT_NAME']);
+			$this->appbase=str_replace("\\", '/', dirname($_SERVER['SCRIPT_NAME']));
 			
 			// Determine controller and action by default map
 			$this->map=@$option['url_rewrite'] ? 
-				new Clue_RouteMap($option['map']) : 
+				new Clue_RouteMap() : 
 				new Clue_QueryRouteMap();		
 		}
 		
@@ -207,12 +233,15 @@
 			return $this->appbase;
 		}
 		
-		function uri_for($controller, $action='index', $param=null){
-			return $this->appbase . $this->map->reform($controller, $action, $param);
+		function url_for($controller, $action='index', $param=array()){
+		    if($this->appbase=='/')
+		        return $this->map->reform($controller, $action, $param);
+		    else
+			    return $this->appbase . $this->map->reform($controller, $action, $param);
 		}
 		
-		function redirect_route($controller, $action='index', $param=null){
-			$uri=$this->uri_for($controller, $action, $param);
+		function redirect_route($controller, $action='index', $param=array()){
+			$uri=$this->url_for($controller, $action, $param);
 			$this->redirect($uri);
 		}
 		
@@ -225,52 +254,59 @@
 		function route($controller, $action, $params=array()){
 			// load controller
 			$class="{$controller}Controller";
-			$path="controller/".strtolower(str_replace('_','/',$class)).".php";
+			$path=APP_ROOT . "/controller/".strtolower(str_replace('_','/',$class)).".php";
 
 			if($_SERVER['REQUEST_METHOD']=='POST')
 				$action="_$action";
-			
-			if(file_exists($path)){
-				require_once $path;
-				
-				$rfxClass=new ReflectionClass($class);
-				
-				if($rfxClass->hasMethod($action)){
-					$rfxMethod=new ReflectionMethod($class, $action);
-					
-					// detect parameters using reflection
-					$callArgs=array();
-					foreach($rfxMethod->getParameters() as $rfxParam){
-						if(isset($params[$rfxParam->name])){
-							$callArgs[]=$params[$rfxParam->name];
-						}
-						else{
-							$callArgs[]=null;
-						}
-					}
-					
-					$obj=new $class($controller, $action);
-					
-					// invoke action
-					$obj->params=$params;
-					$obj->controller=$controller;
-					$obj->view=$action;
-					$obj->action=$action;
-					
-					call_user_func_array(array($obj, $obj->action), $callArgs);
-				}
-				else{
-					return $this->route('error', 'noAction', array('controller'=>$controller, 'action'=>$action));
-				}
+
+			if(!class_exists($class, false)){
+			    if(file_exists($path)) require_once $path;
+			    if(!class_exists($class, false))
+			        throw new Exception("No controller found: $controller");
 			}
-			else
-				return $this->route('error', 'noController', array('controller'=>$controller));		
+			
+			$rfxClass=new ReflectionClass($class);
+			
+			if($rfxClass->hasMethod($action) || $rfxClass->hasMethod('action')){
+			    // Fallback action handler
+			    if(!$rfxClass->hasMethod($action)){
+			        $params['action']=$action;
+			        $action='action';
+			    }
+			    
+				$rfxMethod=new ReflectionMethod($class, $action);
+				
+				// detect parameters using reflection
+				$callArgs=array();
+				foreach($rfxMethod->getParameters() as $rfxParam){
+					if(isset($params[$rfxParam->name])){
+						$callArgs[]=$params[$rfxParam->name];
+					}
+					else{
+						$callArgs[]=null;
+					}
+				}
+				
+				$obj=new $class($controller, $action);
+				
+				// invoke action
+				$obj->params=$params;
+				$obj->controller=$controller;
+				$obj->view=$action;
+				$obj->action=$action;
+				
+				call_user_func_array(array($obj, $obj->action), $callArgs);
+			}
+			else{
+		        throw new Exception("Can't find action $action of $controller");
+			}
 		}
 		
 		function resolve($uri){
-			if(strpos($uri, $this->appbase)===0){
+			if($this->appbase!='/' && strpos($uri, $this->appbase)===0){
 				$uri=substr($uri, strlen($this->appbase));
 			}
+			
 		    return $this->map->resolve($uri);
 		}
 	}

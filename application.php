@@ -1,7 +1,7 @@
 <?php  
-	require_once 'clue/core.php';
-	require_once 'clue/config.php';
-	require_once 'clue/database.php';
+	require_once __DIR__.'/core.php';
+	require_once __DIR__.'/config.php';
+	require_once __DIR__.'/database.php';
 	
 	class Clue_Application{
 		public $base;
@@ -11,6 +11,10 @@
 		public $options=array(
 			"url_rewrite"=>true
 		);
+		
+		public $controller;
+		public $action;
+		public $params;
 		
 		protected $beforeDispatchHandler=null;
 		
@@ -26,21 +30,30 @@
 				$this->config=$this->options['config'];
 			}
 			else{
-				$this->config=new Clue_Config("$appbase/config/config.ini");
-			}			
+			    // Make sure the config exists
+			    $cfgFile="$appbase/config/config.php";
+			    if(file_exists($cfgFile))
+				    $this->config=new Clue_Config($cfgFile);
+				else
+				    $this->config=new Clue_Config();
+			}
 			
 			if($this->config->database){
 				$this->set_default_database((array)$this->config->database);
 			}
 			
 			$this->router=new Clue_Router(array(
-				'url_rewrite'=>$this->options["url_rewrite"],
-				'map'=>array(
-					// translate controller name
-					// TODO: this should appear as application configuration
-					// '^admin/?'=>'Admin_'
-				)
+				'url_rewrite'=>$this->options["url_rewrite"]
 			));
+			
+			if(isset($this->config->debug) && $this->config->debug==true){
+			    Clue::enable_debug();
+			}
+			else if(!isset($this->config->log) || $this->config->log!==false){
+			    if(!isset($this->config->log) || !is_string($this->config->log))
+			        $this->config->log=$appbase . DIRECTORY_SEPARATOR . 'log';
+			    Clue::enable_log($this->config->log);
+			}
 		}
 		
 		function set_default_database($param){
@@ -63,21 +76,27 @@
 		    $this->beforeDispatchHandler=$callback;
 		}
 		
+        function prepare(){
+            $map=$this->router->resolve($_SERVER['REQUEST_URI']);
+                        
+            $this->controller=$map['controller'];
+            $this->action=$map['action'];
+            $this->params=$map['params'];
+        }
+		
+		function dispatch(){
+			$this->router->route($this->controller, $this->action, $this->params);
+		}
+		
 		function run(){
-			try{
-    			$map=$this->router->resolve($_SERVER['REQUEST_URI']);
-    			
-    			// call plugin
-    			if(is_callable($this->beforeDispatchHandler)){
-    			    call_user_func($this->beforeDispatchHandler, $map);
-    			}
-    			
-				$this->router->route($map['controller'], $map['action'], $map['params']);
-			}
-			catch(Exception $e){
-				// TODO: route to error controller, which must exist.
-				echo $e->getMessage();
-			}
+			$this->prepare();
+			
+            // call plugin
+            if(is_callable($this->beforeDispatchHandler)){
+                call_user_func($this->beforeDispatchHandler, $this->controller, $this->action, $this->params);
+            }
+            
+			$this->dispatch();
 		}
 		
 		static function initialized(){ return is_object(self::$instance); }
@@ -93,8 +112,8 @@
 		static function router(){ return self::getInstance()->router; }
 	}
 	// global short cut
-	function url_for($controller, $action='index', $params=null){
-		return Clue_Application::router()->uri_for($controller, $action, $params);
+	function url_for($controller, $action='index', $params=array()){
+		return Clue_Application::router()->url_for($controller, $action, $params);
 	}
 	
 	function app(){
@@ -102,5 +121,11 @@
 	}
 	function appbase(){
 		return Clue_Application::getInstance()->router->base();
+	}
+	function assets($asset=null){
+	    $url=appbase()=='/' ? '/assets' : appbase()."/assets";
+	    if(!empty($asset)) $url.="/$asset";
+	    
+	    return $url;
 	}
 ?>

@@ -1,67 +1,35 @@
 <?php  
-	require_once 'clue/core.php';
-	
-	class Clue_Config{
-		static function get_default_config_path(){
-			if(Clue_Tool::os()=='windows'){
-				return "C:/config";
-			}
-			throw new Exception("Can't determine operating system.");
-		}
-		
-		public $config;
-		
-		function __construct($file=null){			
-			$this->load($file);
-		}
-		
-		function __get($name){
-			if(isset($this->$name)) 
-				return $this->$name;
-			else if(isset($this->config->$name))
-				return $this->config->$name;
-			else
-				return false;
-		}
-		
-		// Convert array to object recursively
-		function array_to_obj(array $a){
-			$o=(object)$a;
-			foreach($a as $n=>$v){
-				if(is_array($v))
-					$o->$n=$this->array_to_obj($v);
-			}
-			return $o;
-		}
-		
-		/**
-		 * Load configuration file with ini format.
-		 * 
-		 * If no file is given, the default file (default.ini) will be used
-		 * If the file didn't exist in relative path, try it in default config path
-		 *
-		 * @param string $file 
-		 */
-		function load($file=null){
-			if($file==null) $file='default.ini';
-			
-			if(!file_exists($file)){
-				$file=self::get_default_config_path() . '/' . $file;
-			}
-			
-			if(!file_exists($file)) throw new Exception("Can't find config file: $file !");
-			
-			$this->config=$this->array_to_obj(parse_ini_file($file, true));
-		}
-		
-		/**
-		 * Merge config with another Clue_Config object
-		 * @return nothing
-		 */
-		function merge(Clue_Config $cfg){
-			foreach($cfg->config as $k=>$v){
-				$this->config->$k=$v;
-			}
-		}
-	}
+    require_once __DIR__.'/core.php';
+
+    class Clue_Config extends Clue_Registry{				
+        function __construct($ary=null){
+            if(is_string($ary)){
+                $file=$ary;
+                if(file_exists($file))
+                    parent::__construct(include $file);
+                else
+                    throw new Exception("Config file not found: $file");
+            }
+            else
+                parent::__construct($ary);
+        }
+
+        /**
+        * Merge config with another Clue_Config object
+        * @return nothing
+        */
+        function merge(Clue_Config $cfg){
+            function recursive_merge(&$base, &$addon){
+                foreach($addon as $k=>&$v){
+                    if(isset($base->$k) && is_object($base->$k) && is_object($v)){
+                        recursive_merge($base->$k, $v);
+                    }
+                    else
+                        $base->$k=$v;
+                }
+            }
+
+            recursive_merge($this, $cfg);
+        }
+    }
 ?>
