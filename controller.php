@@ -41,24 +41,33 @@
 			
 			if(file_exists($view)){
 				extract($this->view_data);
-				require_once $view;
+				include $view;
 			}
 			else
 				throw new Exception("View didn't exists: $view");
 		}
 		
-        function render_snippet($snippet){
+        function render_snippet($snippet, $data=array()){
             // determine view;
             $view=strtolower(APP_ROOT . "/view/".str_replace('_','/',$this->controller)."/snippet/{$snippet}.tpl");
             
             if(file_exists($view)){
                 extract($this->view_data);
-                require_once $view;
+                extract($data);
+                include $view;
             }
             else
                 throw new Exception("Snippet didn't exists: $snippet");
         }
-				
+        
+        function load_snippet($snippet, $data=array()){
+			ob_start();
+			$this->render_snippet($snippet, $data);			    
+			$content = ob_get_contents(); ob_end_clean();
+			
+            return $content;
+        }
+        
 		function redirect_route($controller, $action='index', $param=array()){			
 			Clue_Application::router()->redirect_route($controller, $action, $param);
 		}
