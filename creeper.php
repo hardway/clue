@@ -162,8 +162,8 @@
 			curl_setopt($this->curl, CURLOPT_USERAGENT, $this->agent);			
 		}
 		
-		function get($url){
-			$this->open($url);
+		function get($url, $forceReload=false){
+			$this->open($url, $forceReload);
 			return $this->content;
 		}
 		
@@ -179,6 +179,8 @@
 			
 			curl_setopt($this->curl, CURLOPT_POSTFIELDS, $formData);
 			$this->_parse_response(curl_exec($this->curl));
+			
+			// TODO: check curl_errno
 		}
 		
 		function download($url, $dest){
@@ -190,6 +192,7 @@
 			curl_setopt($this->curl, CURLOPT_REFERER, end($this->history));
 			
 			curl_exec($this->curl);
+			// TODO: check curl_errno
 			
 			fclose($file);
 		}
@@ -209,6 +212,7 @@
 				curl_setopt($this->curl, CURLOPT_RETURNTRANSFER, true);
 				
 				$this->_parse_response(curl_exec($this->curl));
+			    // TODO: check curl_errno
 				
 				if($this->cache)
 					$this->cache->put($url, $this->content);
