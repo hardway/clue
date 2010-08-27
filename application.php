@@ -11,6 +11,7 @@
 		public $options=array(
 			"url_rewrite"=>true
 		);
+		public $session;
 		
 		public $controller;
 		public $action;
@@ -54,6 +55,8 @@
 			        $this->config->log=$appbase . DIRECTORY_SEPARATOR . 'log';
 			    Clue::enable_log($this->config->log);
 			}
+			
+			$this->session=new Clue_Session();
 		}
 		
 		function set_default_database($param){
@@ -66,10 +69,8 @@
 		}
 		
 		static protected $instance;
-		static function init($appbase='.', $options=null){
-			self::$instance=new Clue_Application($appbase, $options);
-			
-			session_start();
+		static function init($approot='.', $options=null){
+			self::$instance=new Clue_Application($approot, $options);
 		}
 		
 		function before_dispatch($callback=null){
@@ -106,11 +107,11 @@
 			return self::$instance;
 		}
 		
-		static function base(){return self::getInstance()->base;}
 		static function config(){ return self::getInstance()->config; }
 		static function db(){ return self::getInstance()->db; }
 		static function router(){ return self::getInstance()->router; }
 	}
+	
 	// global short cut
 	function url_for($controller, $action='index', $params=array()){
 		return Clue_Application::router()->url_for($controller, $action, $params);
@@ -119,9 +120,15 @@
 	function app(){
 		return Clue_Application::getInstance();
 	}
+	
+	function session(){
+	    return app()->session;
+	}
+	
 	function appbase(){
 		return Clue_Application::getInstance()->router->base();
 	}
+	
 	function assets($asset=null){
 	    $url=appbase()=='/' ? '/assets' : appbase()."/assets";
 	    if(!empty($asset)) $url.="/$asset";
