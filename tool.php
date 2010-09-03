@@ -147,11 +147,6 @@
 		return isset($_GET[$name]) ? $_GET[$name] : $default;
 	}
 	
-	function SESSION($name, $default=false){
-		if(!session_name()) session_start();
-		return isset($_SESSION[$name]) ? $_SESSION[$name] : $default;
-	}
-	
 	function REQS(){
 		$n=func_num_args();
 		$a=func_get_args();
