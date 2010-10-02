@@ -158,5 +158,43 @@
 			$this->expectException();
 			$r=$R->resolve('string/post');
 		}
+		
+		function test_scope_mapping(){
+			$R=new Clue_RouteMap();			
+			
+			$R->connect('/admin/:controller/:action', array(), 'admin');
+			$R->connect('/admin/:controller', array(), 'admin');
+			$R->connect('/admin', array(), 'admin');
+			
+			$R->connect('/:controller/:action', array());
+			
+			// URL Resolve
+			$r=$R->resolve("/foo/bar");
+			$this->assertEqual($r['controller'], 'foo');
+			$this->assertEqual($r['action'], 'bar');
+			
+			$r=$R->resolve("/admin/foo/bar");
+			$this->assertEqual($r['controller'], 'admin_foo');
+			$this->assertEqual($r['action'], 'bar');
+			
+			$r=$R->resolve("/admin");
+			$this->assertEqual($r['controller'], 'admin_Index');
+			$this->assertEqual($r['action'], 'index');
+
+			$r=$R->resolve("/admin/session");
+			$this->assertEqual($r['controller'], 'admin_session');
+			$this->assertEqual($r['action'], 'index');
+
+			// URL Reforming
+			$url=$R->reform('admin_foo', 'bar');
+			$this->assertEqual($url, '/admin/foo/bar');
+			
+			$url=$R->reform('foo', 'bar');
+			$this->assertEqual($url, '/foo/bar');
+			
+			
+			
+			return $this->assertTrue(true);
+		}
 	}
 ?>

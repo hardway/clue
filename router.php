@@ -23,7 +23,7 @@
 			$this->param=array();
 		}
 		
-		function connect($urlPattern, $rule=array()){
+		function connect($urlPattern, $rule=array(), $scope=null){
 			// TODO: check validity of url pattern and mapping rule
 			
 			// decode mapping string to array
@@ -57,6 +57,7 @@
 				'pattern'=>$pattern,
 				'names'=>$names,
 				'mapping'=>$mapping,
+    			'scope'=> empty($scope) ? "" : $scope."_"
 			);
 			
 			return true;
@@ -64,6 +65,14 @@
 		
 		function reform($controller, $action, $params=array()){
 			foreach($this->rules as $r){
+		    	// reduce scope is exists
+			    if(!empty($r['scope'])){
+			        if(preg_match('|^'.$r['scope'].'|i', $controller)){
+			            $controller = preg_replace('|^'.$r['scope'].'|i', '', $controller);
+			        }
+			        else continue;
+			    }
+			    
 				if(
 					isset($r['mapping']['controller']) && 
 					strcasecmp($r['mapping']['controller'], $controller)!=0
@@ -79,9 +88,9 @@
 				    if(isset($r['mapping'][$name]) && !preg_match('/'.$r['mapping'][$name].'/i', $params[$name])) continue;
 				}
 				
-				$params['controller']=$controller=='index' ? '' : $controller;
+				$params['controller']=$controller=='index' ? '' : $controller;			
 				$params['action']=$action=='index' ? '' : $action;
-								
+				
 				$url=preg_replace_callback('/\:([a-zA-Z0-9_]+)/', function($m) use(&$params, $r){
 				    $name=$m[1];
 				    
@@ -161,7 +170,12 @@
 					if(empty($mapping['action'])) $mapping['action']='index';
 					
 					foreach($mapping as $n=>$v){
-						if($n=='controller' || $n=='action') continue;
+						if($n=='controller'){
+						    $mapping['controller']=$r['scope'].$v;
+						    continue;
+						}
+						else if($n=='action') continue;
+						
 						$params[$n]=urldecode($v);
 						unset($mapping[$n]);
 					}
@@ -173,22 +187,6 @@
 			}
 			
 			throw new Exception("No route found.");
-			
-			// explode path and do mapping.
-			$p=explode('/', $uri);
-			
-			for($i=0; $i<count($p); $i++){
-				if($i==$this->cp)
-					$this->controller=$p[$this->cp];
-				else if($i==$this->ap)
-					$this->action=$p[$this->ap];
-				else
-					$this->param[]=$p[$i];
-			}
-			
-			// Default controller and action
-			if(empty($this->controller)) $this->controller='Index';
-			if(empty($this->action)) $this->action='index';
 		}
 	}
 	
@@ -220,8 +218,8 @@
 				new Clue_QueryRouteMap();		
 		}
 		
-		function connect($pattern, $route=''){
-			$this->map->connect($pattern, $route);
+		function connect($pattern, $rule=array(), $scope=null){
+			$this->map->connect($pattern, $rule, $scope);
 		}
 		
 		function controller(){
