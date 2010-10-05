@@ -281,7 +281,7 @@
 						$callArgs[]=$params[$rfxParam->name];
 					}
 					else{
-						$callArgs[]=null;
+						$callArgs[]=$rfxParam->isDefaultValueAvailable() ? $rfxParam->getDefaultValue() : null;
 					}
 				}
 				
