@@ -78,7 +78,11 @@
 		}
 		
         function prepare(){
-            $map=$this->router->resolve($_SERVER['REQUEST_URI']);
+            $url=isset($_SERVER['HTTP_X_REWRITE_URL']) ? 
+                    $_SERVER['HTTP_X_REWRITE_URL'] : 
+                    $_SERVER['REQUEST_URI'];
+                    
+            $map=$this->router->resolve($url);
                         
             $this->controller=$map['controller'];
             $this->action=$map['action'];
