@@ -33,7 +33,7 @@
 class Clue_API_GoogleChart
 {
 	// Constants
-	const BASE = '/chart?';
+	static $BASE = 'http://chart.apis.google.com/chart?';
 
 	// Variables
 	protected $types = array(
@@ -95,7 +95,7 @@ class Clue_API_GoogleChart
 
 		// Return chart
 		return $this->img(
-					self::BASE.http_build_query($this->query),
+					self::$BASE.http_build_query($this->query),
 					$this->title
 				);
 	}
