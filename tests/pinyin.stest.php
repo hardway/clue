@@ -6,26 +6,16 @@
 		private $py;
 		
 		function setUp(){
-		    /*
-			$cfg=new Clue_Config();
-			$db=Clue_Database::create('mysql', $cfg->database);
-			$this->py=new Clue_PinYin($db);
-			*/
+			$this->py=new Clue_PinYin();
 		}
 		
 		function tearDown(){}
 		
 		function test_soundex(){
-			/*
 			$this->assertEqual("a", $this->py->soundex("啊"));
-			echo $this->py->soundex("你好") , "\n";
-			echo $this->py->soundex("一只棕色狐狸飞快地跳过那只懒惰的狗"), "\n";
-			echo $this->py->soundex("中英文混排，Chinglish, haha :) 哦也！"), "\n";
-			echo $this->py->soundex2("胡锦涛")."\n";
-			echo $this->py->soundex2("侯丹午")."\n";
-			echo $this->py->soundex2("陈斌B")."\n";
-			echo $this->py->soundex2("Leonardo Davinci")."\n";
-			*/
+			$this->assertEqual("ni hao", $this->py->soundex("你好"));
+			$this->assertEqual("zhong wen ABC", $this->py->soundex("中文ABC"));			
+			$this->assertEqual("zhu zhao", $this->py->soundex("朱赵"));
 
 			return $this->assertTrue(true);
 		}
