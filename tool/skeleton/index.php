@@ -3,7 +3,8 @@
     
 	require_once 'clue/core.php';
 	
-	Clue_Application::init('.', array('config'=>new Clue_Config('C:/config/oa.php')));
+	Clue_UI_Skin::load('simple');
+	Clue_Application::init('.', array('config'=>new Clue_Config(/* Config file location */)));
 
 	$router=Clue_Application::router();
 
