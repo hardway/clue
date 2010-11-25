@@ -13,7 +13,7 @@
 			$this->controller=$controller;
 			$this->action=$action;
 			
-			$this->referrer=$_SERVER['HTTP_REFERER'];
+			$this->referrer=isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : null;
 		}
 		
 		function render($view=null, $html=false){
