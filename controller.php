@@ -5,12 +5,15 @@
 		public $controller;
 		public $action;
 		public $view;
+		public $referrer;
 		
 		protected $view_data=array();
 		
 		function __construct($controller=null, $action=null){
 			$this->controller=$controller;
 			$this->action=$action;
+			
+			$this->referrer=$_SERVER['HTTP_REFERER'];
 		}
 		
 		function render($view=null, $html=false){
@@ -77,7 +80,7 @@
 		}
 		
 		function go_back(){
-			$this->redirect($_SERVER['HTTP_REFERER']);
+			$this->redirect($this->referrer);
 		}
 		
 		function set($name, $value=null){
