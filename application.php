@@ -39,10 +39,6 @@
 				    $this->config=new Clue_Config();
 			}
 			
-			if($this->config->database){
-				$this->set_default_database((array)$this->config->database);
-			}
-			
 			$this->router=new Clue_Router(array(
 				'url_rewrite'=>$this->options["url_rewrite"]
 			));
@@ -57,6 +53,10 @@
 			}
 			
 			$this->session=new Clue_Session();
+			
+			if($this->config->database){
+				$this->set_default_database((array)$this->config->database);
+			}
 		}
 		
 		function set_default_database($param){
