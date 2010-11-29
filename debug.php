@@ -18,7 +18,9 @@
             
             E_ERROR=>'E_ERROR',
             E_CORE_ERROR=>'E_CORE_ERROR',
-            E_USER_ERROR=>'E_USER_ERROR'
+            E_USER_ERROR=>'E_USER_ERROR',
+            
+            E_RECOVERABLE_ERROR=>'E_RECOVERABLE_ERROR'
 	    );
 	    
 		static function view_exception($e){
