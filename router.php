@@ -91,7 +91,7 @@
 				$params['controller']=$controller=='index' ? '' : $controller;			
 				$params['action']=$action=='index' ? '' : $action;
 				
-				$url=preg_replace_callback('/\:([a-zA-Z0-9_]+)/', function($m) use(&$params, $r){
+				$url=preg_replace_callback('/\:([a-zA-Z0-9_]+)/', function($m) use(&$params, &$allParamsAreMet, $r){
 				    $name=$m[1];
 				    
 					if(isset($params[$name])){
@@ -100,11 +100,14 @@
 						return $ret;
 					}
 					else{
+					    $allParamsAreMet=false;
 					    return "";
 						// TODO: Clue_RouterException
 						// throw new Exception("Couldn't found parameter '$name' in mapping rule.");
 					}
 				}, $r['reformation']);
+				
+				if(!$allParamsAreMet) continue;
 
                 $url=str_replace('//', '/', $url);
                 
