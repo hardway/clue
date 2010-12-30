@@ -39,7 +39,7 @@
             $message ="--$this->boundary\r\n";
             $message.="Content-Type: text/html; charset=\"UTF-8\"\r\n";
             $message.="Content-Transfer-Encoding: quoted-printable\r\n\r\n";            
-            $message.=$this->body;
+            $message.=quoted_printable_encode($this->body);
             $message.="\r\n--$this->boundary\r\n";
             $message.=implode("\r\n", $this->attach);
             
