@@ -1,5 +1,6 @@
 <?php  
-	class Clue_Database_Exception extends Exception{
+namespace Clue\Database{
+	class Exception extends \Exception{
 		protected $sql;
 		
 		function __construct($sql, $code, $message){
@@ -19,4 +20,5 @@
 			return $this->sql;
 		}
 	}
+}
 ?>

@@ -1,4 +1,5 @@
 <?php  
+namespace Clue{
 	class Clue_Tool{
 		static function os(){
 			if(isset($_SERVER['OS'])){
@@ -127,7 +128,8 @@
 			return strpos($_SERVER['HTTP_USER_AGENT'], 'MSIE')!==false;
 		}
 	}
-	
+}
+namespace{
 	//////////////////////////////////////
 	// Shortcuts
 	//////////////////////////////////////
@@ -146,6 +148,10 @@
 		
 		return isset($_GET[$name]) ? $_GET[$name] : $default;
 	}
+
+	function SERVER($name=null, $default=false){
+		return isset($_SERVER[$name]) ? $_SERVER[$name] : $default;
+	}
 	
 	function REQS(){
 		$n=func_num_args();
@@ -159,14 +165,5 @@
 		
 		return $ret;
 	}
-	
-	if (!function_exists('lc')) {
-		require_once 'clue/tool/lc.php';
-		
-		function lc($expression, $Data = array()) {
-			return ListComprehension::execute($expression, $Data);
-		}
-	}
-
-
+}
 ?>

@@ -1,4 +1,6 @@
 <?php
-	class Clue_Exception extends Exception{
+namespace Clue{    
+	class Exception extends \Exception{
 	}
+}
 ?>

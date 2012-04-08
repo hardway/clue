@@ -1,4 +1,5 @@
 <?php  
+namespace Clue{
     class Clue_Registry{        
         public function __construct($ary=null){
             if(is_array($ary)) foreach($ary as $k=>$v){
@@ -54,4 +55,5 @@
             return $this;
         }
     }
+}
 ?>

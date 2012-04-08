@@ -1,7 +1,5 @@
 <?php  
-	require_once __DIR__.'/database.php';
-	require_once __DIR__.'/tool.php';
-	
+namespace Clue{
 	// TODO md5 collision in mind
 	class Clue_Creeper_Cache{
 		private $cacheDir;
@@ -239,4 +237,5 @@
 			
 		}
 	}
+}
 ?>

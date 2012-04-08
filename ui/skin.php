@@ -1,4 +1,5 @@
 <?php 
+namespace Clue{
 	abstract class Clue_UI_Skin{
 		protected $header=array(
 			'title'=>array(),
@@ -91,4 +92,5 @@
 	function skin(){
 		return Clue_UI_Skin::$instance;
 	}
+}
 ?>

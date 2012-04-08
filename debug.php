@@ -1,7 +1,6 @@
 <?php  
-	require_once __DIR__.'/core.php';
-	
-	class Clue_Debug{
+namespace Clue{
+	class Debug{
 	    static public $cli=false;
 	    
 	    static private $htmlStyleDumped=false;
@@ -64,7 +63,7 @@
     		            .dump .error a {color: #FF9;}
     		            .dump .error .message {float: left;}
     		            .dump .error .position {float: right;}
-    		            .dump .error .trace {margin: 0; font: 13px consolas, monospace; background: #FFD; padding: 15px; white-space: pre;}
+    		            .dump .error .trace {margin: 0; color: #333; font: 13px consolas, monospace; background: #FFD; padding: 15px; white-space: pre;}
     		        </style>
     		    ";
     		    self::$htmlStyleDumped=true;
@@ -78,11 +77,12 @@
 		        echo "<div class='dump'><fieldset><legend>".get_class($e)."</legend>";
     		    echo "<div class='error'>";
     		    echo "<div class='title'><div class='message'>[".$e->getCode()."] ".$e->getMessage()."</div>";
-    		    echo "<div class='position'>".$e->getFile().":".$e->getLine()."</div></div>";
+    		    echo "<div class='position'>".$e->getFile().":".$e->getLine()."</div><div style='clear: both;'></div></div>";
     		    echo "<pre class='trace'><strong>Backtrace:</strong>\n".$e->getTraceAsString()."</pre>";
     		    echo "</div>";
     		    echo "</fieldset></div>";
 			}
 		}
 	}
+}
 ?>

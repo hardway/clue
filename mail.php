@@ -1,5 +1,6 @@
 <?php  
-    class Clue_Mail{
+    namespace Clue;
+    class Mail{
         public $subject;
         public $body;
         public $header;

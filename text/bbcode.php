@@ -1,4 +1,5 @@
 <?php  
+namespace Clue{
 	class Clue_Text_BBCode{
 		private $inputRule=array(
 			// Text Formatting
@@ -32,4 +33,5 @@
 			return preg_replace($this->inputRule, $this->outputRule, $input);
 		}
 	}
+}
 ?>

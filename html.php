@@ -1,11 +1,19 @@
 <?php  
-    class Clue_HTML{
-        static function html_options($options, $selected=null, $singleOrPair=null){
+namespace Clue{
+    class HTML{
+        static function select_options($options, $selected=null, $singleOrPair=null){
 		    if(!is_array($selected)) $selected=array($selected);
 		    
 		    $html="";
 		    foreach($options as $value=>$name){
-		        if($singleOrPair=='single')
+		        if($name instanceof ActiveRecord){  // 自动处理activerecord对象
+		            $obj=$name;
+		            $model=$obj->model();
+		            $pkey=$model['pkey'];
+		            $value=$obj->$pkey;
+		            $name=(string)$obj;
+		        }
+		        elseif($singleOrPair=='single')
 		            $value=$name;
 		        else if($singleOrPair=='pair')
 		            $value=$value;
@@ -27,4 +35,5 @@
             return $text;
         }
     }
+}
 ?>

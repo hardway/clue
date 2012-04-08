@@ -1,6 +1,5 @@
 <?php  
-	require_once __DIR__.'/core.php';
-
+namespace Clue{
 	class Clue_Log{
 	    static $logDir;
 	    
@@ -13,7 +12,7 @@
 	        self::$logDir=$dir;
 	    }
 	    
-	    static function write_log($err){
+	    static function write_log($err){	        
 	        $path=self::$logDir . DIRECTORY_SEPARATOR. date("His") . '.log';
 
 	        $context=array(
@@ -52,4 +51,5 @@
 	        self::display_error();
 	    }
 	}
+}
 ?>

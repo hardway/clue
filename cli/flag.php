@@ -1,4 +1,5 @@
 <?php  
+namespace Clue{
     class Clue_CLI_Flag{
         protected $flagDef;
         
@@ -60,4 +61,5 @@
             }
         }
     }
+}
 ?>

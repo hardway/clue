@@ -1,4 +1,5 @@
 <?php  
+namespace Clue{
     class Clue_Text_Diff{
         /* 
             Copyright: http://www.holomind.de/phpnet/diff2.php 
@@ -135,4 +136,5 @@
             return implode("\n", $new);
         }
     }
+}
 ?>

@@ -1,5 +1,6 @@
 <?php  
-    class Clue_Session{
+namespace Clue{
+    class Session{
         function __construct(){
             if(!session_id()) session_start();
         }
@@ -18,4 +19,5 @@
 		    return $value;
 		}
     }
+}
 ?>

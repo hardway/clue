@@ -1,6 +1,5 @@
 <?php  
-    require_once __DIR__.'/core.php';
-
+namespace Clue{
     class Clue_Config extends Clue_Registry{				
         function __construct($ary=null){
             if(is_string($ary)){
@@ -32,4 +31,5 @@
             recursive_merge($this, $cfg);
         }
     }
+}
 ?>

@@ -1,6 +1,5 @@
 <?php  
-	require_once 'clue/core.php';
-	
+namespace Clue{
 	/**
 	 * How to get private key
 		 * visit http://delicious.com/{username} , the key can be found at rare of the page (Private RSS Feed).
@@ -123,4 +122,5 @@
 			return $this->_retrieve_feed("/urlinfo/$md5URL");
 		}
 	}	
+}
 ?>

@@ -1,7 +1,8 @@
 <?php  
-	class Clue_Database_Mysql extends Clue_Database{
+namespace Clue\Database{
+	class Mysql extends \Clue\Database{
 		protected $_result;
-				
+
 		function __construct(array $param){
 			// Make sure mysqli extension is enabled
 			if(!extension_loaded('mysqli')) 
@@ -127,7 +128,6 @@
 		}
 		
 		function has_table($table){
-			$table=strtolower($table);
 			$tables=$this->get_col("show tables");
 			return in_array($table, $tables);
 		}
@@ -217,4 +217,5 @@
 			return $schema;
 		}
 	}
+}
 ?>

@@ -1,4 +1,5 @@
 <?php  
+namespace Clue{
     class Clue_CLI{
         static $consoleEncoding;
         
@@ -23,4 +24,5 @@
             ob_flush();
         }
     }
+}
 ?>

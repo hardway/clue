@@ -1,24 +1,25 @@
 <?php  
-	class Clue_Database_Sqlite extends Clue_Database{
+namespace Clue\Database{
+	class Sqlite extends \Clue\Database{
 		protected $_result;
 				
 		function __construct(array $param){
 			// Make sure mysqli extension is enabled
-			if(!extension_loaded('sqlite')) 
-				throw new Exception(__CLASS__.": extension sqlite is missing!");
+			if(!extension_loaded('sqlite3')) 
+				throw new Exception(__CLASS__.": extension sqlite3 is missing!");
 			
 			// Check Parameter, TODO: access mode
-			$this->dbh=sqlite_popen($param['db'], 0666, $sqlite_open_err);
+			$this->dbh=new \SQLite3($param['db'], SQLITE3_OPEN_READWRITE | SQLITE3_OPEN_CREATE);
 			
 			if(!$this->dbh){
-				$this->setError(array('error'=>$sqlite_open_err));
+				$this->setError(array('error'=>SQLite3::lastErrorMsg()));
 			}
 		}
 		
 		function __destruct(){
 			$this->free_result();
 			if($this->dbh){
-				sqlite_close($this->dbh);
+				$this->dbh->close();
 				$this->dbh=null;
 			}
 		}
@@ -31,7 +32,7 @@
 		}
 		
 		function insert_id(){
-			return sqlite_last_insert_rowid($this->dbh);
+			return $this->dbh->lastInsertRowID();
 		}
 		
 		function has_table($table){
@@ -45,7 +46,7 @@
 			$result_type=false;
 			
 			$this->free_result();
-			$this->_result=sqlite_query($this->dbh, $sql, $result_type, $error);
+			$this->_result=$this->dbh->query($sql, $result_type, $error);
 			
 			if(!$this->_result){
 				$this->setError(array('error'=>$error));
@@ -120,4 +121,5 @@
 			return $result;
 		}
 	}
+}
 ?>

@@ -1,5 +1,6 @@
 <?php  
-	class Clue_DOM_Element extends DOMElement{
+namespace Clue{
+	class Clue_DOM_Element extends \DOMElement{
 		public $el;	// Can be used by Clue_DOM_Parser
 		
 		function __construct($el){
@@ -77,5 +78,5 @@
 			return $html;
 		}
 	}
-
+}
 ?>

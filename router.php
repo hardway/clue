@@ -1,8 +1,5 @@
 <?php
-	require_once __DIR__.'/core.php';
-	require_once __DIR__.'/controller.php';
-	require_once __DIR__.'/tool.php';
-	
+namespace Clue{
 	// TODO: rule order (fallback ?)
 	class Clue_RouteMap{
 		protected $cp;
@@ -24,6 +21,7 @@
 		}
 		
 		function connect($urlPattern, $rule=array(), $scope=null){
+		    // TODO: auto sort rule priority
 			// TODO: check validity of url pattern and mapping rule
 			
 			// decode mapping string to array
@@ -80,7 +78,8 @@
 				
 				if(
 					isset($r['mapping']['action']) && 
-					!preg_match('/'.$r['mapping']['action'].'/i',$action)
+					strcasecmp($r['mapping']['action'], $action)!=0
+					//!preg_match('/'.$r['mapping']['action'].'/i',$action)
 				) continue;
 
 				$allParamsAreMet=true;
@@ -114,7 +113,7 @@
 				$query=array();
 				if($params) foreach($params as $n=>$v){
 					if($n=='controller' || $n=='action') continue;
-					$query[]="$n=$v";
+					$query[]="$n=".urlencode($v);
 				}
 				if(count($query)>0)
 					$url.='?'.implode('&', $query);
@@ -208,9 +207,9 @@
 		}
 	}
 	
-	class Clue_Router{
+	class Router{
 		protected $appbase;
-		protected $map;
+		public $map;
 		
 		function __construct($option){
 			$this->appbase=str_replace("\\", '/', dirname($_SERVER['SCRIPT_NAME']));
@@ -254,8 +253,8 @@
 		
 		function route($controller, $action, $params=array()){
 			// load controller
-			$class="{$controller}Controller";
-			$path=APP_ROOT . "/controller/".strtolower(str_replace('_','/',$class)).".php";
+			$class="{$controller}_Controller";
+			$path=APP_ROOT . "/controller/".strtolower(str_replace('_','/',$controller)).".php";
 
 			if($_SERVER['REQUEST_METHOD']=='POST')
 				$action="_$action";
@@ -266,7 +265,7 @@
 			        throw new Exception("No controller found: $controller");
 			}
 			
-			$rfxClass=new ReflectionClass($class);
+			$rfxClass=new \ReflectionClass($class);
 			
 			if($rfxClass->hasMethod($action) || $rfxClass->hasMethod('action')){
 			    // Fallback action handler
@@ -275,7 +274,7 @@
 			        $action='action';
 			    }
 			    
-				$rfxMethod=new ReflectionMethod($class, $action);
+				$rfxMethod=new \ReflectionMethod($class, $action);
 				
 				// detect parameters using reflection
 				$callArgs=array();
@@ -296,7 +295,10 @@
 				$obj->view=$action;
 				$obj->action=$action;
 				
-				call_user_func_array(array($obj, $obj->action), $callArgs);
+				return array(
+				    'handler'=>$obj,
+				    'args'=>$callArgs
+				);
 			}
 			else{
 		        throw new Exception("Can't find action $action of $controller");
@@ -311,4 +313,5 @@
 		    return $this->map->resolve($uri);
 		}
 	}
+}
 ?>

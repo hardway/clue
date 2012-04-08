@@ -1,4 +1,5 @@
 <?php  
+namespace Clue{
 	/*
 		Inspired by Net_URL2 (http://pear.php.net/package/Net_URL2)
 	*/
@@ -115,4 +116,5 @@
 			return $this->get_url();
 		}
 	}
+}
 ?>

@@ -1,7 +1,7 @@
 <?php  
-	require_once __DIR__.'/core.php';
-	
-	class Clue_ActiveRecord{
+	namespace Clue;
+
+	class ActiveRecord{
 		static protected $_db;
 		
 		protected static $_model=array(
@@ -24,7 +24,7 @@
 		        $class=get_called_class();
 		        
 		        if(!isset($model['table'])){
-		            $model['table']=strtolower($class);
+		            $model['table']="`".strtolower($class)."`";
 		        }
 		        
 		        if(!isset($model['pkey'])){
@@ -38,7 +38,7 @@
 	            else
 	                $columns=array();
 		        
-		        $class=new ReflectionClass($class);
+		        $class=new \ReflectionClass($class);
 		        foreach($class->getProperties() as $prop){
 		            $col=$prop->getName();
 		            if($prop->isPublic() && !$prop->isStatic() && substr($col, 0, 1)!='_' && !isset($columns[$col])){
@@ -62,6 +62,8 @@
         }
         
 		static function db(){
+		    global $app;
+
 		    if(static::$_db != null){
 		        return static::$_db;
 		    }
@@ -69,8 +71,8 @@
 		        return self::$_db;
 		    }
 		    // TODO: decouple this extra relationship
-		    else if(Clue_Application::initialized()){
-				return static::$_db=Clue_Application::db();
+		    else if(isset($app) && $app->initialized){
+				return static::$_db=$app->db;
 			}
 			else
 				return null;
@@ -78,8 +80,8 @@
 		
 		static function get($id){
 		    $model=self::model();
-		    
-		    $row=self::db()->get_row("select * from `{$model['table']}` where `{$model['pkey']}`='".self::db()->escape($id)."'", ARRAY_A);
+
+		    $row=self::db()->get_row("select * from {$model['table']} where `{$model['pkey']}`='".self::db()->escape($id)."'", ARRAY_A);
 		    if($row){
 		        $class=get_called_class();
 		        $r=new $class($row);
@@ -166,7 +168,7 @@
 		    $model=self::model();
 		    $class=get_called_class();
 		    
-			$sql="select * from `{$model["table"]}` ";
+			$sql="select * from {$model["table"]} ";
 			$sql.=self::_get_where_clause($condition, $range);
 						
 			switch(strtolower($range)){
@@ -214,7 +216,7 @@
 				
 		static function count($condition=array()){
 			$model=self::model();
-			return intval(self::db()->get_var("select count(*) from `{$model["table"]}` ".self::_get_where_clause($condition)));
+			return intval(self::db()->get_var("select count(*) from {$model["table"]} ".self::_get_where_clause($condition)));
 		}
 
 
@@ -233,6 +235,8 @@
 		}
 		
 		function __get($key){
+		    if($key=='db') return self::db();
+		    
 		    if(method_exists($this, "get_$key")){
 		        $method="get_$key";
 		        return $this->$method();

@@ -1,5 +1,6 @@
 <?php  
-	class Clue_UI_Pagination{
+namespace Clue\UI{
+	class Pagination{
 		public $page, $pageSize, $size;
 		public $navPages;
 		protected $pageCount;
@@ -24,9 +25,6 @@
 			
 			return "limit $begin, $size";
 		}
-		
-		/* Deprecated */
-		function limitRange(){return $this->limit_range();}
 		
 		function item_range(){
 			$begin=($this->page-1) * $this->pageSize;
@@ -84,4 +82,5 @@
 END;
 		}
 	}
+}
 ?>

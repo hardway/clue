@@ -1,4 +1,5 @@
 <?php  
+namespace Clue{
     class Clue_Image{
         protected $gfx=null;
         public $width, $height;
@@ -56,4 +57,5 @@
             imagedestroy($thumb);
         }
     }
+}
 ?>

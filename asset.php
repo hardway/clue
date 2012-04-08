@@ -1,4 +1,5 @@
 <?php
+namespace Clue{
 	class Clue_Asset{
 		static public $ASSET_BASE=".";
 		
@@ -47,4 +48,5 @@
 			echo $content;
 		}
 	}
+}
 ?>

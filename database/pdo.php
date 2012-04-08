@@ -1,4 +1,5 @@
 <?php  
+namespace Clue{
 	class Clue_Database_PDO extends Clue_Database{
 		protected $_result;
 				
@@ -111,4 +112,5 @@
 			return $result;
 		}
 	}
+}
 ?>

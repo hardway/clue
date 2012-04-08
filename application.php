@@ -1,82 +1,152 @@
 <?php  
-	require_once __DIR__.'/core.php';
-	require_once __DIR__.'/config.php';
-	require_once __DIR__.'/database.php';
-	
-	class Clue_Application{
-		public $base;
-		public $config;
-		public $db;
-		public $router;
-		public $options=array(
-			"url_rewrite"=>true
-		);
-		public $session;
-		
-		public $controller;
-		public $action;
-		public $params;
-		
-		protected $beforeDispatchHandler=null;
-		
-		function __construct($appbase='.', $options=null){
-			$this->base=$appbase;
-			
-			// Extend options
-			if(is_array($options)) foreach($options as $o=>$v){
-				$this->options[$o]=$v;
-			}
-			
-			if(isset($this->options['config'])){
-				$this->config=$this->options['config'];
-			}
-			else{
-			    // Make sure the config exists
-			    $cfgFile="$appbase/config/config.php";
-			    if(file_exists($cfgFile))
-				    $this->config=new Clue_Config($cfgFile);
-				else
-				    $this->config=new Clue_Config();
-			}
-			
-			$this->router=new Clue_Router(array(
-				'url_rewrite'=>$this->options["url_rewrite"]
-			));
-			
-			if(isset($this->config->debug) && $this->config->debug==true){
-			    Clue::enable_debug();
-			}
-			else if(!isset($this->config->log) || $this->config->log!==false){
-			    if(!isset($this->config->log) || !is_string($this->config->log))
-			        $this->config->log=$appbase . DIRECTORY_SEPARATOR . 'log';
-			    Clue::enable_log($this->config->log);
-			}
-			
-			$this->session=new Clue_Session();
-			
-			if($this->config->database){
-				$this->set_default_database((array)$this->config->database);
-			}
-		}
-		
-		function set_default_database($param){
-			$this->db=Clue_Database::create($param['type'], $param);
-			
-			// throw exception if database is not connectable
-			if($this->db->errors){
-				throw new Exception($this->db->lasterror['error']);
-			}
-		}
-		
-		static protected $instance;
-		static function init($approot='.', $options=null){
-			self::$instance=new Clue_Application($approot, $options);
-		}
-		
-		function before_dispatch($callback=null){
-		    $this->beforeDispatchHandler=$callback;
-		}
-		
+namespace Clue{
+    $DEFAULT_APPLICATION_CONFIG=array(
+        'debug'=>true,
+        'maintenance'=>false
+    );
+    
+    class Application{
+        public $base;
+        public $config;
+        public $db;
+        public $router;
+        public $options=array(
+            "url_rewrite"=>true
+        );
+        public $session;
+        public $layout;
+        
+        public $controller;
+        public $action;
+        public $params;
+        
+        public $initialized=false;
+        
+        protected $beforeDispatchHandler=null;
+        
+        protected $restricted_zone=array();
+        protected $auth;
+        
+        function __construct(){
+        }
+        
+        function init($options=null){
+            global $DEFAULT_APPLICATION_CONFIG;
+            
+            // Extend options
+            if(is_array($options)) foreach($options as $o=>$v){
+                $this->options[$o]=$v;
+            }
+            
+            $this->config=$DEFAULT_APPLICATION_CONFIG;
+            
+            if(isset($this->options['config'])){
+                $this->config=array_merge($this->config, $this->options['config']);
+            }
+            
+            $this->router=new Router(array(
+                'url_rewrite'=>$this->options["url_rewrite"]
+            ));
+            
+            if(isset($this->config['debug']) && $this->config['debug']==true){
+                require_once __DIR__."/debug.php";
+                set_exception_handler(array("Clue\Debug","view_exception"));
+                set_error_handler(array("Clue\Debug", "view_error"));
+            }
+            else if(!isset($this->config['log']) || $this->config['log']!==false){
+                if(!isset($this->config['log']) || !is_string($this->config['log']))
+                    $this->config['log']=APP_ROOT . DIRECTORY_SEPARATOR . 'log';
+
+                require_once __DIR__."/log.php";
+                Clue_Log::set_log_dir($this->config['log']);
+                set_exception_handler(array("Clue_Log","log_exception"));
+                set_error_handler(array("Clue_Log", "log_error"));
+            }
+            
+            $this->session=new Session();
+            
+            if($this->config['database']){
+                $this->set_default_database((array)$this->config['database']);
+            }
+            
+            $this->auth=null;
+            
+            $this->initialized=true;
+        }
+        
+        function set_default_database($param){
+            $this->db=Database::create($param['type'], $param);
+            
+            // throw exception if database is not connectable
+            if($this->db->errors){
+                throw new Exception($this->db->lasterror['error']);
+            }
+        }
+
+        function has_layout(){
+            return $this->layout;
+        }
+        
+        function set_layout($layout=null){
+            $this->layout=new Clue_Layout($layout);
+            // TODO
+        }
+        
+        static protected $instance;
+        
+        function restrict_access($controller, $auth, $access=null){
+            $this->restricted_zone[]=array(
+                'controller'=>$controller,
+                'auth'=>$auth,
+                'access'=>$access
+            );
+            
+            $ctl=empty($controller) ? 'auth' : "{$controller}_auth";
+            
+            $url=empty($controller) ? "/login" : "/$controller/login";
+            $this->router->connect($url, array('controller'=>$ctl, 'action'=>'login'));
+            
+            $url=empty($controller) ? "/logout" : "/$controller/logout";
+            $this->router->connect($url, array('controller'=>$ctl, 'action'=>'logout'));
+        }
+        
+        public function identify(){
+            if(isset($_COOKIE['userid'])){
+                return $_COOKIE['userid'];
+            }
+            
+            return false;
+        }
+        
+        public function login($username, $password, $extra=array()){
+            if(empty($this->auth)) return false;
+            
+            $r=$this->auth->authenticate($username, $password, $extra);
+            
+            if(!empty($r)){
+                setcookie('userid', $r['id']);
+                setcookie('username', $r['name']);
+                return true;
+            }
+            
+            return false;
+        }
+        
+        public function logout(){
+            setcookie("userid", "", time() - 3600);
+            setcookie("username", "", time() - 3600);
+        }
+        
+        public function authorize($resource){
+            if(empty($this->auth)) return false;
+
+            return $this->auth->authorize($resource);
+        }
+        
+        function before_dispatch($callback=null){
+            $this->beforeDispatchHandler=$callback;
+        }
+        
         function prepare(){
             $url=isset($_SERVER['HTTP_X_REWRITE_URL']) ? 
                     $_SERVER['HTTP_X_REWRITE_URL'] : 
@@ -88,55 +158,62 @@
             $this->action=$map['action'];
             $this->params=$map['params'];
         }
-		
-		function dispatch(){
-			$this->router->route($this->controller, $this->action, $this->params);
-		}
-		
-		function run(){
-			$this->prepare();
-			
+        
+        function dispatch(){            
+            foreach($this->restricted_zone as $rz){
+                if(preg_match('/^'.$rz['controller'].'/i', $this->controller)){
+                    if(in_array($this->action, array('login', 'logout'))){
+                        $this->auth=$rz['auth'];
+                    }
+                    else if($rz['auth']->authorize($this->identify(), $rz['access'])==false){
+                        $this->router->redirect_route($rz['controller'], 'login');
+                    }
+                    
+                    break;
+                }
+            }
+            
+            $r=$this->router->route($this->controller, $this->action, $this->params);
+            $ret=call_user_func_array(array($r['handler'], $r['handler']->action), $r['args']);
+        }
+        
+        function run(){
+            $this->prepare();
+            
             // call plugin
             if(is_callable($this->beforeDispatchHandler)){
                 call_user_func($this->beforeDispatchHandler, $this->controller, $this->action, $this->params);
             }
             
-			$this->dispatch();
-		}
-		
-		static function initialized(){ return is_object(self::$instance); }
-		
-		static function getInstance(){
-			if(empty(self::$instance)) throw new Exception("Application not initialized!");
-			return self::$instance;
-		}
-		
-		static function config(){ return self::getInstance()->config; }
-		static function db(){ return self::getInstance()->db; }
-		static function router(){ return self::getInstance()->router; }
-	}
-	
-	// global short cut
-	function url_for($controller, $action='index', $params=array()){
-		return Clue_Application::router()->url_for($controller, $action, $params);
-	}
-	
-	function app(){
-		return Clue_Application::getInstance();
-	}
-	
-	function session(){
-	    return app()->session;
-	}
-	
-	function appbase(){
-		return Clue_Application::getInstance()->router->base();
-	}
-	
-	function assets($asset=null){
-	    $url=appbase()=='/' ? '/assets' : appbase()."/assets";
-	    if(!empty($asset)) $url.="/$asset";
-	    
-	    return $url;
-	}
+            $this->dispatch();
+        }        
+    }
+    
+}
+
+namespace{
+    $app=new Clue\Application(APP_ROOT);
+    
+    // global short cut
+    function url_for($controller, $action='index', $params=array()){
+        global $app;
+        return $app->router->url_for($controller, $action, $params);
+    }
+    
+    function messenger(){
+        global $app;
+        return $app->session;
+    }
+    
+    function appbase(){
+        return APP_BASE;
+    }
+    
+    function assets($asset=null){
+        $url=(APP_BASE=="\\" || APP_BASE=='/') ? '/assets' : appbase()."/assets";
+        if(!empty($asset)) $url.="/$asset";
+        
+        return $url;
+    }
+}
 ?>

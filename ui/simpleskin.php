@@ -1,4 +1,5 @@
 <?php  
+namespace Clue{
 	class Clue_UI_SimpleSkin extends Clue_UI_Skin{
 		function __construct($option=array()){
 			if(isset($option['template'])){
@@ -31,12 +32,25 @@
 			if(count($this->header['script'])>0){
 				$scripts.='<script type="text/javascript" charset="utf-8">'.implode("\n", $this->header['script']).'</script>';
 			}
-			
-			include($this->template_path . DS . 'header.tpl');
+		
+            $view=$this->template_path.DS.'header.tpl';
+            $php_view=$view.".php";    
+
+            if(file_exists($php_view))
+                include($php_view);
+            else
+                include($view);
 		}
 		
 		protected function render_footer(){
-			include($this->template_path . DS . 'footer.tpl');
+            $view=$this->template_path.DS.'footer.tpl';
+            $php_view=$view.".php";    
+
+            if(file_exists($php_view))
+                include($php_view);
+            else
+                include($view);
 		}
 	}
+}
 ?>

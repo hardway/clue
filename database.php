@@ -1,16 +1,20 @@
 <?php	
-	require_once __DIR__.'/core.php';
-	
+namespace Clue{
 	// Constants to indicate how to retrieve data by get_row and get_results
 	if(!defined('OBJECT')) define('OBJECT', 'OBJECT');
 	if(!defined('ARRAY_A')) define('ARRAY_A', 'ARRAY_A');
 	if(!defined('ARRAY_N')) define('ARRAY_N', 'ARRAY_N');
 	
-	abstract class Clue_Database{
+	abstract class Database{
 		protected static $_cons=array();
 		
-		static function create($dbms, $param){
-			$factory='Clue_Database_'.$dbms;
+		static function create($dbms, $param=null){
+            if(is_object($dbms) && isset($dbms->type) && empty($param)){
+                $param=$dbms;
+                $dbms=$param->type;
+            }
+
+			$factory="Clue\\Database\\".$dbms;
 			if(!class_exists($factory)) throw new Exception("Database: $dbms is not implemented!");
 			
 			// Make sure the parameter is always in array format
@@ -47,7 +51,7 @@
 			$this->lasterror=$err;
 			$this->errors[]=$err;
 			
-			throw new Clue_Database_Exception($this->lastquery, $err['code'], $err['error']);
+			throw new Database\Exception($this->lastquery, $err['code'], $err['error']);
 		}
 		
 		protected function clearError(){
@@ -137,4 +141,5 @@
 		
 		function has_table($table){return false;}
 	}
+}
 ?>

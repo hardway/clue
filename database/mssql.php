@@ -1,38 +1,43 @@
 <?php  
+namespace Clue\Database{
 	/**
 	 * Clue/Database/Microsoft SQL Server
 	 * Need to trap sql server error
 	 *
 	 * TODO: not tested
 	 */
-	class Clue_Database_MSSql extends Clue_Database{
+	class MSSql extends \Clue\Database{
 		protected $_stmt;
 		
 		function __construct(array $param){
 			// Make sure oci extension is enabled
-			if(!extension_loaded('mssql')) throw new Exception(__CLASS__.": extension MSSQL is missing!");
+			if(!extension_loaded('sqlsrv')) throw new \Exception(__CLASS__.": extension MSSQL/SQLSRV is missing!");
 			
 			// Check Parameter, TODO
 			
-			$this->dbh=mssql_pconnect($param['host'], $param['username'], $param['password']);
+			$this->dbh=sqlsrv_connect($param['host'], array(
+			    'UID'=>$param['username'], 
+			    'PWD'=>$param['password'],
+			    'Database'=>$param['db']
+			));
+			
 			if(!$this->dbh){
 				$this->setError("Can't connect to sql server.");
 			}
-			mssql_select_db($param['db']);
 		}
 		
 		function __destruct(){
 			$this->free_result();
 						
 			if($this->dbh){
-				mssql_close($this->dbh);
+				sqlsrv_close($this->dbh);
 				$this->dbh=null;
 			}
 		}
 		
 		function free_result(){
 			if($this->_stmt){
-				mssql_free_result($this->_stmt);
+				sqlsrv_free_stmt($this->_stmt);
 				$this->_stmt=null;
 			}	
 		}
@@ -41,7 +46,7 @@
 			parent::exec($sql);
 			
 			$this->free_result();
-			$this->_stmt=mssql_query($sql, $this->dbh);
+			$this->_stmt=sqlsrv_query($this->dbh, $sql);
 			if(!$this->_stmt){
 				$this->setError("Error in sql");
 				return false;
@@ -53,7 +58,7 @@
 		function get_var($sql){
 			if(!$this->exec($sql)) return false;
 			
-			$row=mssql_fetch_row($this->_stmt);
+			$row=sqlsrv_fetch_array($this->_stmt, SQLSRV_FETCH_NUMERIC);
 			return $row[0];
 		}
 		
@@ -61,20 +66,20 @@
 			if(!$this->exec($sql)) return false;
 			
 			if($mode==OBJECT)
-				return mssql_fetch_object($this->_stmt);
+				return sqlsrv_fetch_object($this->_stmt);
 			else if($mode==ARRAY_A)
-				return mssql_fetch_assoc($this->_stmt);
+				return sqlsrv_fetch_array($this->_stmt, SQLSRV_FETCH_ASSOC);
 			else if($mode==ARRAY_N)
-				return mssql_fetch_row($this->_stmt);
+				return sqlsrv_fetch_array($this->_stmt, SQLSRV_FETCH_NUMERIC);
 			else
-				return mssql_fetch_row($this->_stmt);	
+				return sqlsrv_fetch_array($this->_stmt, SQLSRV_FETCH_BOTH);	
 		}
 		
 		function get_col($sql){
 			if(!$this->exec($sql)) return false;
 			
 			$result=array();
-			while($a=mssql_fetch_row($this->_stmt)){
+			while($a=sqlsrv_fetch_array($this->_stmt, SQLSRV_FETCH_NUMERIC)){
 				$result[]=$a[0];
 			}
 			
@@ -87,16 +92,22 @@
 			$result=array();
 			
 			if($mode==OBJECT){
-				while($o=mssql_fetch_object($this->_stmt)){
+				while($o=sqlsrv_fetch_object($this->_stmt)){
 					$result[]=$o;
 				}
 			}
 			else if($mode==ARRAY_A)
-				$result=mssql_fetch_array($this->_stmt, MSSQL_ASSOC);
+			    while($o=sqlsrv_fetch_array($this->_stmt, SQLSRV_FETCH_ASSOC)){
+				    $result[]=$o;
+                }
 			else if($mode==ARRAY_N)
-				$result=mssql_fetch_array($this->_stmt, MSSQL_NUM);
+			    while($o=sqlsrv_fetch_array($this->_stmt, SQLSRV_FETCH_NUMERIC)){
+			        $result[]=$o;
+		        }
 			else
-				$result=mssql_fetch_array($this->_stmt);
+			    while($o=sqlsrv_fetch_array($this->_stmt, SQLSRV_FETCH_BOTH)){
+			        $result[]=$o;
+		        }
 			
 			return $result;
 		}
@@ -107,4 +118,5 @@
 			return $cnt==1;
 		}
 	}
+}
 ?>

@@ -1,19 +1,20 @@
 <?php  
+namespace Clue\Database{
 	/**
 	 * Clue/Database/Oracle
 	 * For oracle server that uses RAC/HA, consider enable oci8.event in php.ini
 	 */
-	class Clue_Database_Oracle extends Clue_Database{
+	class Oracle extends \Clue\Database{
 		protected $_stmt;
 		
 		function __construct(array $param){
 			// Make sure oci extension is enabled
-			if(!extension_loaded('oci8')) throw new Exception(__CLASS__.": extension OCI8 is missing!");
+			if(!extension_loaded('oci8')) throw new \Exception(__CLASS__.": extension OCI8 is missing!");
 			
 			// Check Parameter, TODO
-			
-			// echo "Creating Oracle Connection.\n";
-			$this->dbh=oci_pconnect($param['username'], $param['password'], $param['db']);
+		
+            $encoding=isset($param['encoding']) ? $param['encoding'] : 'UTF8';    
+			$this->dbh=oci_pconnect($param['username'], $param['password'], $param['db'], $encoding);
 			if(!$this->dbh){
 				$err=oci_error();
 				$this->setError(array('code'=>$err['code'], 'error'=>$err['message']));
@@ -58,7 +59,7 @@
 				return false;
 			}
 			
-			return oci_result($this->_stmt, 1);
+            return oci_result($this->_stmt, 1);
 		}
 		
 		function get_row($sql, $mode=OBJECT){
@@ -71,9 +72,9 @@
 			else if($mode==ARRAY_N)
 				return oci_fetch_row($this->_stmt);
 			else
-				return oci_fetch_array($this->_stmt);	
+				return oci_fetch_array($this->_stmt);
 		}
-		
+
 		function get_col($sql){
 			if(!$this->exec($sql)) return false;
 			
@@ -159,4 +160,5 @@
 			return $schema;
 		}
 	}
+}
 ?>

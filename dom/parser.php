@@ -1,4 +1,5 @@
 <?php  
+namespace Clue{
 	class Clue_DOM_Parser{
 		public $html;
 		public $dom;
@@ -90,4 +91,5 @@
 				echo $xpath;
 		}
 	}
+}
 ?>

@@ -1,4 +1,5 @@
 <?php  
+namespace Clue{
     class Clue_Text_CSV{
         public $filename;
         
@@ -26,4 +27,5 @@
             }
         }
     }
+}
 ?>
