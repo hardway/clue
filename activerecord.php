@@ -92,6 +92,21 @@
 		    else
 		        return false;
 		}
+
+		static function delete($ids){
+			if(!array($ids)) $ids=array($ids);
+			$class=get_called_class();
+
+			$cnt=0;
+			foreach($ids as $id){
+				$r=self::get($id);
+				if($r instanceof $class){
+					$r->destroy();
+					$cnt++;
+				}
+			}
+			return $cnt;
+		}
 		
 		static function __callStatic($name, array $arguments){
 		    if(preg_match('/(count|find|find_one|find_all)_by_(\w+)/', $name, $match)){

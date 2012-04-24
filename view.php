@@ -107,14 +107,14 @@ namespace Clue{
                                 
                             case 'INCLUDE':
                                 $view=$m[1];
-                                
+
                                 if(!empty($view)){
                                     if($view[0]!='/' && !preg_match('/:/', $view)){
                                         // Convert to absolute path based on VIEW_ROOT
                                         $view=dirname($this->view).'/'.$view;
                                     }
 
-                                    $src ="<?php \$v=new Clue\View('$view'); ";
+                                    $src ="<?php \$v=new Clue\View(\"$view\"); ";
                                     if(isset($m[3])) foreach(explode(",", $m[3]) as $v){
                                         $v=trim($v);
                                         $src.="\$v->set('$v', \$$v);";
