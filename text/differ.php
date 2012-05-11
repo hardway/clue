@@ -1,6 +1,6 @@
 <?php  
-namespace Clue{
-    class Clue_Text_Diff{
+namespace Clue\Text{
+    class Differ{
         /* 
             Copyright: http://www.holomind.de/phpnet/diff2.php 
         */

@@ -7,36 +7,42 @@
         }
         
         function build($dest){
-            $phar = new Phar($dest, 0, 'clue.phar');
+            if(!Phar::canWrite()) {
+                throw new Exception('Unable to create PHAR archive, must be phar.readonly=Off option in php.ini');
+            }
+
+            if(file_exists($dest)) unlink($dest);
+
+            $phar = new Phar($dest);
+            $phar->convertToExecutable(Phar::PHAR);
+            $phar->startBuffering();
             $phar->buildFromDirectory($this->root);
-            $phar->setStub(<<<'END'
-<?php 
-    Phar::mapPhar('clue.phar'); 
-            
-    require_once "phar://clue.phar/core.php";
-    spl_autoload_register("Clue\\autoload_load");
-    require_once "phar://clue.phar/application.php";
-    require_once "phar://clue.phar/tool.php";
-    
-    if(php_sapi_name()=='cli' && preg_match('/clue/i', $argv[0])){
-        require_once "phar://clue.phar/tool/constructor.php";
-        
-        $ctor=new Clue_Tool_Constructor();
-        $command=isset($argv[1]) ? $argv[1] : "help";
-        
-        if(method_exists($ctor, $command)){
-            call_user_func_array(array($ctor, $command), array_slice($argv, 2));
-        }
-        else{
-            echo "Unknown command: $command\n";
-        }        
-    }
-    __HALT_COMPILER(); 
-?>
-END
-            );
-            $phar->compressFiles(Phar::GZ);
+            $phar->setStub('
+            <?php 
+                Phar::mapPhar("Clue"); 
+                        
+                require_once "phar://Clue/core.php";
+                spl_autoload_register("Clue\autoload_load");
+                require_once "phar://Clue/application.php";
+                require_once "phar://Clue/tool.php";
+                
+                if(php_sapi_name()=="cli" && preg_match("/clue/i", $argv[0])){
+                    require_once "phar://Clue/tool/constructor.php";
+                    
+                    $ctor=new Clue_Tool_Constructor();
+                    $command=isset($argv[1]) ? $argv[1] : "help";
+                    
+                    if(method_exists($ctor, $command)){
+                        call_user_func_array(array($ctor, $command), array_slice($argv, 2));
+                    }
+                    else{
+                        echo "Unknown command: $command\n";
+                    }        
+                }
+                __HALT_COMPILER(); 
+            ?>');
             $phar->stopBuffering();
+            echo "Phar build at: $dest";
         }
         
         function __toString(){

@@ -19,7 +19,7 @@ namespace Clue{
 
     function autoload_load($class){
         if(substr($class, 0, 5)=="Clue\\"){
-            $class=substr($class, 5);
+            $class=str_replace("\\", '/', substr($class, 5));
             $path=__DIR__ . DS . str_replace("_", DS, strtolower($class)). ".php";
         }
         else{

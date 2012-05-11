@@ -31,6 +31,18 @@ namespace Clue{
         function set($name, $value){
             $this->vars[$name]=$value;
         }
+
+        function subview($view, $inherit_vars=true){
+            if($view[0]!='/' && !preg_match('/:/', $view)){
+                // Convert to absolute path based on VIEW_ROOT
+                $view=dirname($this->view).'/'.$view;
+            }
+
+            $sv=new View($view);
+            if($inherit_vars) $sv->vars=$this->vars;
+
+            return $sv;
+        }
         
         function render($vars=array()){
             $this->vars=array_merge($this->vars, $vars);
