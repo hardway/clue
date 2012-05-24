@@ -44,6 +44,18 @@ namespace Clue\Database{
 			return mysqli_insert_id($this->dbh);
 		}
 		
+		function insert($table, $fields){
+			$cols=array();
+			$vals=array();
+			foreach($fields as $c=>$v){
+				$cols[]=$c;
+				$vals[]=$this->quote($v);
+			}
+			$sql="insert into `$table`(".implode(',', $cols).") values(".implode(',', $vals).")";
+			$this->exec($sql);
+			return $this->insert_id();
+		}
+		
 		function affected_rows(){
 		    return mysqli_affected_rows($this->dbh);
 		}
