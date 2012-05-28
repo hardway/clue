@@ -1,4 +1,5 @@
 <?php    
+	require_once dirname(__DIR__).'/core.php';
     require_once "constructor.php";
     
     $ctor=new Clue_Tool_Constructor();

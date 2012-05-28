@@ -20,7 +20,9 @@
             $phar->setStub('
             <?php 
                 Phar::mapPhar("Clue"); 
-                        
+                
+                define("CLUE_VERSION", "'.CLUE_VERSION.'");
+
                 require_once "phar://Clue/core.php";
                 spl_autoload_register("Clue\autoload_load");
                 require_once "phar://Clue/application.php";
@@ -52,14 +54,14 @@
     
     class Clue_Tool_Constructor{
         function help(){
-            echo <<<END
+            echo "
+Version: ".CLUE_VERSION."
 Usage: clue [command] {arguments...}
     init    Initialize application skeleton
     add     Add controller::action skeleton
             eg: clue add controller {action}
     help    Display this help screen
-    
-END;
+            ";
         }
         
         function build($dest=null){

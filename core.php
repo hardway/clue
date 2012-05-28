@@ -3,8 +3,13 @@ namespace Clue{
     /**
      * Bootstrap code, facility to load subsystem here.
      */
-     
-    define('CLUE_VERSION', '5.3.001');
+    if(!defined("CLUE_VERSION")){
+        $version=exec("hg parent --template {latesttag}.{latesttagdistance}", $_, $err);
+        if($err==0)
+            define('CLUE_VERSION', $version);
+        else
+            define("CLUE_VERSION", "DEVELOPMENT");
+    }    
     
     // common defination
     if(!defined('DS'))          define("DS", DIRECTORY_SEPARATOR);
