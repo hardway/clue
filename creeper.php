@@ -62,7 +62,7 @@ namespace Clue{
 		}
 	}
 	
-	class Clue_Creeper{
+	class Creeper{
 		public $responseHeader;
 		public $content;
 		public $agent="ClueCreeper";
