@@ -3,6 +3,7 @@
 
 	class ActiveRecord{
 		static protected $_db;
+		static protected $_acl;
 		
 		protected static $_model=array(
 			/* Example
@@ -57,6 +58,10 @@
 		    return static::$_model;
 		}
 		
+		static function use_acl($acl_class){
+			static::$_acl=$acl_class;
+		}
+
         static function use_database($db){
             static::$_db=$db;
         }
@@ -301,6 +306,19 @@
 			return empty($this->_snap[$model['pkey']]);
 		}
 		
+		function add_history($data, $action){
+			$model=self::model();
+
+			if(!isset($model['history_table']) || empty(self::$_acl)) return false;
+
+			$data['history_user']=call_user_func(array(self::$_acl,"username"));
+			$data['history_action']=$action;
+			$data['history_time']=date("Y-m-d H:i:s");
+			$data['history_comment']=null;
+
+			self::db()->insert($model['history_table'], $data);
+		}
+
 		function save(){
 		    if(!$this->validate()) return false;
 			
@@ -312,23 +330,30 @@
 			if($this->is_new()){	// Insert New
 				$clist=array();
 				$vlist=array();
+				$history_data=array();
 				foreach($model['columns'] as $c=>$m){
 					if(isset($m['readonly']) || $this->_snap[$c]==$this->$c) continue;
 					
 					$clist[]="`".$m['name']."`";
 					$vlist[]=self::db()->quote($this->$c);
+					$history_data[$m['name']]=$this->$c;
 				}
 				$sql="insert into $table (".join(", ", $clist).") values(".join(",", $vlist).")";
+				$history_action='C';
 			}
 			else{ // Update Value
 				$list=array();
+				$history_data=array();
 				foreach($model['columns'] as $c=>$m){
 					if(isset($m['readonly']) || $this->_snap[$c]==$this->$c) continue;
 					
 					$list[]="`".$m['name']."`=".self::db()->quote($this->$c);
+					$history_data[$m['name']]=$this->$c;
 				}
-				if(count($list)>0)
+				if(count($list)>0){
 					$sql="update $table set ".join(",", $list)." where `$pk`='".$this->$pk."'";
+					$history_action='U';
+				}
 				else{
 				    // Nothing has changed.
 				    return true;
@@ -343,6 +368,10 @@
     			if(empty($this->$pk)){
     				$this->$pk=self::db()->insert_id();
     			}
+    			
+    			$history_data[$pk]=$this->$pk;
+    			$this->add_history($history_data, $history_action);
+
     			$this->_snap_shot();
 			}
 			
@@ -353,9 +382,17 @@
 			$model=self::model();
 			$pk=$model['pkey'];
 			
+			$history_data=array();
+			foreach($model['columns'] as $c=>$m){
+				$history_data[$m['name']]=$this->$c;
+			}
+			$history_data[$pk]=$this->$pk;
+
 			$sql="delete from {$model["table"]} where `$pk`='".$this->$pk."'";
 			$ret=self::db()->exec($sql);
 			
+			$this->add_history($history_data, 'D');
+
 			$this->init();
 			$this->_snap_shot();
 			
