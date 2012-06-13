@@ -4,12 +4,12 @@ namespace Clue{
      * Bootstrap code, facility to load subsystem here.
      */
     if(!defined("CLUE_VERSION")){
-        $version=exec("hg parent --template {latesttag}.{latesttagdistance}", $_, $err);
+        $version=exec("hg parent --template {latesttag}.{latesttagdistance} 2>&1", $_, $err);
         if($err==0)
             define('CLUE_VERSION', $version);
         else
             define("CLUE_VERSION", "DEVELOPMENT");
-    }    
+    }
     
     // common defination
     if(!defined('DS'))          define("DS", DIRECTORY_SEPARATOR);

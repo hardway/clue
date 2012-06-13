@@ -74,10 +74,20 @@ namespace Clue{
 		private $curl;
 		private $history=array();
 		
-		function __construct(){
+		/**
+		 * Example of config file:
+		 * 
+		 * $config=array(
+		 * 		'cookie'=>'curl.cookie'
+		 * )
+		*/
+
+		function __construct($config=array()){
 			$this->curl=curl_init();
 			curl_setopt($this->curl, CURLOPT_RETURNTRANSFER, true);
 			curl_setopt($this->curl, CURLOPT_FOLLOWLOCATION, true);
+			curl_setopt($this->curl, CURLOPT_CONNECTTIMEOUT, 15);
+			curl_setopt($this->curl, CURLOPT_TIMEOUT, 60);
 			
 			$cacheDir=getenv('creeper_cache');
 			if($cacheDir) $this->enable_cache($cacheDir);
@@ -91,9 +101,10 @@ namespace Clue{
 			
 			curl_setopt($this->curl, CURLOPT_USERAGENT, $this->agent);
 			
-			// TODO: pick a unique cookie file name
-			curl_setopt($this->curl, CURLOPT_COOKIEJAR, "curl.cookie");	// write
-			curl_setopt($this->curl, CURLOPT_COOKIEFILE, "curl.cookie");// read
+			if(isset($config['cookie'])){
+				curl_setopt($this->curl, CURLOPT_COOKIEJAR, $config['cookie']);	// write
+				curl_setopt($this->curl, CURLOPT_COOKIEFILE, $config['cookie']);// read
+			}
 		}
 		
 		function __destruct(){
