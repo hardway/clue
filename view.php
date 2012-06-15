@@ -1,27 +1,20 @@
 <?php 
 namespace Clue{
     define('CLUE_VIEW_FUNCTION_FILTER', "eval, call_user_func, exec, system, passthru, pcntl_exec");
-    
+
+    // TODO: cache should be implemented at controller or router level.
     class View{
         protected $view;
-        protected $file;
-        protected $cache;
+        protected $template;
+        protected $compiled;
         protected $vars;
         
         function __construct($view=null){
             $this->view=trim($view, '/');
-            $this->file=APP_ROOT.'/view/'.$view;
-            $this->cache=APP_ROOT.'/cache/'.str_replace('/','_',$view).'_'.md5($view);
+            $this->template=APP_ROOT."/view/$view.html";
+            $this->compiled=APP_ROOT."/view/$view.compiled";
             
-            // Search for existed file extension
-            foreach(array(".html", ".php") as $ext){
-                if(file_exists($this->file.$ext)){
-                    $this->file.=$ext;
-                    break;
-                }
-            }
-
-            if(!file_exists($this->file)){
+            if(!file_exists($this->template)){
 				throw new Exception("View didn't exists: $view");
             }
             
@@ -47,15 +40,15 @@ namespace Clue{
         function render($vars=array()){
             $this->vars=array_merge($this->vars, $vars);
             
-            if(!file_exists($this->cache) || filemtime($this->file) > filemtime($this->cache)){
+            if(!file_exists($this->compiled) || filemtime($this->template) > filemtime($this->compiled)){
                 $this->compile();
             }
             extract($this->vars);
-            include $this->cache;
+            include $this->compiled;
         }
         
         function compile(){
-            $page=file_get_contents($this->file);
+            $page=file_get_contents($this->template);
 
             // TODO: if/else, viriable suffix
             //      http://www.raintpl.com/Documentation/
@@ -175,8 +168,7 @@ namespace Clue{
                 $compiled.=$src;
             }
             
-            if(!is_dir(dirname($this->cache))) mkdir(dirname($this->cache), 0666, true);
-            file_put_contents($this->cache, $compiled);
+            file_put_contents($this->compiled, $compiled);
         }
         
         function parse_var($str){
@@ -184,10 +176,6 @@ namespace Clue{
                 return "\${$m[1]}['{$m[2]}']";
             }
             else return $str;
-        }
-        
-        function cache(){
-            // TODO
         }
     }
 }

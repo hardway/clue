@@ -176,6 +176,24 @@ namespace Clue{
             $r=$this->router->route($this->controller, $this->action, $this->params);
             $ret=call_user_func_array(array($r['handler'], $r['handler']->action), $r['args']);
         }
+
+        function set_msg($code, $message){
+            $this->session->put($code, $message);
+        }
+
+        function msg($code){
+            $message=$this->session->take($code);
+            if(empty($message)) return false;
+
+            $type="info";
+            if(preg_match('/error/i', $code)) $type='error';
+            else if(preg_match('/warning/i', $code)) $type='warning';
+            else if(preg_match('/debug/i', $code)) $type='debug';
+
+            echo <<<MSG
+            <div class='msg'><div class='$type'>$message</div></div>
+MSG;
+        }
         
         function run(){
             $this->prepare();
