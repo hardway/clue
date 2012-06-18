@@ -17,10 +17,7 @@
             $phar->convertToExecutable(Phar::PHAR);
             $phar->startBuffering();
             $phar->buildFromDirectory($this->root);
-            $phar->setStub('
-            <?php 
-                Phar::mapPhar("Clue"); 
-                
+            $phar->setStub('<?php Phar::mapPhar("Clue");                 
                 define("CLUE_VERSION", "'.CLUE_VERSION.'");
 
                 require_once "phar://Clue/core.php";
@@ -42,7 +39,7 @@
                     }        
                 }
                 __HALT_COMPILER(); 
-            ?>');
+            ');
             $phar->stopBuffering();
             echo "Phar build at: $dest";
         }
