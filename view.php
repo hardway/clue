@@ -1,5 +1,8 @@
 <?php 
 namespace Clue{
+    require_once 'Mustache/Autoloader.php';
+    \Mustache_Autoloader::register();
+
     define('CLUE_VIEW_FUNCTION_FILTER', "eval, call_user_func, exec, system, passthru, pcntl_exec");
 
     // TODO: cache should be implemented at controller or router level.
@@ -11,7 +14,14 @@ namespace Clue{
         
         function __construct($view=null){
             $this->view=trim($view, '/');
-            $this->template=APP_ROOT."/view/$view.html";
+
+            foreach(array("mustache", "html") as $ext){
+                $this->template=APP_ROOT."/view/$view.$ext";
+                if(file_exists($this->template)){
+                    break;
+                }
+            }
+
             $this->compiled=APP_ROOT."/view/$view.compiled";
             
             if(!file_exists($this->template)){
@@ -38,13 +48,26 @@ namespace Clue{
         }
         
         function render($vars=array()){
-            $this->vars=array_merge($this->vars, $vars);
-            
-            if(!file_exists($this->compiled) || filemtime($this->template) > filemtime($this->compiled)){
-                $this->compile();
+            if(is_array($vars))
+                $this->vars=array_merge($this->vars, $vars);
+            else
+                $this->vars=$vars;
+
+            if(preg_match('/\.mustache$/i', $this->template)){
+                $mustache_base=dirname(APP_ROOT."/view/".$this->view);
+                $m = new \Mustache_Engine(array(
+                    'loader'=>new \Mustache_Loader_FilesystemLoader($mustache_base),
+                    'partials_loader'=>new \Mustache_Loader_FilesystemLoader($mustache_base)
+                ));
+                echo $m->render(basename($this->view), $this->vars);
             }
-            extract($this->vars);
-            include $this->compiled;
+            else{
+                if(!file_exists($this->compiled) || filemtime($this->template) > filemtime($this->compiled)){
+                    $this->compile();
+                }
+                extract($this->vars);
+                include $this->compiled;
+            }
         }
         
         function compile(){

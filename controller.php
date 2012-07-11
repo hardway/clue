@@ -18,10 +18,12 @@ namespace Clue{
 			$this->layout=new Layout(empty($this->layout) ? 'default' : $this->layout);
 		}
 		
-		function render_raw($view=null){            
+		function render_raw($view=null, $vars=null){            
             $view=empty($view) ? $this->view : $view;
             $view=new View(str_replace('_','/',$this->controller)."/{$view}");
-            $view->render($this->view_data);
+            
+            if(empty($vars)) $vars=$this->view_data;
+            $view->render($vars);
 		}
 
         function render($view=null){
