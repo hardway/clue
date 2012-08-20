@@ -1,0 +1,21 @@
+/* RESET */
+body,h1,h2,h3,h4,h5,h6,dl,dt,dd,ul,ol,li,th,td,p,blockquote,pre,form,fieldset,legend,input,button,textarea,hr{margin:0;padding:0;}
+h1,h2,h3,h4,h5,h6{font-size:100%;}
+html { overflow-x: auto; overflow-y: scroll; }
+body { background-color: #FFF; color: #333; min-width: 940px; height: 100%; padding: 0; }
+body,button,input,select,textarea{font: 14px "Microsoft Yahei",sans-serif;}
+* html * {font-size: 100%;} /* Just For IE6 */
+li{list-style:none;}
+fieldset,img{border:0;}
+table{border-collapse:collapse;border-spacing:0;}
+q:before,q:after{content:'';}
+abbr[title]{border-bottom:1px dotted;cursor:help;}
+address,cite,dfn,em,var{font-style:normal;}
+button,input,select,textarea{font-size:100%;}
+legend{color:#000;}
+code,kbd,samp{font-family:"Consolas",monospace;}
+a, a:link, a:visited { color: #06c; }
+ul, ol {list-style: none;}
+textarea, input[type=text], input[type=password] {  font: 12px "Consolas", monospace;}
+textarea:focus, input[type=text]:focus, input[type=password]:focus {background: #FFE;}
+small {font-size: 12px;}
