@@ -20,7 +20,7 @@ namespace Clue{
 		
 		function render_raw($view=null, $vars=null){            
             $view=empty($view) ? $this->view : $view;
-            $view=new View(str_replace('_','/',$this->controller)."/{$view}");
+            $view=new View('page/'.str_replace('_','/',$this->controller)."/{$view}");
             
             if(empty($vars)) $vars=$this->view_data;
             $view->render($vars);

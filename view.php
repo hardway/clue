@@ -1,15 +1,14 @@
 <?php 
 namespace Clue{
-    define('CLUE_VIEW_FUNCTION_FILTER', "eval, call_user_func, exec, system, passthru, pcntl_exec");
-
-    // TODO: cache should be implemented at controller or router level.
     class View{
         protected $view;
         protected $template;
         protected $vars;
         
+        // TODO: use template_dir
+
         function __construct($view=null){
-            $this->view=trim($view, '/');
+            $this->view=strtolower(trim($view, '/'));
 
             foreach(array("mustache", "html") as $ext){
                 $this->template=APP_ROOT."/view/".strtolower($view).".$ext";
@@ -47,6 +46,13 @@ namespace Clue{
             else
                 $this->vars=$vars;
 
+            // View Logic
+            extract($this->vars);
+            if(file_exists("$this->view.php")){
+                include "$this->view.php";
+            }
+
+            // View Template
             if(preg_match('/\.mustache$/i', $this->template)){
                 require_once 'Mustache/Autoloader.php';
                 \Mustache_Autoloader::register();
@@ -58,8 +64,7 @@ namespace Clue{
                 ));
                 echo $m->render(basename($this->view), $this->vars);
             }
-            else{
-                extract($this->vars);
+            else{                
                 include $this->template;
             }
         }
