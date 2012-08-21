@@ -61,10 +61,10 @@ namespace Clue\Database{
 		}
 		
 		function exec($sql){
-			parent::exec($sql);
+			call_user_func_array("parent::exec", func_get_args());
 			
 			$this->free_result();
-			$this->_result=mysqli_query($this->dbh, $sql);
+			$this->_result=mysqli_query($this->dbh, $this->lastquery);
 			
 			if(!$this->_result){
 				$this->setError(array('code'=>mysqli_errno($this->dbh), 'error'=>mysqli_error($this->dbh)));
