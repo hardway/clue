@@ -12,7 +12,8 @@ namespace Clue{
     }
     
     // common defination
-    if(!defined('DS'))          define("DS", DIRECTORY_SEPARATOR);
+    if(!defined('DS'))  define("DS", DIRECTORY_SEPARATOR);
+    if(!defined('NS'))  define('NS', "\\");
     
     if(!defined('APP_ROOT'))    define('APP_ROOT', dirname($_SERVER['SCRIPT_FILENAME']));
     if(!defined('APP_BASE')){
@@ -22,30 +23,50 @@ namespace Clue{
         define('APP_BASE', $dir);
     }
 
+    $_CLASS_PATH=array();
+
+    function add_class_path($path){
+        global $_CLASS_PATH;
+
+        // Normalize path
+        $path=realpath($path);
+
+        if($path!==false && !in_array($path, $_CLASS_PATH)){
+            $_CLASS_PATH[]=$path;
+        }
+    }
+
+    function get_class_path(){
+        global $_CLASS_PATH;
+        return $_CLASS_PATH;
+    }
+
     function autoload_load($class){
-        if(substr($class, 0, 5)=="Clue\\"){
-            $class=str_replace("\\", '/', substr($class, 5));
-            $path=__DIR__ . DS . str_replace("_", DS, strtolower($class)). ".php";
+        global $_CLASS_PATH;
+
+        $class=str_replace(NS, '/', $class);
+        $class=str_replace('_', '/', $class);
+        $class=strtolower($class);
+
+        if(substr_compare($class, 'clue/', 0, 5)==0){
+            // Special treat for Clue\ classes. For they might reside in a phar file.
+            $class=substr($class, 5);
+            if(file_exists(__DIR__.'/'.$class.".php")){
+                require_once __DIR__.'/'.$class.".php";
+                return;
+            }
         }
         else{
-            $path=APP_ROOT.'/class/'.$class.'.php';
+            foreach($_CLASS_PATH as $path){
+                if(file_exists($path.'/'.$class.".php")){
+                    require_once $path.'/'.$class.".php";
+                    return;
+                }
+            }
         }
-        
-        if(!file_exists($path)) $path=strtolower($path);
-        if(!file_exists($path)) return false;
-        
-        require_once $path;
     }
         
+    add_class_path(APP_ROOT."/class");
     spl_autoload_register("Clue\autoload_load");
-    
-    class Clue{
-        // TODO: remove this $classpath out of class 'clue'
-        public static $classPath=array();
-        
-        static function add_class_path($path){
-            self::$classPath[]=$path;
-        }
-    }
 }
 ?>
