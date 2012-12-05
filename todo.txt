@@ -1,3 +1,6 @@
 * mysql记录日志功能，同时能够记录执行sql的位置，参考go4mat
 * mysql支持insert，或许还有update，参考go4mat
 * pagination可以优化sql，参考go4mat
+* creeper检测curl模块是否安装
+* creeper_cache优化
+* creeper参考snoopy的优点
