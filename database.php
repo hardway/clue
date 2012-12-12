@@ -147,7 +147,7 @@ namespace Clue{
 		        $key=$row[0];
 		        $val=$row[1];
 		        
-		        if(empty($key)) continue;
+		        if(is_null($key)) continue;
 		        
 		        if($mode==OBJECT)
 		            $hash->$key=$val;
