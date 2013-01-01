@@ -108,7 +108,7 @@ namespace Clue{
 						$var=intval($args[$idx]);
 						break;
 					case 'f':
-						$varfloatval($args[$idx]);
+						$var=floatval($args[$idx]);
 						break;
 				}
 

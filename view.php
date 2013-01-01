@@ -53,6 +53,7 @@ namespace Clue{
             }
 
             // View Template
+            // TODO: rewrite mustache template engine
             if(preg_match('/\.mustache$/i', $this->template)){
                 require_once 'Mustache/Autoloader.php';
                 \Mustache_Autoloader::register();
