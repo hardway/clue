@@ -54,10 +54,15 @@
             echo "
 Version: ".CLUE_VERSION."
 Usage: clue [command] {arguments...}
-    init    Initialize application skeleton
-    add     Add controller::action skeleton
-            eg: clue add controller {action}
-    help    Display this help screen
+    init        Initialize application skeleton
+
+    gen_sql     Generate SQL Script based on db/schema.php
+    gen_model   Generate Model file according to schema
+                eg: clue gen_model user
+    gen_control Generate Controller along with Views
+                eg: clue gen_control project view
+
+    help        Display this help screen
             ";
         }
         
@@ -80,33 +85,118 @@ Usage: clue [command] {arguments...}
             $this->_deepcopy($skeleton, $site);
         }
         
+        function gen_sql(){
+            $schema=include "db/schema.php";
+            if(!is_array($schema)) die("Schema file not found or invalid.");
+
+            foreach($schema as $table=>$def){
+                $sql[]=Clue\Database\MySQL::sql_to_create_table($table, $def);
+            }
+
+            file_put_contents("db/create.sql", implode("\n\n", $sql));
+            echo "SQL Script generated successfully.";
+        }
+
+        function gen_model($name="*"){
+            $schema=include "db/schema.php";
+            if(!is_array($schema)) die("Schema file not found or invalid.");
+
+            // Determine models to generate
+            if($name=="*"){
+                $models=array_keys($schema);
+            }
+            else{
+                $models=array($name);
+            }
+
+            // Remove existed model from list
+            if(!is_dir("model/base")) mkdir("model/base");
+            $models=array_filter($models, function($m){ return !file_exists("model/base/$m.php");});
+
+            if(count($models)==0){
+                exit("No models to generate");
+            }
+
+            if(count($models)>1 && !$this->_confirm("Generting models of: ".implode(", ", $models))){
+                exit("Canceled");
+            }
+
+            // Generate model files
+            foreach($models as $m){
+                $className=str_replace(" ", "", ucwords(str_replace("_", " ", $m)));
+                $fields=array_filter(array_keys(($schema[$m])), function($c){ return $c[0]!="_"; });
+                $fields=implode("\n", array_map(function($f){ return "    public \$$f;"; }, $fields));
+
+                // ReCreate base model class
+                file_put_contents("model/base/".strtolower($className).".php", <<<END
+<?php
+namespace Base;
+use \Clue\ActiveRecord;
+class $className extends ActiveRecord{
+$fields
+}
+END
+                );
+
+                // Create model class if not exists
+                file_put_contents("model/".strtolower($className).".php", <<<END
+<?php
+class $className extends Base\\$className{
+}
+END
+                );
+            }
+        }
+
+        function gen_control(/* controller, actions ... */){
+            $args=func_get_args();
+            $controller=array_shift($args);
+            $actions=count($args) > 0 ? $args : array("index");
+
+            $className=ucwords($controller)."_Controller";
+            // Create Controller Class
+            if(!file_exists("control/$controller.php")){
+                file_put_contents("control/$controller.php", <<<END
+<?php
+class $className extends Clue\Controller{
+
+}
+END
+                );
+            }
+
+            
+            foreach($actions as $action){
+                $src=file_get_contents("control/$controller.php");
+                $src=substr($src, 0, strrpos($src, "}"));
+
+                // Append Actions
+                $signature="/function\s+$action\(/";
+                if(!preg_match($signature, $src)){
+                    $src.=<<<END
+    public function $action(){
+        \$this->render();
+    }
+}
+END;
+                    file_put_contents("control/$controller.php", $src);
+                }
+
+                // Create Default view files
+                if(!is_dir("view/page/$controller")) mkdir("view/page/$controller");
+                if(!file_exists("view/page/$controller/$action.html")){
+                    file_put_contents("view/page/$controller/$action.html", <<<END
+VIEW PATH: view/page/$controller/$action.html
+END
+                    );
+                }
+            }
+        }
+
         function db($target){
             // Determine app root
             // Detect current database
             // Execute Migration
-        }
-        
-        function add($controller, $action='index'){
-            $skel=new Clue_Tool_Constructor_Skeleton();
-            if(!$skel->controller_exists($controller)){
-                $skel->add_controller($controller);
-            }
-            else{
-                echo "Controller $controller already exists.\n";
-            }
-            
-            if($skel->controller_exists($controller)){  // In case user cancelled controller creation
-                if(!$skel->action_exists($controller, $action)){
-                    $skel->add_action($controller, $action);
-                }
-                else{
-                    echo "Action $controller::$action already exists.\n";
-                }
-            }
-        }
-        
-        function remove($controller, $action=null){
-            // TODO
         }
         
         static function _confirm($question){

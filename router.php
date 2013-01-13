@@ -254,7 +254,7 @@ namespace Clue{
 		function route($controller, $action, $params=array()){
 			// load controller
 			$class="{$controller}_Controller";
-			$path=APP_ROOT . "/controller/".strtolower(str_replace('_','/',$controller)).".php";
+			$path=APP_ROOT . "/control/".strtolower(str_replace('_','/',$controller)).".php";
 
 			if($_SERVER['REQUEST_METHOD']=='POST')
 				$action="_$action";

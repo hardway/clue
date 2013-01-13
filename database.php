@@ -21,6 +21,26 @@ namespace Clue{
 			if(is_object($param)) $param=(array)$param;
 			return new $factory($param);
 		}
+
+		static function sql_to_create_table($table, $columns){
+			foreach($columns as $name=>$def){
+				if($name=='_pkey'){
+					// Constraints: Primary Key 
+					if(!is_array($def)) $def=array($def);
+					$sql[]='CONSTRAINT PRIMARY KEY ('.implode(",", $def).')';
+				}
+				else{
+					if(!is_array($def)) $def=array('type'=>$def);
+					$s=array("`$name`", $def['type']);
+					if(isset($def['null'])) $s[]=$def['null'] ? "NULL" : "NOT NULL";
+					if(isset($def['default'])) $s[]="DEFAULT ".$def['default'];
+					if(isset($def['auto_increment'])) $s[]="AUTO_INCREMENT";
+					if(isset($def['pkey']) && $def['pkey']) $s[]="PRIMARY KEY";
+					$sql[]=implode(" ", $s);
+				}
+			}
+			return "CREATE TABLE IF NOT EXISTS `$table` (\n".implode(", \n", $sql)."\n);";
+		}
 		
 		// TODO: refactor profile, use config inject
 		static function open($profile='default'){

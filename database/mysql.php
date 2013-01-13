@@ -5,7 +5,7 @@ namespace Clue\Database{
 
 		function __construct(array $param){
 			// Make sure mysqli extension is enabled
-			if(!extension_loaded('mysqli')) 
+			if(!extension_loaded('mysqli'))
 				throw new Exception(__CLASS__.": extension mysqli is missing!");
 			
 			// Check Parameter, TODO

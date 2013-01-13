@@ -66,7 +66,10 @@ namespace Clue{
         }
     }
         
+    add_class_path(APP_ROOT."/model");
     add_class_path(APP_ROOT."/class");
+    add_class_path(APP_ROOT."/include");
+
     spl_autoload_register("Clue\autoload_load");
 }
 ?>

@@ -6,12 +6,11 @@
 	else
 		require 'clue/stub.php';
 	
-    $config=require_once __DIR__.'/config.php';
+    $config=include 'config.php';
     $app->init(array('config'=>$config));
 
     $router=$app->router;
-    $router->connect('/:controller/:action');
-    $router->connect('/:controller');
+    include "route.php";
 
     $app->run();
 ?>
