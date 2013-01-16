@@ -7,7 +7,6 @@ namespace Clue{
 		public $referrer;
 		
 		protected $layout="default";
-		protected $view_data=array();
 		
 		function __construct($controller=null, $action=null){
 			$this->controller=$controller;
@@ -18,19 +17,18 @@ namespace Clue{
 			$this->layout=new Layout(empty($this->layout) ? 'default' : $this->layout);
 		}
 		
-		function render_raw($view=null, $vars=null){            
+		function render_raw($view=null, $data=array()){            
             $view=empty($view) ? $this->view : $view;
             $view=new View('page/'.str_replace('_','/',$this->controller)."/{$view}");
             
-            if(empty($vars)) $vars=$this->view_data;
-            $view->render($vars);
+            $view->render($data);
 		}
 
-        function render($view=null){
+        function render($view=null, $data=array()){
             $content=false;
             
             ob_start();
-        	$content=$this->render_raw($view);
+        	$content=$this->render_raw($view, $data);
             $content = ob_get_contents(); 
             ob_end_clean();
 
@@ -55,14 +53,6 @@ namespace Clue{
 		
 		function go_back(){
 			$this->redirect($this->referrer);
-		}
-		
-		function set($name, $value=null){
-		    if(is_array($name) && is_null($value)){
-		        $this->view_data=array_merge($this->view_data, $name);
-		    }
-		    else
-			    $this->view_data[$name]=$value;
 		}
 	}
 }

@@ -111,7 +111,6 @@ Usage: clue [command] {arguments...}
 
             // Remove existed model from list
             if(!is_dir("model/base")) mkdir("model/base");
-            $models=array_filter($models, function($m){ return !file_exists("model/base/$m.php");});
 
             if(count($models)==0){
                 exit("No models to generate");
@@ -128,7 +127,8 @@ Usage: clue [command] {arguments...}
                 $fields=implode("\n", array_map(function($f){ return "    public \$$f;"; }, $fields));
 
                 // ReCreate base model class
-                file_put_contents("model/base/".strtolower($className).".php", <<<END
+                $path="model/base/".strtolower($className).".php";
+                file_put_contents($path, <<<END
 <?php
 namespace Base;
 use \Clue\ActiveRecord;
@@ -137,14 +137,22 @@ $fields
 }
 END
                 );
+                echo "CREATED: $path\n";
 
                 // Create model class if not exists
-                file_put_contents("model/".strtolower($className).".php", <<<END
+                $path="model/".strtolower($className).".php";
+                if(file_exists($path)){
+                    echo "SKIPPED: $path\n";
+                }
+                else{
+                    file_put_contents($path, <<<END
 <?php
 class $className extends Base\\$className{
 }
 END
-                );
+                    );
+                    echo "CREATED: $path\n";
+                }
             }
         }
 

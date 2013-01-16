@@ -80,16 +80,10 @@ namespace Clue{
             $this->session=new Session();
             
             if($this['config']['database']){
-                $this->set_default_database((array)$this['config']['database']);
-            }
-        }
-        
-        function set_default_database($param){
-            $this->db=Database::create($param['type'], $param);
-            
-            // throw exception if database is not connectable
-            if($this->db->errors){
-                throw new Exception($this->db->lasterror['error']);
+                $cfg=$this['config']['database'];
+                $this['db']=array(
+                    'default'=>Database::create($cfg['type'], $cfg)
+                );
             }
         }
 
@@ -123,8 +117,9 @@ namespace Clue{
         function dispatch(){
             $resource=substr($this->url, strlen($this['webbase']));
 
-            if($this['user'])
-                $this['user']->authorize($resource);
+            if($this['user'] && !$this['user']->authorize($resource, 'a')){
+                $this['user']->authorize_failed($resource, 'a');
+            }
             
             $r=$this['router']->route($this->controller, $this->action, $this->params);
             $ret=call_user_func_array(array($r['handler'], $r['handler']->action), $r['args']);
@@ -159,27 +154,19 @@ MSG;
             $this->dispatch();
         }        
     }
-    
 }
 
 namespace{    
     // global short cut
     function url_for($controller, $action='index', $params=array()){
         global $app;
-        return $app->router->url_for($controller, $action, $params);
-    }
-    
-    function messenger(){
-        global $app;
-        return $app->session;
-    }
-    
-    function appbase(){
-        return APP_BASE;
+        return $app['router']->url_for($controller, $action, $params);
     }
     
     function assets($asset=null){
-        $url=(APP_BASE=="\\" || APP_BASE=='/') ? '/assets' : appbase()."/assets";
+        global $app;
+
+        $url=(APP_BASE=="\\" || APP_BASE=='/') ? '/assets' : $app['webbase']."/assets";
         if(!empty($asset)) $url.="/$asset";
         
         return $url;

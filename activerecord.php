@@ -80,8 +80,8 @@
 		        return self::$_db;
 		    }
 		    // TODO: decouple this extra relationship
-		    else if(isset($app) && $app->initialized){
-				return static::$_db=$app->db;
+		    else if(isset($app)){
+				return static::$_db=$app['db']['default'];
 			}
 			else
 				return null;

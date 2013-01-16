@@ -4,6 +4,12 @@ namespace Clue;
 # This is a sample implementation
 # Might use trait when PHP5.4 is popular
 
+# Resource, might be an URI or a feature code
+# Verb:
+#	a 	access, used in Application by default
+#	m 	manage
+#	p 	post, HTTP VERB
+
 class User{
 	static function current(){
 		return isset($_SESSION['user']) ? unserialize($_SESSION['user']) : new static("Guest");
@@ -16,8 +22,11 @@ class User{
 		$this->username=$username;
 	}
 
-	function login($name, $pass){
-		$this->username=$this->name=$name;
+	function login($info){
+		foreach($info as $k=>$v){
+			$this->$k=$v;
+		}
+
 		$_SESSION['user']=serialize($this);
 
 		return true;
@@ -28,17 +37,17 @@ class User{
 		session_destroy();
 	}
 
-	function allow($resource, $verb='r'){
+	function allow($resource, $verb='a'){
 		$hash=md5(serialize(array($resource, $verb)));
 		$this->acl_rules[$hash]=array($resource, $verb, true);
 	}
 
-	function deny($resource, $verb='r'){
+	function deny($resource, $verb='a'){
 		$hash=md5(serialize(array($resource, $verb)));
 		$this->acl_rules[$hash]=array($resource, $verb, false);
 	}
 
-	function authorize($resource, $verb='r'){
+	function authorize($resource, $verb='a'){
 		$rules=array_values($this->acl_rules);
 
 		usort($rules, function($a, $b){
@@ -52,11 +61,11 @@ class User{
 					return true;
 				}
 				else{
-					$this->authorize_failed($resource, $verb);
+					return false;
 				}
 			}
 		}
-		$this->authorize_failed($resource, $verb);
+		return false;
 	}
 
 	function authorize_failed($resource, $verb){
