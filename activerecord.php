@@ -25,7 +25,11 @@
 		        $class=get_called_class();
 		        
 		        if(!isset($model['table'])){
-		            $model['table']="`".strtolower($class)."`";
+		            $table=strtolower($class);
+		            if(strpos($table, "\\")!==false){
+		            	$table=substr($table, strpos($table, "\\"));
+		            }
+		            $model['table']="`$table`";
 		        }
 		        
 		        if(!isset($model['pkey'])){

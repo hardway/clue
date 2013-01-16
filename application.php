@@ -1,11 +1,8 @@
 <?php  
 namespace Clue{
-    $DEFAULT_APPLICATION_CONFIG=array(
-        'debug'=>true,
-        'maintenance'=>false
-    );
-    
-    class Application{
+    class Application implements \ArrayAccess{
+        private $_values;
+
         public $base;
         public $config;
         public $db;
@@ -27,51 +24,64 @@ namespace Clue{
         protected $restricted_zone=array();
         protected $auth;
         
-        function __construct(){
+        function __construct($values=array()){
+            $this->_values=$values;
+
+            if(!isset($this['webbase'])) $this['webbase']=str_replace("\\", '/', dirname($_SERVER['SCRIPT_NAME']));
+            if(!isset($this['user_class'])) $this['user_class']="Clue\\User";
+            if(!isset($this['user'])){
+                $this['user']=$this->share(function($c){ 
+                    $cls=$c['user_class'];
+                    return $cls::current();
+                });
+            }
+            if(!isset($this['router'])){
+                $this['router']=new Router();            
+            }
+
+            $this->init();
         }
-        
-        function init($options=null){
-            global $DEFAULT_APPLICATION_CONFIG;
-            
-            // Extend options
-            if(is_array($options)) foreach($options as $o=>$v){
-                $this->options[$o]=$v;
-            }
-            
-            $this->config=$DEFAULT_APPLICATION_CONFIG;
-            
-            if(isset($this->options['config'])){
-                $this->config=array_merge($this->config, $this->options['config']);
-            }
-            
-            $this->router=new Router(array(
-                'url_rewrite'=>$this->options["url_rewrite"]
-            ));
-            
-            if(isset($this->config['debug']) && $this->config['debug']==true){
+
+        function offsetGet($id){
+            $callable = is_object($this->_values[$id]) && method_exists($this->_values[$id], '__invoke');
+            return $callable ? $this->_values[$id]($this) : $this->_values[$id];
+        }
+
+        function offsetSet($id, $val)   { $this->_values[$id]=$val; }
+        function offsetExists($id)      { return array_key_exists($id, $this->_values); }
+        function offsetUnset($id)       { unset($this->_value[$id]); }
+        // REF: Pimple
+        public function share(\Closure $callable){
+            return function ($c) use ($callable) {
+                static $object;
+                if (null === $object) {
+                    $object = $callable($c);
+                }
+                return $object;
+            };
+        }
+
+        function init(){            
+            if(isset($this['config']['debug']) && $this['config']['debug']==true){
                 require_once __DIR__."/debug.php";
                 set_exception_handler(array("Clue\Debug","view_exception"));
                 set_error_handler(array("Clue\Debug", "view_error"));
             }
-            else if(!isset($this->config['log']) || $this->config['log']!==false){
-                if(!isset($this->config['log']) || !is_string($this->config['log']))
-                    $this->config['log']=APP_ROOT . DIRECTORY_SEPARATOR . 'log';
+            else if(!isset($this['config']['log']) || $this['config']['log']!==false){
+                if(!isset($this['config']['log']) || !is_string($this['config']['log']))
+                    $this['config']['log']=APP_ROOT . DIRECTORY_SEPARATOR . 'log';
 
                 require_once __DIR__."/log.php";
-                Clue_Log::set_log_dir($this->config['log']);
+                Clue_Log::set_log_dir($this['config']['log']);
                 set_exception_handler(array("Clue_Log","log_exception"));
                 set_error_handler(array("Clue_Log", "log_error"));
             }
             
             $this->session=new Session();
             
-            if($this->config['database']){
-                $this->set_default_database((array)$this->config['database']);
+            if($this['config']['database']){
+                $this->set_default_database((array)$this['config']['database']);
             }
-            
-            $this->auth=null;
-            
-            $this->initialized=true;
         }
         
         function set_default_database($param){
@@ -94,86 +104,29 @@ namespace Clue{
         
         static protected $instance;
         
-        function restrict_access($controller, $auth, $access=null){
-            $this->restricted_zone[]=array(
-                'controller'=>$controller,
-                'auth'=>$auth,
-                'access'=>$access
-            );
-            
-            $ctl=empty($controller) ? 'auth' : "{$controller}_auth";
-            
-            $url=empty($controller) ? "/login" : "/$controller/login";
-            $this->router->connect($url, array('controller'=>$ctl, 'action'=>'login'));
-            
-            $url=empty($controller) ? "/logout" : "/$controller/logout";
-            $this->router->connect($url, array('controller'=>$ctl, 'action'=>'logout'));
-        }
-        
-        public function identify(){
-            if(isset($_COOKIE['userid'])){
-                return $_COOKIE['userid'];
-            }
-            
-            return false;
-        }
-        
-        public function login($username, $password, $extra=array()){
-            if(empty($this->auth)) return false;
-            
-            $r=$this->auth->authenticate($username, $password, $extra);
-            
-            if(!empty($r)){
-                setcookie('userid', $r['id']);
-                setcookie('username', $r['name']);
-                return true;
-            }
-            
-            return false;
-        }
-        
-        public function logout(){
-            setcookie("userid", "", time() - 3600);
-            setcookie("username", "", time() - 3600);
-        }
-        
-        public function authorize($resource){
-            if(empty($this->auth)) return false;
-
-            return $this->auth->authorize($resource);
-        }
-        
         function before_dispatch($callback=null){
             $this->beforeDispatchHandler=$callback;
         }
         
         function prepare(){
-            $url=isset($_SERVER['HTTP_X_REWRITE_URL']) ? 
+            $this->url=isset($_SERVER['HTTP_X_REWRITE_URL']) ? 
                     $_SERVER['HTTP_X_REWRITE_URL'] : 
                     $_SERVER['REQUEST_URI'];
-                    
-            $map=$this->router->resolve($url);
+
+            $map=$this['router']->resolve($this->url);
                         
             $this->controller=$map['controller'];
             $this->action=$map['action'];
             $this->params=$map['params'];
         }
         
-        function dispatch(){            
-            foreach($this->restricted_zone as $rz){
-                if(preg_match('/^'.$rz['controller'].'/i', $this->controller)){
-                    if(in_array($this->action, array('login', 'logout'))){
-                        $this->auth=$rz['auth'];
-                    }
-                    else if($rz['auth']->authorize($this->identify(), $rz['access'])==false){
-                        $this->router->redirect_route($rz['controller'], 'login');
-                    }
-                    
-                    break;
-                }
-            }
+        function dispatch(){
+            $resource=substr($this->url, strlen($this['webbase']));
+
+            if($this['user'])
+                $this['user']->authorize($resource);
             
-            $r=$this->router->route($this->controller, $this->action, $this->params);
+            $r=$this['router']->route($this->controller, $this->action, $this->params);
             $ret=call_user_func_array(array($r['handler'], $r['handler']->action), $r['args']);
         }
 
@@ -209,9 +162,7 @@ MSG;
     
 }
 
-namespace{
-    $app=new Clue\Application(APP_ROOT);
-    
+namespace{    
     // global short cut
     function url_for($controller, $action='index', $params=array()){
         global $app;

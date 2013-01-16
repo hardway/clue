@@ -192,32 +192,15 @@ namespace Clue{
 		}
 	}
 	
-	class Clue_QueryRouteMap extends Clue_RouteMap{	
-		function resolve($uri){
-			if(isset($_GET["_c"])) {$this->controller=$_GET["_c"]; unset($_GET["_c"]);} else {$this->controller="index";}
-			if(isset($_GET["_a"])) {$this->action=$_GET["_a"]; unset($_GET["_a"]);} else {$this->action="index";}
-		}
-		
-		function reform($controller, $action, $params=array()){
-			$ps=array();
-			if(is_array($params)) foreach($params as $n=>$v){
-				$ps[]="&$n=$v";
-			}
-			return "/index.php?_c=$controller&_a=$action" . implode("", $ps);
-		}
-	}
-	
 	class Router{
 		protected $appbase;
 		public $map;
 		
-		function __construct($option){
+		function __construct(){
 			$this->appbase=str_replace("\\", '/', dirname($_SERVER['SCRIPT_NAME']));
 			
 			// Determine controller and action by default map
-			$this->map=@$option['url_rewrite'] ? 
-				new Clue_RouteMap() : 
-				new Clue_QueryRouteMap();		
+			$this->map=new Clue_RouteMap();	
 		}
 		
 		function connect($pattern, $rule=array(), $scope=null){

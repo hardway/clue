@@ -45,12 +45,12 @@ namespace Clue{
 		    
 		    $controller=empty($controller) ? $this->controller : $controller;
 		    
-			$app->router->redirect_route($controller, $action, $param);
+			$app['router']->redirect_route($controller, $action, $param);
 		}
 		
 		function redirect($url){
 		    global $app;
-			$app->router->redirect($url);
+			$app['router']->redirect($url);
 		}
 		
 		function go_back(){

@@ -6,11 +6,12 @@
 	else
 		require 'clue/stub.php';
 	
-    $config=include 'config.php';
-    $app->init(array('config'=>$config));
+    $app=new Clue\Application(array(
+    	'config'=>include 'config.php'
+    ));
 
-    $router=$app->router;
     include "route.php";
+    include "acl.php";
 
     $app->run();
-?>
+
