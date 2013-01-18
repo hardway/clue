@@ -61,20 +61,12 @@ namespace Clue{
             };
         }
 
-        function init(){            
-            if(isset($this['config']['debug']) && $this['config']['debug']==true){
-                require_once __DIR__."/debug.php";
-                set_exception_handler(array("Clue\Debug","view_exception"));
-                set_error_handler(array("Clue\Debug", "view_error"));
-            }
-            else if(!isset($this['config']['log']) || $this['config']['log']!==false){
-                if(!isset($this['config']['log']) || !is_string($this['config']['log']))
-                    $this['config']['log']=APP_ROOT . DIRECTORY_SEPARATOR . 'log';
-
-                require_once __DIR__."/log.php";
-                Clue_Log::set_log_dir($this['config']['log']);
-                set_exception_handler(array("Clue_Log","log_exception"));
-                set_error_handler(array("Clue_Log", "log_error"));
+        function init(){
+            $this->guard=new Guard($this['config']);
+            
+            if($this['config']['debug']===false){
+                $this->guard->display_level=0;
+                $this->guard->stop_level=0;
             }
             
             $this->session=new Session();
