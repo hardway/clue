@@ -34,7 +34,6 @@ class Guard{
 	public $log_level;		# Log it when overlimit
 	public $email_level;	# Email it when overlimit
 
-	public $email_address;
 	public $log_file;
 
 	private $errors=array();
@@ -46,7 +45,9 @@ class Guard{
 			'display_level'=>'ERROR',
 			'stop_level'=>0,	// Non Stoppping on error
 
-			'email_address'=>null,
+			'mail_to'=>null,
+			'mail_from'=>null,
+
 			'log_file'=>"log/".date("Ymd").".log"
 		);
 
@@ -57,7 +58,9 @@ class Guard{
 		$this->display_level=is_numeric($config['display_level']) ? $config['display_level'] : self::$ERROR_LEVEL[$config['display_level']];
 		$this->stop_level=is_numeric($config['stop_level']) ? $config['stop_level'] : self::$ERROR_LEVEL[$config['stop_level']];
 
-		$this->email_address=$config['email_address'];
+		$this->mail_to=$config['mail_to'];
+		$this->mail_from=$config['mail_from'];
+
 		$this->log_file=$config['log_file'];
 
         set_exception_handler(array($this, "on_exception"));
@@ -66,6 +69,17 @@ class Guard{
 	}
 
 	public function summarize(){
+		$fatal_error=error_get_last();
+		if(is_array($fatal_error)){
+			$this->errors[]=array(
+				'level'=>self::$ERROR_LEVEL[self::$PHP_ERROR_MAP[$fatal_error['type']]],
+				'type'=>self::$PHP_ERROR_MAP[$fatal_error['type']],
+				'message'=>$fatal_error['message'],
+				'trace'=>array(array('file'=>$fatal_error['file'], 'line'=>$fatal_error['line'])),
+				'context'=>$this->filter_context_vars($GLOBALS)
+			);
+		}
+
 		$to_log=array();
 		$to_display=array();
 		$to_email=array();
@@ -85,6 +99,14 @@ class Guard{
 		}
 
 		if(count($to_display)>0){
+			echo "
+				<script>
+					function toggle(id){
+						var el = document.getElementById(id);
+						el.style.display = el.style.display === 'none' ? '' : 'none';
+					}
+				</script>
+			";
 			echo implode("", $to_display);
 		}
 		if(!empty($this->log_file) && count($to_log)>0){
@@ -94,8 +116,8 @@ class Guard{
 				fclose($f);
 			}
 		}
-		if(!empty($this->email_address) && count($to_email)>0){
-			Email::send_mail("Developer", $this->email_address, "Error Report", "noreply", 
+		if(!empty($this->mail_to) && count($to_email)>0){
+			Email::send_mail("Developer", $this->mail_to, "Error Report", $this->mail_from, 
 				count($to_email)." error occured recently.", "<pre>".implode("\n\n", $to_email))."</pre>";
 		}
 
@@ -172,9 +194,11 @@ class Guard{
 			if(isset($t['file']) || isset($t['line'])){
 				$html.="<strong>{$t['file']}:{$t['line']}</strong> &gt;&gt; ";
 			}
-			$html.="{$t['class']}{$t['type']}{$t['function']}(".(is_array($t['args']) ? "<a style='cursor: pointer;' onclick='\$(this).getNext(\"ol\").toggle();'>".count($t['args'])." arguments</a>":"").")";
+
+			$uid="ol_".md5(serialize($t).rand());
+			$html.="{$t['class']}{$t['type']}{$t['function']}(".(is_array($t['args']) ? "<a style='cursor: pointer;' onclick='toggle(\"$uid\");'>".count($t['args'])." arguments</a>":"").")";
 			if(is_array($t['args'])){
-				$html.="<ol style='display: none;'>";
+				$html.="<ol id='$uid' style='display: none;'>";
 				foreach($t['args'] as $idx=>$a){
 					$html.="<li><ul style='margin: 0; padding: 0;'>".$this->var_to_html($a)."</ul></li>";
 				}
@@ -184,14 +208,26 @@ class Guard{
 		}
 		$html.="</ul>";
 
-		$html.="<h2 style='margin: 0;padding: 1em;font-size: 1em;font-weight: normal;background: #666;'><a onclick='\$(this).getParent(\"h2\").getNext(\"ul\").toggle();' style='cursor: pointer; color: #FFF;'>Environment</a></h2>";
-		$html.="<ul style='background: #FFF; border: 1px solid #666; margin: 0; padding: 1em; display: none;'>";
+		$uid="ul_".md5(serialize($err['context']).rand());
+		$html.="<h2 style='margin: 0;padding: 1em;font-size: 1em;font-weight: normal;background: #666;'><a onclick='toggle(\"$uid\");' style='cursor: pointer; color: #FFF;'>Environment</a></h2>";
+		$html.="<ul id='$uid' style='background: #FFF; border: 1px solid #666; margin: 0; padding: 1em; display: none;'>";
 		$html.=$this->var_to_html($err['context']);
 		$html.="</ul>";
 
 		$html.="</div>";
 
 		return $html;
+	}
+
+	function filter_context_vars($vars){
+		# Filter Context
+		$context=array();
+		if(!empty($vars['_GET'])) $context['_GET']=$vars['_GET'];
+		if(!empty($vars['_POST'])) $context['_POST']=$vars['_POST'];
+		if(!empty($vars['_COOKIE'])) $context['_COOKIE']=$vars['_COOKIE'];
+		if(!empty($vars['_SERVER'])) $context['_SERVER']=$vars['_SERVER'];
+
+		return $context;
 	}
 
 	function on_exception($e){
@@ -208,8 +244,6 @@ class Guard{
 				unset($errtrace[$i]['args'][4]);
 			}
 		}
-
-		#array_shift($errtrace);
 
 		# Filter Context
 		$context=array();
