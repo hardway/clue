@@ -95,15 +95,27 @@ namespace Clue{
         }
         
         function prepare(){
-            $this->url=isset($_SERVER['HTTP_X_REWRITE_URL']) ? 
-                    $_SERVER['HTTP_X_REWRITE_URL'] : 
-                    $_SERVER['REQUEST_URI'];
+            parse_str($_SERVER['QUERY_STRING'], $query);
+            
+            // Use controller/action in query string will override PATH_INFO or URL_REWRITE
+            if(isset($query['_c'])){
+                $this->controller=$query["_c"];
+                $this->action=$query["_a"] ?: "index";
 
-            $map=$this['router']->resolve($this->url);
-                        
-            $this->controller=$map['controller'];
-            $this->action=$map['action'];
-            $this->params=$map['params'];
+                unset($query['_c']); unset($query['_m']);
+                $this->params=$query;
+            }
+            else{
+                $this->url=$_SERVER['PATH_INFO'];
+                if(empty($this->url)) $this->url=$_SERVER['HTTP_X_REWRITE_URL'];
+                if(empty($this->url)) $this->url=$_SERVER['REQUEST_URI'];
+
+                $map=$this['router']->resolve($this->url);
+
+                $this->controller=$map['controller'];
+                $this->action=$map['action'];
+                $this->params=$map['params'];
+            }
         }
         
         function dispatch(){

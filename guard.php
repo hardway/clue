@@ -186,7 +186,7 @@ class Guard{
 
 	function error_html($err){
 		$html="<div style='text-align: left; padding: 1em;'>";
-		$html.="<h2 style='margin: 0;padding: 1em;font-size: 1em;font-weight: normal;background: #911;color: #fff;'><strong>{$err['type']}</strong>:{$err['message']}</h2>";
+		$html.="<h2 style='margin: 0;padding: 1em;font-size: 1em;font-weight: normal;background: #911;color: #fff;'><strong>{$err['type']}</strong>: {$err['message']}</h2>";
 
 		$html.="<ul style='background: #EEE; margin: 0; padding: 1em;'>";
 		if(is_array($err['trace'])) foreach($err['trace'] as $t){

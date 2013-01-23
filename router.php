@@ -148,7 +148,7 @@ namespace Clue{
 			
 			// try to match against rules
 			foreach($this->rules as $r){
-				if(preg_match("|{$r['pattern']}|i", $uri, $match)){
+				if(preg_match("!{$r['pattern']}!i", $uri, $match)){
 					array_shift($match);
 					$mapping=$r['mapping'];
 					
@@ -245,7 +245,7 @@ namespace Clue{
 			if(!class_exists($class, false)){
 			    if(file_exists($path)) require_once $path;
 			    if(!class_exists($class, false))
-			        throw new Exception("No controller found: $controller");
+			        throw new \Exception("No controller found: $controller");
 			}
 			
 			$rfxClass=new \ReflectionClass($class);
@@ -284,7 +284,7 @@ namespace Clue{
 				);
 			}
 			else{
-		        throw new Exception("Can't find action $action of $controller");
+		        throw new \Exception("Can't find action $action of $controller");
 			}
 		}
 		

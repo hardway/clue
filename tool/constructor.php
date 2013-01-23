@@ -133,6 +133,7 @@ Usage: clue [command] {arguments...}
 namespace Base;
 use \Clue\ActiveRecord;
 class $className extends ActiveRecord{
+    static protected \$_model;
 $fields
 }
 END
