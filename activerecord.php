@@ -124,7 +124,7 @@
 		        return static::$method($condition);
 		    }
 		    else
-		        throw new Exception("Call to undefined static method: $name");
+		        throw new \Exception("Call to undefined static method: $name");
 		}
 		
 		static function _get_where_clause($condition, $range='all'){
