@@ -4,20 +4,23 @@ namespace Clue;
 class Guard{
 	# Converts php error level to Guard log level
 	static $PHP_ERROR_MAP=array(
-	    E_NOTICE=>"NOTICE",
-	    E_USER_NOTICE=>'NOTICE',
-	    E_STRICT=>'NOTICE',
-	    E_DEPRECATED=>'NOTICE',
-	    E_USER_DEPRECATED=>'NOTICE',
+	    E_NOTICE=>"NOTICE",				# 8
+	    E_USER_NOTICE=>'NOTICE',		# 1024
+	    E_STRICT=>'NOTICE',				# 2048
+	    E_DEPRECATED=>'NOTICE',			# 8192
+	    E_USER_DEPRECATED=>'NOTICE',	# 16384
 	    
-	    E_WARNING=>'WARNING',
-	    E_CORE_WARNING=>'WARNING',
-	    E_USER_WARNING=>'WARNING',
+	    E_WARNING=>'WARNING',			# 2
+	    E_CORE_WARNING=>'WARNING',		# 32
+	    E_COMPILE_WARNING=>'WARNING',	# 128
+	    E_USER_WARNING=>'WARNING',		# 512
 	    
-	    E_ERROR=>'ERROR',
-	    E_CORE_ERROR=>'ERROR',
-	    E_USER_ERROR=>'ERROR',
-	    E_RECOVERABLE_ERROR=>'ERROR'
+	    E_ERROR=>'ERROR',				# 1
+	    E_CORE_ERROR=>'ERROR',			# 16
+	    E_PARSE=>'ERROR',				# 4
+	    E_COMPILE_ERROR=>'ERROR',		# 64
+	    E_USER_ERROR=>'ERROR',			# 256
+	    E_RECOVERABLE_ERROR=>'ERROR'	# 4096
 	);
 
 	static $ERROR_LEVEL=array(
@@ -140,6 +143,9 @@ class Guard{
 	function var_to_html($var){
 		$text="";
 
+		if($var instanceof Closure) $var="Closure Function";
+		elseif(is_object($var)) $var=(array)$var;
+
 		if(is_array($var)){
 			foreach($var as $k=>$v){
 				$text.="$k = ";
@@ -235,6 +241,9 @@ class Guard{
 	}
 	
 	function on_error($errno, $errstr, $errfile=null, $errline=null, array $errcontext=null, array $errtrace=array()){
+		// if error has been supressed with an @
+	    if (error_reporting() == 0) return;
+
 		$errlevel=self::$ERROR_LEVEL[self::$PHP_ERROR_MAP[$errno]];
 
 		if(empty($errtrace)) $errtrace=debug_backtrace();
