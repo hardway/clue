@@ -1,37 +1,20 @@
 <?php
 namespace Clue{
-	// TODO: rule order (fallback ?)
-	class Clue_RouteMap{
-		protected $cp;
-		protected $ap;
-		
-		public $controller;
-		public $action;
-		public $param;
-		
-		public $rules;
-		
+	class Router{
 		function __construct(){
-			$this->rules=array();
-			
-			$this->cp=0;
-			$this->ap=1;
-			
-			$this->param=array();
+			$this->debug=defined("CLUE_ROUTE_DEBUG") && CLUE_ROUTE_DEBUG;
 		}
 		
-		function connect($urlPattern, $rule=array(), $scope=null){
-		    // TODO: auto sort rule priority
-			// TODO: check validity of url pattern and mapping rule
-			
-			// decode mapping string to array
-			$mapping=array();
-			if($rule) foreach($rule as $n=>$v){
-				$mapping[$n]=$v;
-			}
+		function connect($url){
+			$args=func_get_args();
+			$url=array_shift($args);
+
+			$mapping=is_array($args[count($args)-1]) ? array_pop($args) : array();
+
+			list($c, $a)=$args;
+			$mapping=array_merge(array('controller'=>$c, 'action'=>$a), $mapping);
 
 			// decode url pattern into name list
-			$names=array();
 			$pattern=preg_replace_callback('/:([a-zA-Z0-9_]+)/', function($m) use(&$names, $mapping){
 			    $name=$m[1];
 				$names[]=$name;
@@ -46,192 +29,22 @@ namespace Clue{
 			        else
 					    return '([^/]+)';
 				}
-			}, $urlPattern);
+			}, $url);
 			
 			$pattern="^$pattern\$";
 						
 			$this->rules[]=array(
-				'reformation'=>$urlPattern,
+				'reformation'=>$url,
 				'pattern'=>$pattern,
 				'names'=>$names,
-				'mapping'=>$mapping,
-    			'scope'=> empty($scope) ? "" : $scope."_"
+				'mapping'=>$mapping
 			);
-			
+
 			return true;
-		}
-		
-		function reform($controller, $action, $params=array()){
-			foreach($this->rules as $r){
-		    	// reduce scope is exists
-			    if(!empty($r['scope'])){
-			        if(preg_match('|^'.$r['scope'].'|i', $controller)){
-			            $controller = preg_replace('|^'.$r['scope'].'|i', '', $controller);
-			        }
-			        else continue;
-			    }
-			    
-				if(
-					isset($r['mapping']['controller']) && 
-					strcasecmp($r['mapping']['controller'], $controller)!=0
-				) continue;
-				
-				if(
-					isset($r['mapping']['action']) && 
-					strcasecmp($r['mapping']['action'], $action)!=0
-					//!preg_match('/'.$r['mapping']['action'].'/i',$action)
-				) continue;
-
-				$allParamsAreMet=true;
-				foreach(array_keys($params) as $name){
-				    if(isset($r['mapping'][$name]) && !preg_match('/'.$r['mapping'][$name].'/i', $params[$name])) continue;
-				}
-				
-				$params['controller']=$controller=='index' ? '' : $controller;			
-				$params['action']=$action=='index' ? '' : $action;
-				
-				$url=preg_replace_callback('/\:([a-zA-Z0-9_]+)/', function($m) use(&$params, &$allParamsAreMet, $r){
-				    $name=$m[1];
-				    
-					if(isset($params[$name])){
-						$ret=urlencode($params[$name]);
-						unset($params[$name]);
-						return $ret;
-					}
-					else{
-					    $allParamsAreMet=false;
-					    return "";
-						// TODO: Clue_RouterException
-						// throw new Exception("Couldn't found parameter '$name' in mapping rule.");
-					}
-				}, $r['reformation']);
-				
-				if(!$allParamsAreMet) continue;
-
-                $url=str_replace('//', '/', $url);
-                
-				$query=array();
-				if($params) foreach($params as $n=>$v){
-					if($n=='controller' || $n=='action') continue;
-					$query[]="$n=".urlencode($v);
-				}
-				if(count($query)>0)
-					$url.='?'.implode('&', $query);
-				
-				return $url;
-			}
-			
-			throw new Exception('COUND NOT REFORM');
-		}
-		
-		private function replace_with_position($str, $vals){
-			$ret=$str;
-			
-			if(preg_match_all('|\{(\d+)\}|', $str, $match)){
-				foreach($match[1] as $p){
-					if(isset($vals[$p])){
-						$ret=str_replace("{{$p}}", $vals[$p], $ret);
-					}
-				}
-			}
-			
-			return $ret;
-		}
-		
-		function resolve($uri){
-			$params=array();
-			
-			// strip query from uri
-			if(($p=strpos($uri, '?'))!==FALSE){
-				$uri=substr($uri, 0, $p);
-			}
-			
-			// try to match against rules
-			foreach($this->rules as $r){
-				if(preg_match("!{$r['pattern']}!i", $uri, $match)){
-					array_shift($match);
-					$mapping=$r['mapping'];
-					
-					$candidateViolated=false;
-					for($i=0; $i<count($match); $i++){
-					    $name=$r['names'][$i];
-					    if(isset($mapping[$name])){
-					        $candidate=$mapping[$name];
-					        if(!preg_match('/'.$candidate.'/i', $match[$i])){
-					            $candidateViolated=true;
-					            break;
-				            }
-					    }
-					    $mapping[$name]=$match[$i];
-					}
-					if($candidateViolated) continue; // Try Next Rule
-					
-					// Default controller is Index
-					if(empty($mapping['controller'])) $mapping['controller']='Index';
-					// Default action is index
-					if(empty($mapping['action'])) $mapping['action']='index';
-					
-					foreach($mapping as $n=>$v){
-						if($n=='controller'){
-						    $mapping['controller']=$r['scope'].$v;
-						    continue;
-						}
-						else if($n=='action') continue;
-						
-						$params[$n]=urldecode($v);
-						unset($mapping[$n]);
-					}
-					$params=array_merge($params, $_GET, $_POST);
-					
-					$mapping['params']=$params;
-					return $mapping;
-				}
-			}
-			
-			throw new Exception("No route found.");
-		}
-	}
-	
-	class Router{
-		protected $appbase;
-		public $map;
-		
-		function __construct(){
-			$this->appbase=str_replace("\\", '/', dirname($_SERVER['SCRIPT_NAME']));
-			
-			// Determine controller and action by default map
-			$this->map=new Clue_RouteMap();	
-		}
-		
-		function connect($pattern, $rule=array(), $scope=null){
-			$this->map->connect($pattern, $rule, $scope);
 		}
 		
 		function controller(){
 			return $this->controller;
-		}
-		
-		// URL Base for the application, which is defined in route-map
-		function base(){
-			return $this->appbase;
-		}
-		
-		function url_for($controller, $action='index', $param=array()){
-		    if($this->appbase=='/')
-		        return $this->map->reform($controller, $action, $param);
-		    else
-			    return $this->appbase . $this->map->reform($controller, $action, $param);
-		}
-		
-		function redirect_route($controller, $action='index', $param=array()){
-			$uri=$this->url_for($controller, $action, $param);
-			$this->redirect($uri);
-		}
-		
-		function redirect($url){
-			header("Status: 302 Found");
-			header("Location: $url");
-			exit();
 		}
 		
 		function route($controller, $action, $params=array()){
@@ -287,13 +100,140 @@ namespace Clue{
 		        throw new \Exception("Can't find action $action of $controller");
 			}
 		}
-		
-		function resolve($uri){
-			if($this->appbase!='/' && strpos($uri, $this->appbase)===0){
-				$uri=substr($uri, strlen($this->appbase));
+
+		function reform($controller, $action, $params=array()){
+			foreach($this->rules as $r){			    
+				if(
+					isset($r['mapping']['controller']) && 
+					strcasecmp($r['mapping']['controller'], $controller)!=0
+				) continue;
+				
+				if(
+					isset($r['mapping']['action']) && 
+					strcasecmp($r['mapping']['action'], $action)!=0
+					//!preg_match('/'.$r['mapping']['action'].'/i',$action)
+				) continue;
+
+				$allParamsAreMet=true;
+				foreach(array_keys($params) as $name){
+				    if(isset($r['mapping'][$name]) && !preg_match('/'.$r['mapping'][$name].'/i', $params[$name])) continue;
+				}
+				
+				$params['controller']=$controller=='index' ? '' : $controller;			
+				$params['action']=$action=='index' ? '' : $action;
+				
+				$url=preg_replace_callback('/\:([a-zA-Z0-9_]+)/', function($m) use(&$params, &$allParamsAreMet, $r){
+				    $name=$m[1];
+				    
+					if(isset($params[$name])){
+						$ret=urlencode($params[$name]);
+						unset($params[$name]);
+						return $ret;
+					}
+					else{
+					    $allParamsAreMet=false;
+					    return "";
+						// TODO: Clue_RouterException
+						// throw new Exception("Couldn't found parameter '$name' in mapping rule.");
+					}
+				}, $r['reformation']);
+				
+				if(!$allParamsAreMet) continue;
+
+                $url=str_replace('//', '/', $url);
+                
+				$query=array();
+				if($params) foreach($params as $n=>$v){
+					if($n=='controller' || $n=='action') continue;
+					$query[]="$n=".urlencode($v);
+				}
+				if(count($query)>0)
+					$url.='?'.implode('&', $query);
+				
+				return $url;
 			}
 			
-		    return $this->map->resolve($uri);
+			throw new Exception('COUND NOT REFORM');
+		}
+
+		function resolve(){
+			global $app;
+
+            parse_str($_SERVER['QUERY_STRING'], $query);
+            
+            // Use controller/action in query string will override PATH_INFO or URL_REWRITE
+            if(isset($query['_c'])){
+                return array(
+                	'controller'=>$query['_c'],
+                	'action'=>$query["_a"] ?: "index",
+                	'params'=>$query
+                );
+            }
+            else{
+                if(isset($_SERVER['PATH_INFO']))
+                    $uri=$_SERVER['PATH_INFO'];
+                else{
+                    $uri=$_SERVER['HTTP_X_REWRITE_URL'] ?: $_SERVER['REQUEST_URI'];
+                }
+
+                if($app['base']!='/' && strpos($uri, $app['base'])===0){
+                    $uri=substr($uri, strlen($app['base']));
+                }
+
+				// strip query from uri
+				if(($p=strpos($uri, '?'))!==FALSE){
+					$uri=substr($uri, 0, $p);
+				}
+
+	            $params=array();
+				
+				// try to match against rules
+				foreach($this->rules as $r){
+					if($this->debug) $app['guard']->debug("Testing URL: '$uri' against ".$r['pattern']);
+
+					if(preg_match("!{$r['pattern']}!i", $uri, $match)){
+						if($this->debug) $app['guard']->debug("Match URL: '$uri' against ".$r['pattern']);
+						array_shift($match);
+						$mapping=$r['mapping'];
+						
+						$candidateViolated=false;
+						for($i=0; $i<count($match); $i++){
+						    $name=$r['names'][$i];
+						    if(isset($mapping[$name])){
+						        $candidate=$mapping[$name];
+						        if(!preg_match('/'.$candidate.'/i', $match[$i])){
+						            $candidateViolated=true;
+						            break;
+					            }
+						    }
+						    $mapping[$name]=$match[$i];
+						}
+						if($candidateViolated) continue; // Try Next Rule
+						
+						// Default controller is Index
+						if(empty($mapping['controller'])) $mapping['controller']='Index';
+						// Default action is index
+						if(empty($mapping['action'])) $mapping['action']='index';
+						
+						foreach($mapping as $n=>$v){
+							if($n=='controller'){
+							    $mapping['controller']=$v;
+							    continue;
+							}
+							else if($n=='action') continue;
+							
+							$params[$n]=urldecode($v);
+							unset($mapping[$n]);
+						}
+						$params=array_merge($params, $_GET, $_POST);
+						
+						$mapping['params']=$params;
+						return $mapping;
+					}
+				}
+            }
+			
+			throw new \Exception("No route found.");
 		}
 	}
 }

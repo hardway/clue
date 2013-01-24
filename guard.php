@@ -135,6 +135,24 @@ class Guard{
 		}
 	}
 
+	function debug($message){
+		echo "<div style='padding: 5px; border-bottom: 1px solid #CCC; position: relative'>";
+		$trace=debug_backtrace();
+		if(isset($trace[0])){
+			echo "<div style='color: #999; position: absolute; right: 5px; top: 3px;'>".$trace[0]['file'].":".$trace[0]['line']."</div>";
+		}
+		echo "<div>";
+
+		echo $message;
+
+		$args=func_get_args();
+		for($i=1; $i<count($args); $i++){
+			echo $this->var_to_html($args[$i]);
+		}
+		echo "</div>";
+		echo "<div class='clear'></div></div>";
+	}
+
 	function indent($text){
 		return implode("\n", array_map(function($line){ return "    ".$line; }, explode("\n", $text)));
 	}

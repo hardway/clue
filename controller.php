@@ -4,15 +4,12 @@ namespace Clue{
 		public $controller;
 		public $action;
 		public $view;
-		public $referrer;
 		
 		protected $layout="default";
 		
 		function __construct($controller=null, $action=null){
 			$this->controller=$controller;
 			$this->action=$action;
-			
-			$this->referrer=isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : null;
 			
 			$this->layout=new Layout(empty($this->layout) ? 'default' : $this->layout);
 		}
@@ -43,16 +40,21 @@ namespace Clue{
 		    
 		    $controller=empty($controller) ? $this->controller : $controller;
 		    
-			$app['router']->redirect_route($controller, $action, $param);
+			$app->redirect(url_for($controller, $action, $param));
 		}
 		
 		function redirect($url){
 		    global $app;
-			$app['router']->redirect($url);
+			$app->redirect($url);
 		}
 		
 		function go_back(){
-			$this->redirect($this->referrer);
+			// allow GET/POST overrides referer
+			$url=isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : null;
+			if(isset($_POST['return_url'])) $url=$_POST['return_url'];
+			if(isset($_GET['return_url'])) $url=$_GET['return_url'];
+
+			$this->redirect($url);
 		}
 	}
 }
