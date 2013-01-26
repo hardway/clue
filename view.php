@@ -18,7 +18,7 @@ namespace Clue{
             }
 
             if(!file_exists($this->template)){
-				throw new Exception("View didn't exists: $view");
+				throw new \Exception("View didn't exists: $view");
             }
             
             $this->vars=array();

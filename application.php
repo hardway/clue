@@ -19,10 +19,11 @@ namespace Clue{
             if(!isset($this['base'])) $this['base']=str_replace("\\", '/', dirname($_SERVER['SCRIPT_NAME']));
             if(!isset($this['root'])) $this['root']=str_replace("\\", '/', dirname($_SERVER['SCRIPT_FILENAME']));
 
-            if(!isset($this['user_class'])) $this['user_class']="Clue\\User";
+            if(!isset($this['auth_class'])) $this['auth_class']="Clue\\Auth";
+            if(!isset($this['user_class'])) $this['user_class']="User";
             if(!isset($this['user'])){
                 $this['user']=$this->share(function($c){ 
-                    $cls=$c['user_class'];
+                    $cls=$c['auth_class'];
                     return $cls::current();
                 });
             }
@@ -117,7 +118,7 @@ MSG;
             if($this['user'] && !$this['user']->authorize($resource, 'a')){
                 $this['user']->authorize_failed($resource, 'a');
             }
-            
+
             $r=$this['router']->route($this->controller, $this->action, $this->params);
             $ret=call_user_func_array(array($r['handler'], $r['handler']->action), $r['args']);
         }        
@@ -126,11 +127,23 @@ MSG;
 
 namespace{    
     // global short cut
+    function back_url(){
+        // allow GET/POST overrides referer
+        $url=isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : null;
+        if(isset($_POST['return_url'])) $url=$_POST['return_url'];
+        if(isset($_GET['return_url'])) $url=$_GET['return_url'];
+
+        return $url;
+    }
+
     function url_for($controller, $action='index', $params=array()){
         global $app;
-        return $app['base'].$app['router']->reform($controller, $action, $params);
+        $url=$app['base'].$app['router']->reform($controller, $action, $params);
+        $url=preg_replace('/\/+/', '/', $url);
+
+        return $url;
     }
-    
+
     function assets($asset=null){
         global $app;
 

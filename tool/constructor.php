@@ -184,7 +184,11 @@ END
                 if(!preg_match($signature, $src)){
                     $src.=<<<END
     public function $action(){
-        \$this->render();
+        global \$app;
+
+        \$data=array();
+        
+        \$this->render('$action', \$data);
     }
 }
 END;

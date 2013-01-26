@@ -49,12 +49,7 @@ namespace Clue{
 		}
 		
 		function go_back(){
-			// allow GET/POST overrides referer
-			$url=isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : null;
-			if(isset($_POST['return_url'])) $url=$_POST['return_url'];
-			if(isset($_GET['return_url'])) $url=$_GET['return_url'];
-
-			$this->redirect($url);
+			$this->redirect(back_url());
 		}
 	}
 }

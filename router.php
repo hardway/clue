@@ -49,7 +49,8 @@ namespace Clue{
 		
 		function route($controller, $action, $params=array()){
 			// load controller
-			$class="{$controller}_Controller";
+			$class=str_replace('/', '_', "{$controller}_Controller");
+
 			$path=APP_ROOT . "/control/".strtolower(str_replace('_','/',$controller)).".php";
 
 			if($_SERVER['REQUEST_METHOD']=='POST')
@@ -126,7 +127,11 @@ namespace Clue{
 				    $name=$m[1];
 				    
 					if(isset($params[$name])){
-						$ret=urlencode($params[$name]);
+						$ret=$params[$name];
+						if($name!='controller' && $name!='action'){
+							$ret=urlencode($ret);
+						}
+						
 						unset($params[$name]);
 						return $ret;
 					}
@@ -139,8 +144,6 @@ namespace Clue{
 				}, $r['reformation']);
 				
 				if(!$allParamsAreMet) continue;
-
-                $url=str_replace('//', '/', $url);
                 
 				$query=array();
 				if($params) foreach($params as $n=>$v){
@@ -153,7 +156,7 @@ namespace Clue{
 				return $url;
 			}
 			
-			throw new Exception('COUND NOT REFORM');
+			throw new \Exception('COUND NOT REFORM');
 		}
 
 		function resolve(){
