@@ -117,7 +117,7 @@ namespace Clue{
 
 				$allParamsAreMet=true;
 				foreach(array_keys($params) as $name){
-				    if(isset($r['mapping'][$name]) && !preg_match('/'.$r['mapping'][$name].'/i', $params[$name])) continue;
+				    if(isset($r['mapping'][$name]) && !preg_match('!'.$r['mapping'][$name].'!i', $params[$name])) continue;
 				}
 				
 				$params['controller']=$controller=='index' ? '' : $controller;			

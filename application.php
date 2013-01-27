@@ -53,7 +53,7 @@ namespace Clue{
         }
 
         function init(){
-            $this['guard']=new Guard($this['config']);
+            $this['guard']=new Guard($this['config']['guard']);
             
             if($this['config']['debug']===false){
                 $this->guard->display_level=0;

@@ -128,9 +128,14 @@ class Guard{
 	}
 
 	function log($message, $level='INFO'){
+		$trace=debug_backtrace();
+		if(isset($trace[0])){
+			$trace=$trace[0]['file'].":".$trace[0]['line'];
+		}
+
 		if(!empty($this->log_file) && $f=fopen($this->log_file, 'a')){
 			$message=is_string($message) ? $message : print_r($message, true);
-			fwrite($f, sprintf("%s\t%s\t%s\n", date("Y-m-d H:i:s.u"), $level, $message));
+			fwrite($f, sprintf("%s\t%s\t%s\n\t\t%s\n", date("Y-m-d H:i:s.u"), $level, $trace, $message));
 			fclose($f);
 		}
 	}
@@ -158,7 +163,9 @@ class Guard{
 	}
 
 	# With folding javascript
-	function var_to_html($var){
+	function var_to_html($var, $ttl=4){
+		if($ttl==0) return "...";
+
 		$text="";
 
 		if($var instanceof Closure) $var="Closure Function";
@@ -167,7 +174,7 @@ class Guard{
 		if(is_array($var)){
 			foreach($var as $k=>$v){
 				$text.="$k = ";
-				$text.="<ul>".$this->var_to_html($v)."</ul>";
+				$text.="<ul>".$this->var_to_html($v, $ttl-1)."</ul>";
 			}
 		}
 		else{
@@ -218,8 +225,7 @@ class Guard{
 			if(isset($t['file']) || isset($t['line'])){
 				$html.="<strong>{$t['file']}:{$t['line']}</strong> &gt;&gt; ";
 			}
-
-			$uid="ol_".md5(serialize($t).rand());
+			$uid="ol_".uniqid();
 			$html.="{$t['class']}{$t['type']}{$t['function']}(".(is_array($t['args']) ? "<a style='cursor: pointer;' onclick='toggle(\"$uid\");'>".count($t['args'])." arguments</a>":"").")";
 			if(is_array($t['args'])){
 				$html.="<ol id='$uid' style='display: none;'>";
@@ -232,7 +238,7 @@ class Guard{
 		}
 		$html.="</ul>";
 
-		$uid="ul_".md5(serialize($err['context']).rand());
+		$uid="ul_".uniqid();
 		$html.="<h2 style='margin: 0;padding: 1em;font-size: 1em;font-weight: normal;background: #666;'><a onclick='toggle(\"$uid\");' style='cursor: pointer; color: #FFF;'>Environment</a></h2>";
 		$html.="<ul id='$uid' style='background: #FFF; border: 1px solid #666; margin: 0; padding: 1em; display: none;'>";
 		$html.=$this->var_to_html($err['context']);
