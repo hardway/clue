@@ -55,133 +55,241 @@ namespace Clue\Database{
 			$this->exec($sql);
 			return $this->insert_id();
 		}
+
+	    function update($table, $fields, $where){
+	        $updates=array();
+
+	        foreach ($fields as $c=>$v) {
+	            $updates[]="`$c`=".$this->quote($v);
+	        }
+	        $sql="
+	            update `$table` set ".implode(', ', $updates)."
+	            where $where
+	        ";
+	        
+	        $this->exec($sql);
+	    }
+
+	    function remove($table, $where){
+	        $sql="
+	            delete from `$table` where $where
+	        ";
+	        $this->exec($sql);
+	    }
 		
 		function affected_rows(){
 		    return mysqli_affected_rows($this->dbh);
 		}
+
+	    function format($sql){
+	        $args=func_get_args();
+	        $me=$this;
+
+	        $idx=1;
+	        $sql=preg_replace_callback('/%(t|c|s|d|f|%)/', function($m) use($me, $args, &$idx){
+	            if(!array_key_exists($idx, $args)){
+	                throw new \Exception("Not enough arguments for SQL statement.");
+	            }
+
+	            $var="";
+	            switch($m[1]){
+	                case 't':   // Table/View
+	                case 'c':   // Column
+	                    $var="`".$args[$idx]."`";
+	                    break;
+	                case 's':
+	                    $var=$me->quote($args[$idx]);
+	                    break;
+	                case 'd':
+	                    $var=intval($args[$idx]);
+	                    break;
+	                case 'f':
+	                    $var=floatval($args[$idx]);
+	                    break;
+	            }
+
+	            $idx++;
+	            return $var;
+	        }, $sql);
+	        return $sql;
+	    }
+
+    function exec($sql)
+    {
+        $this->free_result();
+
+        if(func_num_args()>1){
+            $sql=call_user_func_array(array($this, "format"), func_get_args());
+        }
+
+        $query_begin=microtime(true);
+        $this->_result=mysqli_query($this->dbh, $sql);
+        $query_end=microtime(true);
+
+        $this->last_query=$sql;
+
+/*
+        $location=null;
+        $bt=debug_backtrace();
+        for ($i=0; $i<count($bt); $i++) {
+            if (isset($bt[$i]['file']) && $bt[$i]['file']!=__FILE__) {
+                $location=$bt[$i]['file'] .':'.$bt[$i]['line'];
+                break;
+            }
+        }
+
+        if ($this->log_sql_query) {
+            $this->log(
+                $this->log_sql_query, $this->last_query, 
+                $query_end - $query_begin, $location
+            );
+        }
+        if ($this->log_slow_query && ($query_end - $query_begin > 0.1)) {
+            $this->log(
+                $this->log_slow_query, $this->last_query, 
+                $query_end - $query_begin, $location
+            );
+        }
+*/
+
+        if (!$this->_result) {
+            $this->setError(
+                array(
+                    'code'=>mysqli_errno($this->dbh), 
+                    'error'=>mysqli_error($this->dbh)
+                )
+            );
+
+            return false;
+        }
+        
+        // NOTE: should not free result since it might be used in get_var...
+        return true;
+    }
+
 		
-		function exec($sql){
-			call_user_func_array("parent::exec", func_get_args());
-			
-			$this->free_result();
-			$this->_result=mysqli_query($this->dbh, $this->lastquery);
-			
-			if(!$this->_result){
-				$this->setError(array('code'=>mysqli_errno($this->dbh), 'error'=>mysqli_error($this->dbh)));
-				return false;
-			}
-			
-			// NOTE: should not free result since it might be used in get_var...
-			return true;
-		}
+	    function get_var($sql)
+	    {
+	        if (!call_user_func_array(array($this, "exec"), func_get_args())) {
+	            return false;
+	        }
+	        
+	        $row=mysqli_fetch_row($this->_result);
+	        $this->free_result();
+
+	        return empty($row) ? null : $row[0];
+	    }
 		
-		function get_var($sql){
-			if(!$this->exec($sql)) return false;
-			
-			$row=$this->_result->fetch_row();
-			$this->free_result();
-			
-			return $row[0];
-		}
+	    function get_row($sql, $mode=OBJECT)
+	    {
+	        if (!call_user_func_array(array($this, "exec"), func_get_args())) {
+	            return false;
+	        }
+	        
+	        $result=false;
+
+	        $mode=func_get_arg(func_num_args()-1);
+	        if($mode!=OBJECT && $mode!=ARRAY_A && $mode!=ARRAY_N){
+	            $mode=OBJECT;
+	        }
+
+	        if ($mode==OBJECT) {
+	            $result=mysqli_fetch_object($this->_result);
+	        } elseif ($mode==ARRAY_A) {
+	            $result=mysqli_fetch_assoc($this->_result);
+	        } elseif ($mode==ARRAY_N) {
+	            $result=mysqli_fetch_row($this->_result);
+	        } else {
+	            $result=mysqli_fetch_array($this->_result);
+	        }
+	        
+	        $this->free_result();
+	        return $result;
+	    }
 		
-		function get_row($sql, $mode=OBJECT){
-			if(!$this->exec($sql)) return false;
-			
-			$result=false;
-			
-			if($mode==OBJECT)
-				$result=$this->_result->fetch_object();
-			else if($mode==ARRAY_A)
-				$result=$this->_result->fetch_assoc();
-			else if($mode==ARRAY_N)
-				$result=$this->_result->fetch_row();
-			else
-				$result=$this->_result->fetch_array();
-			
-			$this->free_result();
-			return $result;
-		}
+	    function get_col($sql)
+	    {
+	        if (!call_user_func_array(array($this, "exec"), func_get_args())) {
+	            return false;
+	        }
+	        
+	        $result=array();
+	        while ($r=mysqli_fetch_row($this->_result)) {
+	            $result[]=$r[0];
+	        }
+	        
+	        $this->free_result();
+	        return $result;
+	    }
 		
-		function get_col($sql){
-			if(!$this->exec($sql)) return false;
-			
-			$result=array();
-			while($r=$this->_result->fetch_row()){
-				$result[]=$r[0];
-			}
-			
-			$this->free_result();
-			return $result;
-		}
-		
-		function get_results($sql, $mode=OBJECT){
-			if(!$this->exec($sql)) return false;
-			
-			$result=array();
-			
-			if($mode==OBJECT){
-				while($r=$this->_result->fetch_object()){
-					$result[]=$r;
-				}
-			}
-			else if($mode==ARRAY_A){
-				while($r=$this->_result->fetch_assoc()){
-					$result[]=$r;
-				}
-			}
-			else if($mode==ARRAY_N){
-				while($r=$this->_result->fetch_row()){
-					$result[]=$r;
-				}
-			}
-			
-			$this->free_result();
-			return $result;
-		}
-		
+	    function get_results($sql, $mode=OBJECT)
+	    {
+	        if (!call_user_func_array(array($this, "exec"), func_get_args())) {
+	            return false;
+	        }
+	        
+	        $result=array();
+	        $mode=func_get_arg(func_num_args()-1);
+	        if($mode!=OBJECT && $mode!=ARRAY_A && $mode!=ARRAY_N){
+	            $mode=OBJECT;
+	        }
+	        
+	        if ($mode==OBJECT) {
+	            while ($r=mysqli_fetch_object($this->_result)) {
+	                $result[]=$r;
+	            }
+	        } elseif ($mode==ARRAY_A) {
+	            while ($r=mysqli_fetch_assoc($this->_result)) {
+	                $result[]=$r;
+	            }
+	        } elseif ($mode==ARRAY_N) {
+	            while ($r=mysqli_fetch_row($this->_result)) {
+	                $result[]=$r;
+	            }
+	        }
+	        
+	        $this->free_result();
+	        return $result;
+	    }
+
+	    # Memeory optimized
+	    function foreach_row($sql, $handler, $mode=OBJECT)
+	    {
+	        if (!call_user_func_array(array($this, "exec"), func_get_args())) {
+	            return false;
+	        }
+	        
+	        $cnt=0;
+
+	        $handler=func_get_arg(func_num_args()-2);
+			$mode=func_get_arg(func_num_args()-1);
+
+	        while (true) {
+	            switch($mode){
+	            case OBJECT:
+	                $r=mysqli_fetch_object($this->_result);
+	                break;
+	            case ARRAY_A:
+	                $r=mysqli_fetch_assoc($this->_result);
+	                break;
+	            case ARRAY_N:
+	                $r=mysqli_fetch_row($this->_result);
+	                break;
+	            }
+
+	            if (empty($r)) {
+	                break;
+	            }
+
+	            $handler($r); $cnt++;
+	        }
+
+	        return $cnt;
+	    }
+
 		function has_table($table){
 			$tables=$this->get_col("show tables");
 			return in_array($table, $tables);
-		}
-
-		function map_ddl_type($type, $length, $precision){
-			switch($type){
-				case "char":
-					return "char($length)";
-				case "varchar2":
-					return "varchar($length)";
-				case "varbinary":
-					return "varbinary($length)";
-				case "datetime":
-					return "datetime";
-				case "timestamp":
-					return "timestamp";
-				case "number":
-					if(empty($precision))
-						return "int";
-					else
-						return $precision > 10 ? "bigint($precision)" : "int($precision)";
-				default:
-					throw new Exception("Don't know how to map this ddl type: ($type, $length, $precision)");
-			}
-		}
-		
-		function DDL_CREATE($schema){
-			$cols=array();
-			foreach($schema['column'] as $c){
-				$type=$this->map_ddl_type($c["type"], $c["length"], $c["precision"]);
-				$nul=$c['nullable'] ? "" : " not null";
-				$default=empty($c['default']) ? "" : " default {$c['default']}";
-				$cols[]="`{$c["name"]}` ".$type.$nul.$default;
-			}
-			$sql="create {$schema['type']} {$schema['name']}(\n";
-			$sql.=implode(", \n", $cols)."\n";
-			if(count($schema['pkey'])>0){
-				$sql.=", primary key(".implode(',', $schema['pkey']).")\n";
-			}
-			$sql.=")";
-			
-			return $sql;
 		}
 		
 		private function get_schema_field_type($text){
