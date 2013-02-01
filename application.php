@@ -12,7 +12,7 @@ namespace Clue{
         public $controller;
         public $action;
         public $params;
-                        
+        
         function __construct($values=array()){
             $this->_values=$values;
 
@@ -53,7 +53,7 @@ namespace Clue{
         }
 
         function init(){
-            $this['guard']=new Guard($this['config']['guard']);
+            $this['guard']=new Guard(@$this['config']['guard']);
             
             if($this['config']['debug']===false){
                 $this->guard->display_level=0;

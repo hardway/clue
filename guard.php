@@ -41,8 +41,8 @@ class Guard{
 
 	private $errors=array();
 
-	public function __construct($config=array()){
-		$default=array(
+	public function __construct($option=array()){
+		$config=array(
 			'log_level'=>"WARNING",
 			'email_level'=>'ERROR',
 			'display_level'=>'ERROR',
@@ -54,7 +54,9 @@ class Guard{
 			'log_file'=>"log/".date("Ymd").".log"
 		);
 
-		$config=array_merge($default, $config);
+		if(is_array($option)){
+			$config=array_merge($config, $option);
+		}
 
 		$this->log_level=is_numeric($config['log_level']) ? $config['log_level'] : self::$ERROR_LEVEL[$config['log_level']];
 		$this->email_level=is_numeric($config['email_level']) ? $config['email_level'] : self::$ERROR_LEVEL[$config['email_level']];
