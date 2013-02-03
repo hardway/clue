@@ -147,8 +147,10 @@ namespace{
     function assets($asset=null){
         global $app;
 
-        $url=(APP_BASE=="\\" || APP_BASE=='/') ? '/assets' : $app['base']."/assets";
-        if(!empty($asset)) $url.="/$asset";
+        $url=($app['base']=="\\" || $app['base']=='/') ? '/assets' : $app['base']."/assets";
+        $file=$app['root'].'/assets/'.$asset;
+
+        if(file_exists($file)) $url.="/$asset?".filemtime($file);
         
         return $url;
     }
