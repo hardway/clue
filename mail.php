@@ -24,7 +24,7 @@
                 $this->mailer->SMTPSecure=$this->options['secure'];
             }
         }
-                
+        
         function send($subject, $html, $to, $from=null, $reply=null){
             $this->mailer->Subject=$subject;
             $this->mailer->MsgHTML($html);

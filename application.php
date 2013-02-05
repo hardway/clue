@@ -59,9 +59,7 @@ namespace Clue{
                 $this->guard->display_level=0;
                 $this->guard->stop_level=0;
             }
-            
-            $this->session=new Session();
-            
+                       
             if($this['config']['database']){
                 $cfg=$this['config']['database'];
                 $this['db']=array(
