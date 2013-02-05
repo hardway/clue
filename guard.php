@@ -272,6 +272,9 @@ class Guard{
 
 		$errlevel=self::$ERROR_LEVEL[self::$PHP_ERROR_MAP[$errno]];
 
+		// Skip minus errors
+		if($errlevel > max($this->display_level, $this->stop_level, $this->log_level, $this->email_level)) return;
+
 		if(empty($errtrace)) $errtrace=debug_backtrace();
 		# Unset $errcontext for this function ($GLOBALS is too big to display)
 		for($i=0; $i<count($errtrace); $i++){

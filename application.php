@@ -87,22 +87,26 @@ namespace Clue{
 
         static protected $instance;
         
-        function set_msg($code, $message){
-            $this->session->put($code, $message);
+        function alert($message, $level='success', $context='application'){
+            $_SESSION['alert'][$context][]=array($level, $message);
         }
 
-        function msg($code){
-            $message=$this->session->take($code);
-            if(empty($message)) return false;
+        function display_alert($context='application'){
+            $messages=$_SESSION['alert'][$context];
+            if(empty($messages)) return false;
 
-            $type="info";
-            if(preg_match('/error/i', $code)) $type='error';
-            else if(preg_match('/warning/i', $code)) $type='warning';
-            else if(preg_match('/debug/i', $code)) $type='debug';
+            $html="";
+            foreach($messages as $m){
+                list($level, $msg)=$m;
+                $html.="
+                    <div class='alert alert-$level'>
+                        <button type='button' class='close' data-dismiss='alert'>&times;</button>
+                        $msg</div>
+                ";
+            }
 
-            echo <<<MSG
-            <div class='msg'><div class='$type'>$message</div></div>
-MSG;
+            unset($_SESSION['alert'][$context]);
+            echo $html;
         }
         
         function run(){
