@@ -126,6 +126,9 @@ Usage: clue [command] {arguments...}
                 $fields=array_filter(array_keys(($schema[$m])), function($c){ return $c[0]!="_"; });
                 $fields=implode("\n", array_map(function($f){ return "    public \$$f;"; }, $fields));
 
+                $pkeys=array_filter(array_keys(($schema[$m])), function($c) use($schema, $m){ return isset($schema[$m][$c]['pkey']) && $schema[$m][$c]['pkey']===true; });
+                $pkeys=count($pkeys)>1 ? "array('".implode("','", $pkeys)."')" : '"'.$pkeys[0].'"';
+
                 // ReCreate base model class
                 $path="model/base/".strtolower($className).".php";
                 file_put_contents($path, <<<END
@@ -134,7 +137,8 @@ namespace Base;
 use \Clue\ActiveRecord;
 class $className extends ActiveRecord{
     static protected \$_model=array(
-        'table'=>'$m'
+        'table'=>'$m',
+        'pkey'=>$pkeys,
     );
 $fields
 }

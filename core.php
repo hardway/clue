@@ -25,6 +25,10 @@ namespace Clue{
 
     $_CLASS_PATH=array();
 
+    function add_include_path($path){
+        set_include_path(get_include_path().PATH_SEPARATOR.$path);
+    }
+
     function add_class_path($path){
         global $_CLASS_PATH;
 
@@ -69,6 +73,7 @@ namespace Clue{
     add_class_path(APP_ROOT."/model");
     add_class_path(APP_ROOT."/class");
     add_class_path(APP_ROOT."/include");
+    add_include_path(APP_ROOT."/include");
 
     spl_autoload_register("Clue\autoload_load");
 }
