@@ -28,7 +28,8 @@
         function send($subject, $html, $to, $from=null, $reply=null){
             $this->mailer->Subject=$subject;
             $this->mailer->MsgHTML($html);
-            
+            $this->mailer->ClearAllRecipients();
+
             if(!empty($from)){
                 $this->mailer->SetFrom($from);
             }
