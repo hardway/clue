@@ -15,7 +15,7 @@ namespace Clue{
             }
 
 			$factory="Clue\\Database\\".$dbms;
-			if(!class_exists($factory)) throw new Exception("Database: $dbms is not implemented!");
+			if(!class_exists($factory)) throw new \Exception("Database: $dbms is not implemented!");
 			
 			// Make sure the parameter is always in array format
 			if(is_object($param)) $param=(array)$param;
@@ -71,7 +71,7 @@ namespace Clue{
 			$this->lasterror=$err;
 			$this->errors[]=$err;
 			
-			throw new Database\Exception($this->lastquery, $err['code'], $err['error']);
+            trigger_error("SQL ERROR: {$err['code']} {$err['error']} [$this->last_query]", E_USER_ERROR);
 		}
 		
 		protected function clearError(){
