@@ -70,4 +70,24 @@ namespace Clue{
 		}
 	}
 }
+
+namespace{
+    function assets($asset=null){
+    	$candidates=array(
+    		DIR_SKIN."/asset/$asset",
+    		DIR_SKIN_DEFAULT."/asset/$asset"
+    	);
+
+    	foreach($candidates as $c){
+    		if(file_exists($c)){
+    			$url=str_replace("\\", '/', str_replace(APP_ROOT, '', $c));
+    			return $url.'?'.filemtime($c);
+    		}
+    	}
+
+    	// Asset not found
+    	// notify developer
+    	return null;
+    }
+}
 ?>

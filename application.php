@@ -16,9 +16,6 @@ namespace Clue{
         function __construct($values=array()){
             $this->_values=$values;
 
-            if(!isset($this['base'])) $this['base']=str_replace("\\", '/', dirname($_SERVER['SCRIPT_NAME']));
-            if(!isset($this['root'])) $this['root']=str_replace("\\", '/', dirname($_SERVER['SCRIPT_FILENAME']));
-
             if(!isset($this['auth_class'])) $this['auth_class']="Clue\\Auth";
             if(!isset($this['user_class'])) $this['user_class']="User";
             if(!isset($this['user'])){
@@ -53,7 +50,8 @@ namespace Clue{
         }
 
         function init(){
-            $this['guard']=new Guard(@$this['config']['guard']);
+            // TODO: guard is optional
+            // $this['guard']=new Guard(@$this['config']['guard']);
             
             if($this['config']['debug']===false){
                 $this->guard->display_level=0;
@@ -90,7 +88,7 @@ namespace Clue{
         }
 
         function display_alert($context='application'){
-            $messages=$_SESSION['alert'][$context];
+            $messages=@$_SESSION['alert'][$context];
             if(empty($messages)) return false;
 
             $html="";
@@ -117,9 +115,12 @@ namespace Clue{
             $resource=$this->controller."::".$this->action;
             if(count($this->params)>0) $resource.="(".http_build_query($this->params).")";
 
+            // TODO: authorization is optional
+            /* 
             if($this['user'] && !$this['user']->authorize($resource, 'a')){
                 $this['user']->authorize_failed($resource, 'a');
             }
+            */
 
             $r=$this['router']->route($this->controller, $this->action, $this->params);
             $ret=call_user_func_array(array($r['handler'], $r['handler']->action), $r['args']);
@@ -138,23 +139,21 @@ namespace{
         return $url;
     }
 
+    function relpath($path){
+        return preg_replace('|[\\\/]+|', '/', str_replace(APP_ROOT, APP_BASE, $path));
+    }
+
     function url_for($controller, $action='index', $params=array()){
         global $app;
-        $url=$app['base'].$app['router']->reform($controller, $action, $params);
+        $url=APP_BASE.$app['router']->reform($controller, $action, $params);
         $url=preg_replace('/\/+/', '/', $url);
 
         return $url;
     }
 
-    function assets($asset=null){
-        global $app;
-
-        $url=($app['base']=="\\" || $app['base']=='/') ? '/assets' : $app['base']."/assets";
-        $file=$app['root'].'/assets/'.$asset;
-
-        if(file_exists($file)) $url.="/$asset?".filemtime($file);
-        
-        return $url;
+    function url_for_ssl(){
+        $url=call_user_func_array("url_for", func_get_args());
+        return "https://".$_SERVER['HTTP_HOST'].$url;
     }
 }
 ?>

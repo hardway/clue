@@ -84,5 +84,6 @@ class Auth{
         // Handler code
         global $app;
         header("Location: ".$app['webbase']);
+        exit();
     }
 }

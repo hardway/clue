@@ -11,18 +11,6 @@ namespace Clue{
             define("CLUE_VERSION", "DEVELOPMENT");
     }
     
-    // common defination
-    if(!defined('DS'))  define("DS", DIRECTORY_SEPARATOR);
-    if(!defined('NS'))  define('NS', "\\");
-    
-    if(!defined('APP_ROOT'))    define('APP_ROOT', dirname($_SERVER['SCRIPT_FILENAME']));
-    if(!defined('APP_BASE')){
-        $dir=dirname($_SERVER['PHP_SELF']);
-        $dir= $dir=="\\" ? "/" : "$dir/";
-        
-        define('APP_BASE', $dir);
-    }
-
     $_CLASS_PATH=array();
 
     function add_include_path($path){
@@ -70,10 +58,10 @@ namespace Clue{
         }
     }
         
-    add_class_path(APP_ROOT."/model");
-    add_class_path(APP_ROOT."/class");
-    add_class_path(APP_ROOT."/include");
-    add_include_path(APP_ROOT."/include");
+    add_class_path(DIR_SOURCE."/model");
+    add_class_path(DIR_SOURCE."/class");
+    add_class_path(DIR_SOURCE."/include");
+    add_include_path(DIR_SOURCE."/include");
 
     spl_autoload_register("Clue\autoload_load");
 }

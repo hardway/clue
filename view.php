@@ -10,8 +10,8 @@ namespace Clue{
         function __construct($view=null){
             $this->view=strtolower(trim($view, '/'));
 
-            foreach(array("mustache", "html") as $ext){
-                $this->template=APP_ROOT."/view/".strtolower($view).".$ext";
+            foreach(array("php", "html") as $ext){
+                $this->template=DIR_SOURCE."/view/".strtolower($view).".$ext";
                 if(file_exists($this->template)){
                     break;
                 }
@@ -28,7 +28,13 @@ namespace Clue{
             $this->vars[$name]=$value;
         }
 
-        function subview($view, $inherit_vars=true){
+        function view($view=null, $inherit_vars=true){
+            // Special treat
+            if($view==null){
+                echo $this->vars['content'];
+                return;
+            }
+
             if($view[0]!='/' && !preg_match('/:/', $view)){
                 // Convert to absolute path based on VIEW_ROOT
                 $view=dirname($this->view).'/'.$view;
@@ -37,7 +43,7 @@ namespace Clue{
             $sv=new View($view);
             if($inherit_vars) $sv->vars=$this->vars;
 
-            return $sv;
+            return $sv->render();
         }
         
         function render($vars=array()){
@@ -47,27 +53,13 @@ namespace Clue{
                 $this->vars=$vars;
 
             // View Logic
-            extract($this->vars);
+            extract(array_merge($GLOBALS, $this->vars));
             if(file_exists("$this->view.php")){
                 include "$this->view.php";
             }
 
             // View Template
-            // TODO: rewrite mustache template engine
-            if(preg_match('/\.mustache$/i', $this->template)){
-                require_once 'Mustache/Autoloader.php';
-                \Mustache_Autoloader::register();
-
-                $mustache_base=dirname(APP_ROOT."/view/".$this->view);
-                $m = new \Mustache_Engine(array(
-                    'loader'=>new \Mustache_Loader_FilesystemLoader($mustache_base),
-                    'partials_loader'=>new \Mustache_Loader_FilesystemLoader($mustache_base)
-                ));
-                echo $m->render(basename($this->view), $this->vars);
-            }
-            else{                
-                include $this->template;
-            }
+            include $this->template;
         }
         
         function parse_var($str){

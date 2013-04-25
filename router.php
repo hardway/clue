@@ -3,6 +3,8 @@ namespace Clue{
 	class Router{
 		function __construct(){
 			$this->debug=defined("CLUE_ROUTE_DEBUG") && CLUE_ROUTE_DEBUG;
+
+			$this->rules=array();
 		}
 		
 		function connect($url){
@@ -49,9 +51,8 @@ namespace Clue{
 		
 		function route($controller, $action, $params=array()){
 			// load controller
-			$class=str_replace('/', '_', "{$controller}_Controller");
-
-			$path=APP_ROOT . "/control/".strtolower(str_replace('_','/',$controller)).".php";
+			$class=str_replace('/', '_', "{$controller}_Controller");	// TODO: ucfirst each path segment?
+			$path=DIR_SOURCE . "/control/".strtolower(str_replace('_','/',$controller)).".php";
 
 			if($_SERVER['REQUEST_METHOD']=='POST')
 				$action="_$action";
@@ -98,6 +99,7 @@ namespace Clue{
 				);
 			}
 			else{
+				// TODO: goto 404 error
 		        throw new \Exception("Can't find action $action of $controller");
 			}
 		}
@@ -155,8 +157,26 @@ namespace Clue{
 				
 				return $url;
 			}
-			
-			throw new \Exception('COUND NOT REFORM');
+
+			# Try to reform in default way
+			$query=array();
+			$path=array("");
+
+			if($controller!='index') $path[]=$controller;
+			if($action!='index') $path[]=$action;
+
+			foreach($params as $k=>$v){
+				if(is_numeric($k)){
+					$path[]=$v;
+				}
+				else{
+					$query[$k]=$v;
+				}
+			}
+
+			$url=implode("/", $path) . (empty($query) ? "" : '?'.http_build_query($query));
+
+			return $url;
 		}
 
 		function resolve(){
@@ -176,11 +196,12 @@ namespace Clue{
                 if(isset($_SERVER['PATH_INFO']))
                     $uri=$_SERVER['PATH_INFO'];
                 else{
-                    $uri=$_SERVER['HTTP_X_REWRITE_URL'] ?: $_SERVER['REQUEST_URI'];
+                    $uri=isset($_SERVER['HTTP_X_REWRITE_URL']) ? $_SERVER['HTTP_X_REWRITE_URL'] : $_SERVER['REQUEST_URI'];
+                    if($uri==$_SERVER['PHP_SELF']) $uri='/';
                 }
 
-                if($app['base']!='/' && strpos($uri, $app['base'])===0){
-                    $uri=substr($uri, strlen($app['base']));
+                if(APP_BASE!='/' && strpos($uri, APP_BASE)===0){
+                    $uri=substr($uri, strlen(APP_BASE));
                 }
 
 				// strip query from uri
@@ -236,6 +257,27 @@ namespace Clue{
 				}
             }
 			
+			# Try default controller
+			$candidates=explode("/", preg_replace('/\/$/', '', $uri));
+			$candidates[]="";	// Append pseudo action index
+			$params=array();
+
+			while(count($candidates)>=2){
+				if(!empty($action)) $params[]=$action;
+				$action=array_pop($candidates);
+				$controller=trim(implode('/', $candidates), '/') ?: 'index';
+
+				if(file_exists(DIR_SOURCE.'/control/'.$controller.".php")){
+					// return with found controller/view
+					$mapping['controller']=$controller;
+					$mapping['action']=$action ?: 'index';
+					$remaining=explode("/", substr($uri, strpos($uri, $controller)+strlen($controller)));
+					$mapping['params']=array_merge($params, $_GET, $_POST);
+
+					return $mapping;
+				}
+			}
+
 			throw new \Exception("No route found.");
 		}
 	}
