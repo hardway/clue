@@ -3,7 +3,7 @@ namespace Clue{
 	class Asset{
 		public $type;
 		public $files;
-		
+
 		function __construct($files){
 			$this->files=array();
 			$this->add($files);
@@ -22,10 +22,10 @@ namespace Clue{
 
 				if(!in_array($f, $this->files)){
 					$this->files[]=$f;
-				}				
+				}
 			}
 		}
-		
+
 		function compile(){
 			$ext=array();
 
@@ -42,12 +42,12 @@ namespace Clue{
 				$this->type=array_keys($ext);
 				$this->type=$this->type[0];
 			}
-			
+
 			// TODO: cache
 
 			return $content;
 		}
-		
+
 		function dump(){
 			$content=$this->compile();
 
@@ -64,7 +64,7 @@ namespace Clue{
 					header("Content-Type: text/plain");
 					break;
 			}
-			
+
 			header('Content-Length: '.strlen($content));
 			echo $content;
 		}
@@ -72,7 +72,7 @@ namespace Clue{
 }
 
 namespace{
-    function assets($asset=null){
+    function asset($asset=null){
     	$candidates=array(
     		DIR_SKIN."/asset/$asset",
     		DIR_SKIN_DEFAULT."/asset/$asset"

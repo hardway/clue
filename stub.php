@@ -1,4 +1,4 @@
-<?php 
+<?php
 	/**
 	 * Definitions before stub
 	 *  APP_BASE	base url of the application
@@ -13,10 +13,11 @@
     // Common Definations
     if(!defined('DS'))  define("DS", DIRECTORY_SEPARATOR);	// directory separator
     if(!defined('NS'))  define('NS', "\\");					// namespace separator
-    
+
     if(!defined('APP_ROOT')) define('APP_ROOT', realpath(dirname($_SERVER['SCRIPT_FILENAME'])));
     if(!defined('APP_BASE')) define('APP_BASE', preg_replace('|[\\\/]+|', '/', dirname($_SERVER['SCRIPT_NAME'])));
 
+    if(!defined('DIR_SITE')) define('DIR_SITE', realpath(APP_ROOT));
     if(!defined('DIR_SOURCE')) define('DIR_SOURCE', realpath(APP_ROOT.'/source'));
 
     define('DIR_SKIN_DEFAULT', realpath(APP_ROOT.'/skin'));

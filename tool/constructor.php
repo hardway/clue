@@ -1,11 +1,19 @@
-<?php  
+<?php
+    if(!defined("CLUE_VERSION")){
+        $version=exec("hg parent --template {latesttag}.{latesttagdistance} 2>&1", $_, $err);
+        if($err==0)
+            define('CLUE_VERSION', $version);
+        else
+            define("CLUE_VERSION", "DEVELOPMENT");
+    }
+
     class Clue_Tool_Constructor_Minifier{
         protected $root;
-        
+
         function __construct($root){
             $this->root=$root;
         }
-        
+
         function build($dest){
             if(!Phar::canWrite()) {
                 throw new Exception('Unable to create PHAR archive, must be phar.readonly=Off option in php.ini');
@@ -17,38 +25,38 @@
             $phar->convertToExecutable(Phar::PHAR);
             $phar->startBuffering();
             $phar->buildFromDirectory($this->root);
-            $phar->setStub('<?php Phar::mapPhar("Clue");                 
+            $phar->setStub('<?php Phar::mapPhar("Clue");
                 define("CLUE_VERSION", "'.CLUE_VERSION.'");
 
                 require_once "phar://Clue/core.php";
                 spl_autoload_register("Clue\autoload_load");
                 require_once "phar://Clue/application.php";
                 require_once "phar://Clue/tool.php";
-                
+
                 if(php_sapi_name()=="cli" && preg_match("/clue/i", $argv[0])){
                     require_once "phar://Clue/tool/constructor.php";
-                    
+
                     $ctor=new Clue_Tool_Constructor();
                     $command=isset($argv[1]) ? $argv[1] : "help";
-                    
+
                     if(method_exists($ctor, $command)){
                         call_user_func_array(array($ctor, $command), array_slice($argv, 2));
                     }
                     else{
                         echo "Unknown command: $command\n";
-                    }        
+                    }
                 }
-                __HALT_COMPILER(); 
+                __HALT_COMPILER();
             ');
             $phar->stopBuffering();
             echo "Phar build at: $dest";
         }
-        
+
         function __toString(){
             return $this->code;
         }
     }
-    
+
     class Clue_Tool_Constructor{
         function help(){
             echo "
@@ -65,26 +73,26 @@ Usage: clue [command] {arguments...}
     help        Display this help screen
             ";
         }
-        
+
         function build($dest=null){
             if(empty($dest)) $dest=getcwd().'/clue.phar';
             $minifier=new Clue_Tool_Constructor_Minifier(dirname(__DIR__));
             $minifier->build($dest);
             //file_put_contents($dest, $minifier);
         }
-                
+
         function init($path=null){
             $skeleton=__DIR__ . DIRECTORY_SEPARATOR . 'skeleton';
             $site=empty($path) ? getcwd() : $path;
-            
+
             if(false==$this->_confirm("New application code skeleton will be copied into: \"$site\", continue?")){
                 return $this->_cancel();
             }
-            
+
             if(!is_dir($site)) mkdir($site, 0755, true);
             $this->_deepcopy($skeleton, $site);
         }
-        
+
         function gen_sql(){
             $schema=include "db/schema.php";
             if(!is_array($schema)) die("Schema file not found or invalid.");
@@ -180,7 +188,7 @@ END
                 );
             }
 
-            
+
             foreach($actions as $action){
                 $src=file_get_contents("control/$controller.php");
                 $src=substr($src, 0, strrpos($src, "}"));
@@ -193,7 +201,7 @@ END
         global \$app;
 
         \$data=array();
-        
+
         \$this->render('$action', \$data);
     }
 }
@@ -217,21 +225,21 @@ END
             // Detect current database
             // Execute Migration
         }
-        
+
         static function _confirm($question){
             printf("%s (Y/n) ", $question);
             $response=fgetc(STDIN);
-            
+
             return $response=='Y';
         }
-        
+
         static function _cancel(){
             echo "Operation Canceled\n";
         }
-        
+
         private function _deepcopy($src, $dest){
             echo "Copying $src --> $dest \n";
-            
+
             if(is_file($src)){	// File Mode
                 copy($src, $dest);
                 touch($dest);
@@ -239,7 +247,7 @@ END
             else if(is_dir($src)){	// Directory Mode
                 // Always make sure the destination folder exists
                 if(!is_dir($dest)) mkdir($dest, 755, true);
-                
+
                 $dh=opendir($src);
                 while(($file=readdir($dh))!==false){
                     if($file=='.' || $file=='..') continue;

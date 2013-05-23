@@ -1,4 +1,4 @@
-<?php 
+<?php
 namespace Clue;
 
 class Guard{
@@ -9,12 +9,12 @@ class Guard{
 	    E_STRICT=>'NOTICE',				# 2048
 	    E_DEPRECATED=>'NOTICE',			# 8192
 	    E_USER_DEPRECATED=>'NOTICE',	# 16384
-	    
+
 	    E_WARNING=>'WARNING',			# 2
 	    E_CORE_WARNING=>'WARNING',		# 32
 	    E_COMPILE_WARNING=>'WARNING',	# 128
 	    E_USER_WARNING=>'WARNING',		# 512
-	    
+
 	    E_ERROR=>'ERROR',				# 1
 	    E_CORE_ERROR=>'ERROR',			# 16
 	    E_PARSE=>'ERROR',				# 4
@@ -67,6 +67,13 @@ class Guard{
 		$this->mail_from=$config['mail_from'];
 
 		$this->log_file=$config['log_file'];
+
+		$error_threshold=max($this->log_level, $this->email_level, $this->display_level, $this->stop_level);
+		$error_reporting=0;
+		foreach(self::$PHP_ERROR_MAP as $lvl=>$_){
+			if($lvl <= $error_threshold) $error_reporting=$error_reporting | $lvl;
+		}
+		error_reporting($error_reporting);
 
         set_exception_handler(array($this, "on_exception"));
         set_error_handler(array($this, "on_error"));
@@ -122,7 +129,7 @@ class Guard{
 			}
 		}
 		if(!empty($this->mail_to) && count($to_email)>0){
-			Email::send_mail("Developer", $this->mail_to, "Error Report", $this->mail_from, 
+			Email::send_mail("Developer", $this->mail_to, "Error Report", $this->mail_from,
 				count($to_email)." error occured recently.", "<pre>".implode("\n\n", $to_email))."</pre>";
 		}
 
@@ -188,7 +195,7 @@ class Guard{
 			}
 			else{
 				$text.=": $var</li>";
-			}			
+			}
 		}
 
 		return $text;
@@ -265,7 +272,7 @@ class Guard{
 	function on_exception($e){
 		return $this->on_error(E_ERROR, $e->getMessage(), $e->getFile(), $e->getLine(), $GLOBALS, $e->getTrace());
 	}
-	
+
 	function on_error($errno, $errstr, $errfile=null, $errline=null, array $errcontext=null, array $errtrace=array()){
 		// if error has been supressed with an @
 	    if (error_reporting() == 0) return;
@@ -297,7 +304,7 @@ class Guard{
 			'trace'=>$errtrace,
 			'context'=>$context
 		);
-		
+
 		if($errlevel <= $this->stop_level) exit("ERROR STOP");
 
 		return true;

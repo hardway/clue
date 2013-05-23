@@ -1,55 +1,62 @@
 <?php
-namespace Clue{	
+namespace Clue{
 	class Controller{
 		public $controller;
 		public $action;
 		public $view;
-		
+
 		protected $layout="default";
-		
+
 		function __construct($controller=null, $action=null){
 			$this->controller=$controller;
 			$this->action=$action;
-			
+
 			$this->layout=new Layout(empty($this->layout) ? 'default' : $this->layout);
+
+			$this->__init();
 		}
-		
-		function render_raw($view=null, $data=array()){            
-            $view=empty($view) ? $this->view : $view;
-            $view=new View('page/'.str_replace('_','/',$this->controller)."/{$view}");
-            
-            $view->render($data);
+
+		// 可以重载
+		function __init(){}
+
+		function get_view($view, $data=array()){
+			$view=new View('page/'.str_replace('_','/',$this->controller)."/{$view}");
+			if(is_array($data)) foreach($data as $k=>$v){
+				$view->set($k, $v);
+			}
+
+			return $view;
 		}
 
         function render($view=null, $data=array()){
             $content=false;
-            
-            ob_start();
-        	$content=$this->render_raw($view, $data);
-            $content = ob_get_contents(); 
-            ob_end_clean();
+
+            $content=$this->get_view($view?:$this->view, $data);
 
             if($this->layout)
                 $this->layout->render(array('content'=>$content));
             else
                 echo $content;
         }
-        
-		function redirect_route($controller=null, $action='index', $param=array()){
-		    global $app;
-		    
-		    $controller=empty($controller) ? $this->controller : $controller;
-		    
-			$app->redirect(url_for($controller, $action, $param));
-		}
-		
+
 		function redirect($url){
 		    global $app;
 			$app->redirect($url);
 		}
-		
-		function go_back(){
-			$this->redirect(back_url());
+
+		function redirect_action($action, $param=array()){
+		    global $app;
+			$app->redirect(url_for($this->controller, $action, $param));
+		}
+
+		function redirect_return($default_url=null){
+			global $app;
+			$app->redirect_return($default_url);
+		}
+
+		function redirect_referer($default_url=null){
+			global $app;
+			$app->redirect_referer($default_url);
 		}
 	}
 }

@@ -1,12 +1,20 @@
 <?php
 namespace Clue{
 	class Router{
-		function __construct(){
+		protected $app;
+		protected $translates=array();
+
+		function __construct($app){
+			$this->app=$app;
 			$this->debug=defined("CLUE_ROUTE_DEBUG") && CLUE_ROUTE_DEBUG;
 
 			$this->rules=array();
 		}
 		
+		function alias($from, $to){
+			$this->translates[]=array('from'=>$from, 'to'=>$to);
+		}
+
 		function connect($url){
 			$args=func_get_args();
 			$url=array_shift($args);
@@ -52,12 +60,14 @@ namespace Clue{
 		function route($controller, $action, $params=array()){
 			// load controller
 			$class=str_replace('/', '_', "{$controller}_Controller");	// TODO: ucfirst each path segment?
-			$path=DIR_SOURCE . "/control/".strtolower(str_replace('_','/',$controller)).".php";
 
 			if($_SERVER['REQUEST_METHOD']=='POST')
 				$action="_$action";
 
 			if(!class_exists($class, false)){
+				$path=DIR_SOURCE . "/control/".strtolower(str_replace('_','/',$controller)).".php";
+				$class='Controller';
+
 			    if(file_exists($path)) require_once $path;
 			    if(!class_exists($class, false))
 			        throw new \Exception("No controller found: $controller");
@@ -65,13 +75,7 @@ namespace Clue{
 			
 			$rfxClass=new \ReflectionClass($class);
 			
-			if($rfxClass->hasMethod($action) || $rfxClass->hasMethod('action')){
-			    // Fallback action handler
-			    if(!$rfxClass->hasMethod($action)){
-			        $params['action']=$action;
-			        $action='action';
-			    }
-			    
+			if($rfxClass->hasMethod($action)){
 				$rfxMethod=new \ReflectionMethod($class, $action);
 				
 				// detect parameters using reflection
@@ -79,11 +83,13 @@ namespace Clue{
 				foreach($rfxMethod->getParameters() as $rfxParam){
 					if(isset($params[$rfxParam->name])){
 						$callArgs[]=$params[$rfxParam->name];
+						unset($params[$rfxParam->name]);
 					}
-					else{
-						$callArgs[]=$rfxParam->isDefaultValueAvailable() ? $rfxParam->getDefaultValue() : null;
+					elseif($rfxParam->isDefaultValueAvailable()){
+						$callArgs[]=$rfxParam->getDefaultValue();
 					}
 				}
+				$callArgs=array_merge($callArgs, $params);
 				
 				$obj=new $class($controller, $action);
 				
@@ -163,7 +169,8 @@ namespace Clue{
 			$path=array("");
 
 			if($controller!='index') $path[]=$controller;
-			if($action!='index') $path[]=$action;
+			if($action=='index') $action="";
+			$path[]=$action;
 
 			foreach($params as $k=>$v){
 				if(is_numeric($k)){
@@ -257,23 +264,35 @@ namespace Clue{
 				}
             }
 			
+			// Translate url
+			foreach($this->translates as $tr){
+				$uri=preg_replace($tr['from'], $tr['to'], $uri);
+			}
+
 			# Try default controller
-			$candidates=explode("/", preg_replace('/\/$/', '', $uri));
+			$candidates=explode("/", $uri);
+			$last=array_pop($candidates);
+			$candidates[]=$last?:"index";
+
 			$candidates[]="";	// Append pseudo action index
 			$params=array();
 
 			while(count($candidates)>=2){
 				if(!empty($action)) $params[]=$action;
 				$action=array_pop($candidates);
-				$controller=trim(implode('/', $candidates), '/') ?: 'index';
+				$controller=trim(implode('/', $candidates), '/');
 
-				if(file_exists(DIR_SOURCE.'/control/'.$controller.".php")){
+				$mapping['controller']=$controller ?: 'index';
+				$mapping['action']=$action ?: 'index';
+				$mapping['params']=array_merge($params, $_GET, $_POST);
+
+				//var_dump($mapping);
+				if(file_exists(DIR_SOURCE.'/control/'.$mapping['controller'].".php")){
 					// return with found controller/view
-					$mapping['controller']=$controller;
-					$mapping['action']=$action ?: 'index';
-					$remaining=explode("/", substr($uri, strpos($uri, $controller)+strlen($controller)));
-					$mapping['params']=array_merge($params, $_GET, $_POST);
 
+					if($mapping['action']=='index' && !preg_match('/\/$/', $uri)){
+						$app->redirect($uri.'/');
+					}
 					return $mapping;
 				}
 			}

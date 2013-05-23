@@ -1,34 +1,40 @@
-<?php 
+<?php
 namespace Clue{
     class View{
         protected $view;
         protected $template;
         protected $vars;
-        
+
         // TODO: use template_dir
 
         function __construct($view=null){
             $this->view=strtolower(trim($view, '/'));
 
-            foreach(array("php", "html") as $ext){
-                $this->template=DIR_SOURCE."/view/".strtolower($view).".$ext";
-                if(file_exists($this->template)){
+            foreach(array("htm", "php") as $ext){
+                $this->template=DIR_SOURCE."/view/".strtolower($view);
+
+                if(file_exists($this->template.".".$ext)){
                     break;
                 }
+
+                $this->template=null;
             }
 
-            if(!file_exists($this->template)){
-				throw new \Exception("View didn't exists: $view");
+            if(empty($this->template)){
+                exit("View didn't exists: $view");
+				//throw new \Exception("View didn't exists: $view");
             }
-            
+
             $this->vars=array();
         }
-        
+
         function set($name, $value){
             $this->vars[$name]=$value;
         }
 
-        function view($view=null, $inherit_vars=true){
+        function incl($view=null, $param=array()){
+            $inherit_vars=$param['inherit_vars'] ?: true;
+
             // Special treat
             if($view==null){
                 echo $this->vars['content'];
@@ -45,7 +51,7 @@ namespace Clue{
 
             return $sv->render();
         }
-        
+
         function render($vars=array()){
             if(is_array($vars))
                 $this->vars=array_merge($this->vars, $vars);
@@ -54,19 +60,20 @@ namespace Clue{
 
             // View Logic
             extract(array_merge($GLOBALS, $this->vars));
-            if(file_exists("$this->view.php")){
-                include "$this->view.php";
-            }
 
-            // View Template
-            include $this->template;
-        }
-        
-        function parse_var($str){
-            if(preg_match('/\$([a-z0-9_]+)\.([a-z0-9_]+)/i', $str, $m)){
-                return "\${$m[1]}['{$m[2]}']";
+            // Code Behind
+            if(file_exists("$this->template.php")){
+                include "$this->template.php";
             }
-            else return $str;
+            // View file
+            if(file_exists($this->template.".htm")){
+                include $this->template.".htm";
+            }
+        }
+
+        function __toString(){
+            $this->render();
+            return "";
         }
     }
 }

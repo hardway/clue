@@ -1,17 +1,29 @@
-<?php      
+<?php
 namespace Clue{
     /**
      * Bootstrap code, facility to load subsystem here.
      */
-    if(!defined("CLUE_VERSION")){
-        $version=exec("hg parent --template {latesttag}.{latesttagdistance} 2>&1", $_, $err);
-        if($err==0)
-            define('CLUE_VERSION', $version);
-        else
-            define("CLUE_VERSION", "DEVELOPMENT");
-    }
-    
     $_CLASS_PATH=array();
+
+    function ary2obj($array) {
+        if(!is_array($array)) {
+            return $array;
+        }
+
+        $object = new stdClass();
+        if (is_array($array) && count($array) > 0) {
+          foreach ($array as $name=>$value) {
+             $name = strtolower(trim($name));
+             if (!empty($name)) {
+                $object->$name = ary2obj($value);
+             }
+          }
+          return $object;
+        }
+        else {
+          return FALSE;
+        }
+    }
 
     function add_include_path($path){
         set_include_path(get_include_path().PATH_SEPARATOR.$path);
@@ -57,7 +69,7 @@ namespace Clue{
             }
         }
     }
-        
+
     add_class_path(DIR_SOURCE."/model");
     add_class_path(DIR_SOURCE."/class");
     add_class_path(DIR_SOURCE."/include");
