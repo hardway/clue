@@ -110,37 +110,6 @@ namespace Clue{
 			return null;
 		}
 
-		function format($sql){
-			$args=func_get_args();
-			$me=$this;
-
-			$idx=1;
-			$sql=preg_replace_callback('/%(s|d|f|%)/', function($m) use($me, $args, &$idx){
-				if(!isset($args[$idx])){
-					throw new \Exception("Not enough arguments for SQL statement.");
-				}
-
-				$var="";
-				switch($m[1]){
-					case 's':
-						$var=$me->quote($args[$idx]);
-						break;
-					case 'd':
-						$var=intval($args[$idx]);
-						break;
-					case 'f':
-						$var=floatval($args[$idx]);
-						break;
-					case '%':
-						$var='%';
-				}
-
-				$idx++;
-				return $var;
-			}, $sql);
-			return $sql;
-		}
-
 		function exec($sql){
 			if(func_num_args()>1){
 				$sql=call_user_func_array(array($this, "format"), func_get_args());

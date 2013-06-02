@@ -32,9 +32,7 @@ namespace Clue{
             $this->vars[$name]=$value;
         }
 
-        function incl($view=null, $param=array()){
-            $inherit_vars=$param['inherit_vars'] ?: true;
-
+        function incl($view=null, $vars=array()){
             // Special treat
             if($view==null){
                 echo $this->vars['content'];
@@ -47,7 +45,7 @@ namespace Clue{
             }
 
             $sv=new View($view);
-            if($inherit_vars) $sv->vars=$this->vars;
+            $sv->vars=array_merge($this->vars, $vars);
 
             return $sv->render();
         }

@@ -192,7 +192,7 @@
 		    $model=self::model();
 		    $class=get_called_class();
 
-			$sql="select * from {$model["table"]} ";
+			$sql="select * from `{$model["table"]}` ";
 			$sql.=self::_get_where_clause($condition, $range);
 
 			switch(strtolower($range)){
@@ -300,13 +300,14 @@
 			// always true, because root class didn't have any business constraints
 			return true;
 		}
-	// Call back handlers
-	function after_construct(){}	// new AR()
-	function after_retrieve(){}		// AR::get(id)
-	function before_save(){ return true; }
-	function after_save(){}
-	function before_destroy(){ return true; }
-	function after_destroy(){}
+
+		// Call back handlers
+		function after_construct(){}	// new AR()
+		function after_retrieve(){}		// AR::get(id)
+		function before_save(){ return true; }
+		function after_save(){}
+		function before_destroy(){ return true; }
+		function after_destroy(){}
 
 		protected function _snap_shot(){
 			$model=self::model();
@@ -415,7 +416,7 @@
 			$this->init();
 			$this->_snap_shot();
 
-		$this->after_destroy();
+			$this->after_destroy();
 			return $ret;
 		}
 

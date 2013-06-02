@@ -23,7 +23,7 @@
     define('DIR_SKIN_DEFAULT', realpath(APP_ROOT.'/skin'));
     if(!defined('DIR_SKIN')) define('DIR_SKIN', DIR_SKIN_DEFAULT);
 
-
+    if(!defined('DIR_LOG')) define('DIR_LOG', realpath(APP_ROOT.'/log'));
     if(!defined('DIR_CACHE')) define('DIR_CACHE', realpath(APP_ROOT.'/cache'));
     if(!defined('DIR_DATA')) define('DIR_DATA', realpath(APP_ROOT.'/data'));
 

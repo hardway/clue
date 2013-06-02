@@ -10,7 +10,7 @@ namespace Clue{
 
 			$this->rules=array();
 		}
-		
+
 		function alias($from, $to){
 			$this->translates[]=array('from'=>$from, 'to'=>$to);
 		}
@@ -40,9 +40,9 @@ namespace Clue{
 					    return '([^/]+)';
 				}
 			}, $url);
-			
+
 			$pattern="^$pattern\$";
-						
+
 			$this->rules[]=array(
 				'reformation'=>$url,
 				'pattern'=>$pattern,
@@ -52,11 +52,11 @@ namespace Clue{
 
 			return true;
 		}
-		
+
 		function controller(){
 			return $this->controller;
 		}
-		
+
 		function route($controller, $action, $params=array()){
 			// load controller
 			$class=str_replace('/', '_', "{$controller}_Controller");	// TODO: ucfirst each path segment?
@@ -72,12 +72,12 @@ namespace Clue{
 			    if(!class_exists($class, false))
 			        throw new \Exception("No controller found: $controller");
 			}
-			
+
 			$rfxClass=new \ReflectionClass($class);
-			
+
 			if($rfxClass->hasMethod($action)){
 				$rfxMethod=new \ReflectionMethod($class, $action);
-				
+
 				// detect parameters using reflection
 				$callArgs=array();
 				foreach($rfxMethod->getParameters() as $rfxParam){
@@ -85,20 +85,17 @@ namespace Clue{
 						$callArgs[]=$params[$rfxParam->name];
 						unset($params[$rfxParam->name]);
 					}
-					elseif($rfxParam->isDefaultValueAvailable()){
-						$callArgs[]=$rfxParam->getDefaultValue();
-					}
 				}
 				$callArgs=array_merge($callArgs, $params);
-				
+
 				$obj=new $class($controller, $action);
-				
+
 				// invoke action
 				$obj->params=$params;
 				$obj->controller=$controller;
 				$obj->view=$action;
 				$obj->action=$action;
-				
+
 				return array(
 				    'handler'=>$obj,
 				    'args'=>$callArgs
@@ -111,14 +108,14 @@ namespace Clue{
 		}
 
 		function reform($controller, $action, $params=array()){
-			foreach($this->rules as $r){			    
+			foreach($this->rules as $r){
 				if(
-					isset($r['mapping']['controller']) && 
+					isset($r['mapping']['controller']) &&
 					strcasecmp($r['mapping']['controller'], $controller)!=0
 				) continue;
-				
+
 				if(
-					isset($r['mapping']['action']) && 
+					isset($r['mapping']['action']) &&
 					strcasecmp($r['mapping']['action'], $action)!=0
 					//!preg_match('/'.$r['mapping']['action'].'/i',$action)
 				) continue;
@@ -127,19 +124,19 @@ namespace Clue{
 				foreach(array_keys($params) as $name){
 				    if(isset($r['mapping'][$name]) && !preg_match('!'.$r['mapping'][$name].'!i', $params[$name])) continue;
 				}
-				
-				$params['controller']=$controller=='index' ? '' : $controller;			
+
+				$params['controller']=$controller=='index' ? '' : $controller;
 				$params['action']=$action=='index' ? '' : $action;
-				
+
 				$url=preg_replace_callback('/\:([a-zA-Z0-9_]+)/', function($m) use(&$params, &$allParamsAreMet, $r){
 				    $name=$m[1];
-				    
+
 					if(isset($params[$name])){
 						$ret=$params[$name];
 						if($name!='controller' && $name!='action'){
 							$ret=urlencode($ret);
 						}
-						
+
 						unset($params[$name]);
 						return $ret;
 					}
@@ -150,9 +147,9 @@ namespace Clue{
 						// throw new Exception("Couldn't found parameter '$name' in mapping rule.");
 					}
 				}, $r['reformation']);
-				
+
 				if(!$allParamsAreMet) continue;
-                
+
 				$query=array();
 				if($params) foreach($params as $n=>$v){
 					if($n=='controller' || $n=='action') continue;
@@ -160,7 +157,7 @@ namespace Clue{
 				}
 				if(count($query)>0)
 					$url.='?'.implode('&', $query);
-				
+
 				return $url;
 			}
 
@@ -190,7 +187,7 @@ namespace Clue{
 			global $app;
 
             parse_str($_SERVER['QUERY_STRING'], $query);
-            
+
             // Use controller/action in query string will override PATH_INFO or URL_REWRITE
             if(isset($query['_c'])){
                 return array(
@@ -217,7 +214,7 @@ namespace Clue{
 				}
 
 	            $params=array();
-				
+
 				// try to match against rules
 				foreach($this->rules as $r){
 					if($this->debug) $app['guard']->debug("Testing URL: '$uri' against ".$r['pattern']);
@@ -226,7 +223,7 @@ namespace Clue{
 						if($this->debug) $app['guard']->debug("Match URL: '$uri' against ".$r['pattern']);
 						array_shift($match);
 						$mapping=$r['mapping'];
-						
+
 						$candidateViolated=false;
 						for($i=0; $i<count($match); $i++){
 						    $name=$r['names'][$i];
@@ -240,30 +237,30 @@ namespace Clue{
 						    $mapping[$name]=$match[$i];
 						}
 						if($candidateViolated) continue; // Try Next Rule
-						
+
 						// Default controller is Index
 						if(empty($mapping['controller'])) $mapping['controller']='Index';
 						// Default action is index
 						if(empty($mapping['action'])) $mapping['action']='index';
-						
+
 						foreach($mapping as $n=>$v){
 							if($n=='controller'){
 							    $mapping['controller']=$v;
 							    continue;
 							}
 							else if($n=='action') continue;
-							
+
 							$params[$n]=urldecode($v);
 							unset($mapping[$n]);
 						}
 						$params=array_merge($params, $_GET, $_POST);
-						
+
 						$mapping['params']=$params;
 						return $mapping;
 					}
 				}
             }
-			
+
 			// Translate url
 			foreach($this->translates as $tr){
 				$uri=preg_replace($tr['from'], $tr['to'], $uri);

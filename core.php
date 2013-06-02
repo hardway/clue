@@ -70,10 +70,12 @@ namespace Clue{
         }
     }
 
-    add_class_path(DIR_SOURCE."/model");
-    add_class_path(DIR_SOURCE."/class");
-    add_class_path(DIR_SOURCE."/include");
-    add_include_path(DIR_SOURCE."/include");
+    if(defined("DIR_SOURCE")){
+        add_class_path(DIR_SOURCE."/model");
+        add_class_path(DIR_SOURCE."/class");
+        add_class_path(DIR_SOURCE."/include");
+        add_include_path(DIR_SOURCE."/include");
+    }
 
     spl_autoload_register("Clue\autoload_load");
 }
