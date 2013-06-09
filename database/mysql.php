@@ -48,7 +48,7 @@ namespace Clue\Database{
 			$cols=array();
 			$vals=array();
 			foreach($fields as $c=>$v){
-				$cols[]=$c;
+				$cols[]='`'.trim($c, '`').'`';
 				$vals[]=$this->quote($v);
 			}
 			$sql="insert into `$table`(".implode(',', $cols).") values(".implode(',', $vals).")";

@@ -1,0 +1,28 @@
+<html>
+<head>
+	<meta charset="UTF-8">
+	<title>MooEditor Example</title>
+	<link rel="stylesheet" href="mooeditor.css">
+	<script src='../mootools/mootools-core-1.4.5.js'></script>
+	<script src='mooeditor.js'></script>
+</head>
+<body>
+	<h1>MooEditor Example</h1>
+	<div>Credit: Mooeditable</div>
+	<form action=''>
+		<div>
+			<textarea id='editor' style='width: 600px; height: 400px;'>
+				Lorem ipsum dolor sit amet, consectetur adipisicing elit. Optio, dolor, sed sit nobis maiores eveniet nihil eum nisi voluptate beatae consequatur numquam saepe facere eligendi rem pariatur quis quam possimus.
+			</textarea>
+		</div>
+		<div>
+			<input type='text' name='extra' value='' placeholder='extra field' />
+		</div>
+	</form>
+	<script>
+		window.addEvent('domready', function(){
+			$("editor").mooEditable();
+		});
+	</script>
+</body>
+</html>
