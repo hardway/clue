@@ -79,10 +79,8 @@ namespace{
     	);
 
     	foreach($candidates as $c){
-    		if(file_exists($c)){
-    			$url=str_replace("\\", '/', str_replace(APP_ROOT, '', $c));
-    			return $url.'?'.filemtime($c);
-    		}
+			$url=str_replace("\\", '/', str_replace(APP_ROOT, APP_BASE, $c));
+			return $url.'?'.@filemtime($c);
     	}
 
     	// Asset not found

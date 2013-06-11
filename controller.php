@@ -16,6 +16,13 @@ namespace Clue{
 			$this->__init();
 		}
 
+		function __call($name, $args){
+			if(preg_match('/render_(.+)/', $name, $m)){
+				$this->layout=new Layout($m[1]);
+				return call_user_func_array(array($this, "render"), $args);
+			}
+		}
+
 		// 可以重载
 		function __init(){}
 

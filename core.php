@@ -51,7 +51,6 @@ namespace Clue{
         $class=str_replace(NS, '/', $class);
         $class=str_replace('_', '/', $class);
         $class=strtolower($class);
-
         if(substr_compare($class, 'clue/', 0, 5)==0){
             // Special treat for Clue\ classes. For they might reside in a phar file.
             $class=substr($class, 5);
