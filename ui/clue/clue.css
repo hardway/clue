@@ -39,3 +39,9 @@
 }
 .dropdown .option:hover {background: #CCC;}
 
+.combobox {}
+.combobox_list {height: 10em; width: 10em; overflow-x: hidden; background: #FFF; border: 1px solid #000; }
+.combobox_list .combobox_item {padding: 2px; width: 100%; overflow: hidden; }
+.combobox_list .combobox_item_highlighted {background: #000; color: #FFF;}
+.combobox_button {background: url(clue/combobox_button.gif) #49A60C;}
+

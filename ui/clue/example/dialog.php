@@ -2,10 +2,10 @@
 <head>
 	<meta charset="UTF-8">
 	<title>Clue Example</title>
-	<link rel="stylesheet" href="clue.css">
-	<script src='../mootools/mootools-core-1.4.5.js'></script>
-	<script src='../mootools/mootools-more-1.4.0.1-yc.js'></script>
-	<script src='clue.js'></script>
+	<link rel="stylesheet" href="../clue.css">
+	<script src='../../mootools/mootools-core-1.4.5.js'></script>
+	<script src='../../mootools/mootools-more-1.4.0.1-yc.js'></script>
+	<script src='../clue.js'></script>
 </head>
 <body>
 	<h1>Clue Example</h1>
