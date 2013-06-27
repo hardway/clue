@@ -29,6 +29,9 @@
                 define("CLUE_VERSION", "'.CLUE_VERSION.'");
 
                 require_once "phar://Clue/stub.php";
+                spl_autoload_register("Clue\autoload_load");
+                require_once "phar://Clue/application.php";
+                require_once "phar://Clue/tool.php";
 
                 if(php_sapi_name()=="cli" && preg_match("/clue/i", $argv[0])){
                     require_once "phar://Clue/tool/constructor.php";

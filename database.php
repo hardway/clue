@@ -172,16 +172,38 @@ namespace Clue{
 		    return $hash;
 		}
 
-		function get_object($sql, $class){
+		function get_object(){
+			$args=func_get_args();
+
+			$class=array_pop($args);
+			$sql=call_user_func_array(array($this, 'format'), $args);
+
 		    $r=$this->get_row($sql, ARRAY_A);
+
+		    if(empty($r))
+		    	return null;
+		    else{
+		    	$obj=new $class($r);
+		    	$obj->_snap_shot();
+		    	$obj->after_retrieve();
+		    }
+
 		    return empty($r) ? null : new $class($r);
 		}
 
-		function get_objects($sql, $class){
+		function get_objects(){
+			$args=func_get_args();
+
+			$class=array_pop($args);
+			$sql=call_user_func_array(array($this, 'format'), $args);
+
 		    $objs=array();
 		    $rs=$this->get_results($sql, ARRAY_A);
 		    if($rs) foreach($rs as $r){
-		        $objs[]=new $class($r);
+		    	$obj=new $class($r);
+		    	$obj->_snap_shot();
+		    	$obj->after_retrieve();
+		        $objs[]=$obj;
 		    }
 
 		    return $objs;

@@ -309,7 +309,7 @@
 		function before_destroy(){ return true; }
 		function after_destroy(){}
 
-		protected function _snap_shot(){
+		public function _snap_shot(){
 			$model=self::model();
 
 			foreach(array_keys($model['columns']) as $f){

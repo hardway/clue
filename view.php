@@ -10,14 +10,18 @@ namespace Clue{
         function __construct($view=null){
             $this->view=strtolower(trim($view, '/'));
 
-            foreach(array("htm", "php") as $ext){
-                $this->template=DIR_SOURCE."/view/".strtolower($view);
+            $view_dirs=array(DIR_SOURCE.'/view/');
+            if(defined("THEME")) array_unshift($view_dirs, APP_ROOT.'/'.THEME.'/view/');
 
-                if(file_exists($this->template.".".$ext)){
-                    break;
+            $this->template=null;
+            foreach($view_dirs as $dir){
+                foreach(array("htm", "php") as $ext){
+                    if(file_exists($dir.strtolower($view).".".$ext)){
+                        $this->template=$dir.strtolower($view);
+                        break;
+                    }
                 }
-
-                $this->template=null;
+                if($this->template!=null) break;
             }
 
             if(empty($this->template)){
@@ -53,8 +57,6 @@ namespace Clue{
         function render($vars=array()){
             if(is_array($vars))
                 $this->vars=array_merge($this->vars, $vars);
-            else
-                $this->vars=$vars;
 
             // View Logic
             extract(array_merge($GLOBALS, $this->vars));

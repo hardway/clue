@@ -20,6 +20,9 @@ namespace Clue{
 					continue;
 				}
 
+				if(!file_exists($f)) $f=DIR_ASSET.'/'.$f;
+				if(!file_exists($f)) continue;
+
 				if(!in_array($f, $this->files)){
 					$this->files[]=$f;
 				}
@@ -73,19 +76,14 @@ namespace Clue{
 
 namespace{
     function asset($asset=null){
-    	$candidates=array(
-    		DIR_SKIN."/asset/$asset",
-    		DIR_SKIN_DEFAULT."/asset/$asset"
-    	);
+    	$path=DIR_ASSET."/$asset";
 
-    	foreach($candidates as $c){
-			$url=str_replace("\\", '/', str_replace(APP_ROOT, APP_BASE, $c));
-			return $url.'?'.@filemtime($c);
+    	if(defined("THEME") && file_exists(APP_ROOT.'/'.THEME."/asset/$asset")){
+    		$path=APP_ROOT.'/'.THEME."/asset/$asset";
     	}
 
-    	// Asset not found
-    	// notify developer
-    	return null;
+		$url=str_replace("\\", '/', str_replace(APP_ROOT, '', $path));
+		return $url.(file_exists($path) ? '?'.filemtime($path) : "");
     }
 }
 ?>

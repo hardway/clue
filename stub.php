@@ -11,21 +11,24 @@
 	 */
 
     // Common Definations
-    if(!defined('DS'))  define("DS", DIRECTORY_SEPARATOR);	// directory separator
-    if(!defined('NS'))  define('NS', "\\");					// namespace separator
+    if(!defined('CLI')) define('CLI', php_sapi_name()=="cli");
+    if(!defined('DS'))  define("DS", DIRECTORY_SEPARATOR);  // directory separator
+    if(!defined('NS'))  define('NS', "\\");                 // namespace separator
 
-    if(!defined('APP_ROOT')) define('APP_ROOT', realpath(dirname($_SERVER['SCRIPT_FILENAME'])));
+    # 整个项目文件路径
+    if(!defined('APP_ROOT')) define('APP_ROOT', dirname($_SERVER['SCRIPT_FILENAME']));
+    # 项目访问URL根
     if(!defined('APP_BASE')) define('APP_BASE', preg_replace('|[\\\/]+|', '/', dirname($_SERVER['SCRIPT_NAME'])));
 
-    if(!defined('DIR_SITE')) define('DIR_SITE', realpath(APP_ROOT));
-    if(!defined('DIR_SOURCE')) define('DIR_SOURCE', realpath(APP_ROOT.'/source'));
+    if(!defined('DIR_SOURCE')) define('DIR_SOURCE', APP_ROOT.'/source');
+    if(!defined('DIR_ASSET')) define('DIR_ASSET', APP_ROOT.'/asset');
+    if(!defined('DIR_LOG')) define('DIR_LOG', APP_ROOT.'/log');
+    if(!defined('DIR_CACHE')) define('DIR_CACHE', APP_ROOT.'/cache');
+    if(!defined('DIR_DATA')) define('DIR_DATA', APP_ROOT.'/data');
 
-    define('DIR_SKIN_DEFAULT', realpath(APP_ROOT.'/skin'));
-    if(!defined('DIR_SKIN')) define('DIR_SKIN', DIR_SKIN_DEFAULT);
-
-    if(!defined('DIR_LOG')) define('DIR_LOG', realpath(APP_ROOT.'/log'));
-    if(!defined('DIR_CACHE')) define('DIR_CACHE', realpath(APP_ROOT.'/cache'));
-    if(!defined('DIR_DATA')) define('DIR_DATA', realpath(APP_ROOT.'/data'));
+    if(!CLI){
+        if(!is_dir(DIR_CACHE)) mkdir(DIR_CACHE, 0775, true);
+    }
 
     require_once __DIR__."/core.php";
     require_once __DIR__."/application.php";

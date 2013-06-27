@@ -85,6 +85,15 @@ namespace Clue{
 						$callArgs[]=$params[$rfxParam->name];
 						unset($params[$rfxParam->name]);
 					}
+					elseif(count($params)>0){
+						$callArgs[]=array_shift($params);
+					}
+					elseif($rfxParam->isDefaultValueAvailable()){
+						$callArgs[]=$rfxParam->getDefaultValue();
+					}
+					else{
+						$callArgs[]=null;
+					}
 				}
 				$callArgs=array_merge($callArgs, $params);
 

@@ -121,7 +121,7 @@ namespace Clue{
         }
 
         // 一般信息
-        function alert($messages, $context='application', $level='alert'){
+        function alert($messages, $context='website', $level='alert'){
             if(!is_array($messages)) $messages=array($messages);
             foreach($messages as $m){
                 $_SESSION["app_msg"][$level][$context][]=$m;
@@ -151,21 +151,21 @@ namespace Clue{
             echo $html;
         }
         // 错误信息
-        function error($message, $context='application'){
+        function error($message, $context='website'){
             $this->alert($message, $context, 'error');
         }
         function display_errors($context_pattern='.*'){
             $this->display_alerts($context_pattern, 'error');
         }
         // 成功信息
-        function success($message, $context='application'){
+        function success($message, $context='website'){
             $this->alert($message, $context, 'success');
         }
         function display_successes($context_pattern='.*'){
             $this->display_alerts($context_pattern, 'success');
         }
         // 辅助信息
-        function info($message, $context='application'){
+        function info($message, $context='website'){
             $this->alert($message, $context, 'info');
         }
         function display_infos($context_pattern='.*'){

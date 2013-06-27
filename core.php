@@ -5,26 +5,6 @@ namespace Clue{
      */
     $_CLASS_PATH=array();
 
-    function ary2obj($array) {
-        if(!is_array($array)) {
-            return $array;
-        }
-
-        $object = new stdClass();
-        if (is_array($array) && count($array) > 0) {
-          foreach ($array as $name=>$value) {
-             $name = strtolower(trim($name));
-             if (!empty($name)) {
-                $object->$name = ary2obj($value);
-             }
-          }
-          return $object;
-        }
-        else {
-          return FALSE;
-        }
-    }
-
     function add_include_path($path){
         set_include_path(get_include_path().PATH_SEPARATOR.$path);
     }
@@ -51,6 +31,7 @@ namespace Clue{
         $class=str_replace(NS, '/', $class);
         $class=str_replace('_', '/', $class);
         $class=strtolower($class);
+
         if(substr_compare($class, 'clue/', 0, 5)==0){
             // Special treat for Clue\ classes. For they might reside in a phar file.
             $class=substr($class, 5);
@@ -69,12 +50,15 @@ namespace Clue{
         }
     }
 
-    if(defined("DIR_SOURCE")){
-        add_class_path(DIR_SOURCE."/model");
-        add_class_path(DIR_SOURCE."/class");
-        add_class_path(DIR_SOURCE."/include");
-        add_include_path(DIR_SOURCE."/include");
-    }
+    #第三方库应该放在lib目录
+    add_class_path(APP_ROOT."/lib");
+    add_include_path(APP_ROOT."/lib");
+
+    #应用相关的代码
+    add_class_path(DIR_SOURCE."/model");
+    add_class_path(DIR_SOURCE."/class");
+    add_class_path(DIR_SOURCE."/include");
+    add_include_path(DIR_SOURCE."/include");
 
     spl_autoload_register("Clue\autoload_load");
 }

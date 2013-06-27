@@ -160,7 +160,7 @@ class Element extends \DOMElement implements \ArrayAccess{
 		$html="";
 
 		foreach($this->el->childNodes as $n){
-			$d=new DOMDocument();
+			$d=new \DOMDocument();
 			$d->appendChild($d->importNode($n, true));
 			$html.=html_entity_decode($d->saveHTML(), ENT_NOQUOTES, "UTF-8");
 		}
