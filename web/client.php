@@ -1,64 +1,88 @@
 <?php
 namespace Clue\Web{
-	// TODO md5 collision in mind
-	class Clue_Creeper_Cache{
-		private $cacheDir;
+	/* Storage layout
+		CACHE
+			\_ A867 								Hash Prefix
+				\_ A86798348c8j8x230k99				Hash
+					\_ meta 						unserizlied data
+					|_ 20130413113412				Content version
 
-		function __construct($cacheDir){
+	 	META=array(
+	 		'url'=>'http://www.google.com',
+			'revisions'=>array(
+				'yyyymmddhhmmss', 'yyyymmddhhmmss', ...
+			)
+	 	)
+	*/
+	class CacheStore{
+		private $cache_dir;
+		private $cache_ttl;
+
+		function __construct($cache_dir, $cache_ttl=86400){
 			// Make sure the cache directory exists
-			if(!file_exists($cacheDir)){
-				mkdir($cacheDir);
-				if(!file_exists($cacheDir)){
-					throw new Exception("Cache directory didn't exist and can't be created: $cacheDir");
+			if(!is_dir($cache_dir)){
+				@mkdir($cache_dir, 0775, true);
+				if(!is_dir($cache_dir)){
+					throw new Exception("Cache directory didn't exist and can't be created: $cache_dir");
 				}
 			}
-			$this->cacheDir=$cacheDir;
+			$this->cache_dir=$cache_dir;
+			$this->cache_ttl=$cache_ttl;
 		}
 
-		private function _cache_folder($hash){
-			$folder=$this->cacheDir;
-			foreach(array(substr($hash, 0, 3), $hash) as $f){
-				$folder=$folder . '/' . $f;
-				if(!file_exists($folder)) mkdir($folder);
-			}
-			return $folder;
+		private function _cache_folder($url){
+			$hash=md5($url);
+
+			return sprintf("%s/%s/%s", $this->cache_dir, substr($hash, 0, 4), $hash);
 		}
 
 		function get($url){
-			$folder=$this->_cache_folder(md5($url));
+			$folder=$this->_cache_folder($url);
 
-			$file="$folder/raw";
+			if(!is_dir($folder) || !file_exists("$folder/meta")) return false;
 
-			if(file_exists($file))
-				return file_get_contents($file);
-			else
-				throw new Exception("Cache file missing: $url");
+			$meta=unserialize(file_get_contents("$folder/meta"));
+			$rev=end($meta['revisions']);
 
-			return false;	// Cache missed
+			if(!file_exists("$folder/$rev")) return false;
+
+			$outdated=filemtime("$folder/$rev")+$this->cache_ttl < time();
+			if($outdated) return false;
+
+			$gzcontent=file_get_contents("$folder/$rev");
+			return  gzinflate(substr($gzcontent,10,-8));
 		}
 
 		function put($url, $content){
-			$folder=$this->_cache_folder(md5($url));
+			$folder=$this->_cache_folder($url);
 
-			// Save URL infomation
-			if(file_exists("$folder/url")){
-				$urlResidents=explode("\n", trim(file_get_contents("$folder/url")));
-				if(!in_array($url, $urlResidents)){
-					throw new Exception("URL Collision detected! $url");
-				}
+			if(!is_dir($folder)) mkdir($folder, 0775, true);
+
+			if(file_exists("$folder/meta")){
+				$meta=unserialize(file_get_contents("$folder/meta"));
+				$rev=end($meta['revisions']);
+				$old_hash=md5_file("$folder/$rev");
+				$new_hash=md5($content);
+
+				$save=$old_hash!=$new_hash;
+				if(!$save) touch("$folder/$rev");
 			}
 			else{
-				file_put_contents("$folder/url", $url);
+				$meta=array(
+					'url'=>$url,
+					'revisions'=>array()
+				);
+
+				$save=true;
 			}
 
-			// Save RAW content
-			file_put_contents("$folder/raw", $content);
-		}
+			if($save){
+				$rev=date("Ymdhis");
+				file_put_contents("$folder/$rev", gzencode($content));
+				$meta['revisions'][]=$rev;
 
-		function timestamp($url){
-			$file=$this->_cache_folder(md5($url)) . "/raw";
-
-			return file_exists($file) ? filemtime($file) : 0;
+				file_put_contents("$folder/meta", serialize($meta));
+			}
 		}
 	}
 
@@ -68,8 +92,6 @@ namespace Clue\Web{
 		public $agent="ClueHTTPClient";
 
 		private $cache;
-		private $cacheTTL=86400;	// Default is 24 Hours
-		private $cachedb;
 
 		private $curl;
 		private $history=array();
@@ -89,9 +111,6 @@ namespace Clue\Web{
 			curl_setopt($this->curl, CURLOPT_CONNECTTIMEOUT, 15);
 			curl_setopt($this->curl, CURLOPT_TIMEOUT, 60);
 
-			$cacheDir=getenv('creeper_cache');
-			if($cacheDir) $this->enable_cache($cacheDir);
-
 			$http_proxy=getenv('http_proxy');
 			if($http_proxy){
 				list($proxy, $port)=explode(":", $http_proxy);
@@ -100,11 +119,6 @@ namespace Clue\Web{
 			}
 
 			curl_setopt($this->curl, CURLOPT_USERAGENT, $this->agent);
-
-			if(isset($config['cookie'])){
-				curl_setopt($this->curl, CURLOPT_COOKIEJAR, $config['cookie']);	// write
-				curl_setopt($this->curl, CURLOPT_COOKIEFILE, $config['cookie']);// read
-			}
 		}
 
 		function __destruct(){
@@ -117,13 +131,27 @@ namespace Clue\Web{
 			}
 		}
 
-		function enable_cache($cacheDir){
-			$this->cache=new Clue_Creeper_Cache($cacheDir);
+		function enable_cache($cache_dir, $cache_ttl=86400){
+			$this->cache=new CacheStore($cache_dir, $cache_ttl);
 		}
 
 		function disable_cache(){
 			$this->cache=null;
 		}
+
+		function enable_cookie($cookie_file){
+			curl_setopt($this->curl, CURLOPT_COOKIEJAR, $cookie_file);	// write
+			curl_setopt($this->curl, CURLOPT_COOKIEFILE, $cookie_file);	// read
+		}
+
+		function set_cookie($cookies=array()){
+			$pair=array();
+			foreach($cookies as $k=>$v){
+				$pair[]="$k=$v";
+			}
+			curl_setopt($this->curl, CURLOPT_COOKIE, implode("; ", $pair));
+		}
+
 
 		private function follow_url($base, $url){
 			// TODO: unittest
@@ -158,21 +186,13 @@ namespace Clue\Web{
 			return $url;
 		}
 
-		function set_cookie($cookies=array()){
-			$pair=array();
-			foreach($cookies as $k=>$v){
-				$pair[]="$k=$v";
-			}
-			curl_setopt($this->curl, CURLOPT_COOKIE, implode("; ", $pair));
-		}
-
 		function set_agent($agent){
 			$this->agent=$agent;
 			curl_setopt($this->curl, CURLOPT_USERAGENT, $this->agent);
 		}
 
-		function get($url, $forceReload=false){
-			$this->open($url, $forceReload);
+		function get($url){
+			$this->open($url);
 			return $this->content;
 		}
 
@@ -209,12 +229,14 @@ namespace Clue\Web{
 		function open($url, $forceRefresh=false){
 			$url=$this->visit($url);
 
-			// check cache
-			$t=time();
+			$this->content=null;
 
-			if(!$this->cache || $this->cacheTTL < $t - $this->cache->timestamp($url) || $forceRefresh){ // cache outdated.
-				//$this->content= $this->cache ? $this->cache->get($url) : false;
-				// echo "Creeping $url\n";
+			// 尝试从cache获取
+			if($this->cache){
+				$this->content=$this->cache->get($url);
+			}
+
+			if(!$this->content){
 				curl_setopt($this->curl, CURLOPT_URL, $url);
 				curl_setopt($this->curl, CURLOPT_POST, false);
 				curl_setopt($this->curl, CURLOPT_HEADER, true);
@@ -223,11 +245,9 @@ namespace Clue\Web{
 				$this->_parse_response(curl_exec($this->curl));
 			    // TODO: check curl_errno
 
-				if($this->cache)
+				if($this->cache){
 					$this->cache->put($url, $this->content);
-			}
-			else{
-				$this->content=$this->cache->get($url);
+				}
 			}
 		}
 
