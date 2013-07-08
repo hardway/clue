@@ -1,4 +1,4 @@
-<?php 
+<?php
 namespace Clue{
     class FormElement{
         protected $prop;
@@ -9,11 +9,11 @@ namespace Clue{
 
         function __toString(){
             $html="";
-            $html.="<div class='field'>";
+            $html.="<div class='control-group'>";
             if(isset($this->prop['label'])){
-                $html.="<div class='label'><label>{$this->prop['label']}</label></div>";
+                $html.="<label class='control-label'>{$this->prop['label']}</label>";
             }
-            $html.="<div class='input'>". $this->input_html()."</div>";
+            $html.="<div class='controls'>". $this->input_html()."</div>";
             $html.="</div>";
 
             return $html;
@@ -24,7 +24,7 @@ namespace Clue{
             foreach($this->prop as $p=>$v){
                 if($p=='name' || $p=='type' || $p=='value' || $p=='label')
                     continue;
-                
+
                 foreach($excludes as $ex){
                     if($p==$ex) continue;
                 }
@@ -72,7 +72,7 @@ namespace Clue{
             $default_buttons=array(array('title'=>'Save', 'type'=>'submit'), array('title'=>'Cancel', 'type'=>'reset'));
             $this->buttons=$buttons ?: $default_buttons;
         }
-        
+
         function __toString(){
             $html="";
 
@@ -81,12 +81,12 @@ namespace Clue{
                 $html.=new $cls($prop);
             }
 
-            $html.="<div class='actions'>";
+            $html.="<div class='form-actions'>";
             foreach($this->buttons as $prop){
-                $html.="<input class='btn' type='{$prop['type']}' value='{$prop['title']}' /> ";
+                $html.="<input class='btn btn-small' type='{$prop['type']}' value='{$prop['title']}' /> ";
             }
             $html.="</div>";
-            
+
             return $html;
         }
     }

@@ -22,8 +22,12 @@
 				"p[class*='hi']"=>"//p[contains(@class,'hi')]",
 				// 单个类
 				'p.hide'=>"//p[contains(concat(' ',normalize-space(@class),' '),' hide ')]",
+				".hide"=>"//*[contains(concat(' ',normalize-space(@class),' '),' hide ')]",
 				// 多个类
 				'p.hide.again'=>"//p[contains(concat(' ',normalize-space(@class),' '),' hide ') and (contains(concat(' ',normalize-space(@class),' '),' again '))]",
+
+				// 伪元素
+				'span.recom li:last-child a'=>"//span[contains(concat(' ',normalize-space(@class),' '),' recom ')]//[name()='li' and (position()=last())]//a"
 			);
 
 			foreach($tests as $css=>$xpath){

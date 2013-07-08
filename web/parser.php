@@ -18,9 +18,14 @@ class Parser{
 			'/([a-zA-Z0-9\_\-\*])\+([a-zA-Z0-9\_\-\*])/'=>'$1/following-sibling::*[1]/self::$2',
 			'/([a-zA-Z0-9\_\-\*])>([a-zA-Z0-9\_\-\*])/'=>'$1/$2',
 			// dedendant of self
-			'/(^|[^a-zA-Z0-9\_\-\*])(#|\.)([a-zA-Z0-9]+)/'=>'$1$2$3',
+			'/(^|[^a-zA-Z0-9\_\-\*])(#|\.)([a-zA-Z0-9]+)/'=>'$1*$2$3',
 			'/(^|[\>\+\|\~\,\s])([a-zA-Z\*]+)/'=>'$1//$2',
 			'/\s+\/\//'=>'//',
+			// :first-child
+			'/([a-zA-Z0-9\_\-\*]+):first-child/'=>'*[1]/self::$1',
+			// :last-child
+			'/([a-zA-Z0-9\_\-\*]+):last-child/'=>'$1[not(following-sibling::*)]',
+
 			// *=attrib
 			'/\[([a-zA-Z0-9\_\-]+)\*=([^\]]+)\]/'=>"[contains(@$1,$2)]",
 			// ~=attrib
@@ -65,6 +70,12 @@ class Parser{
 		$this->dom->substituteEntities=false;
 		$this->dom->formatOutput=false;
 
+		/* TODO: investigate tidy side effects
+		$tidy = new \tidy;
+		$html=$tidy->repairString($html);
+		*/
+
+		# TODO: 如何纠错，发现错误如何记录日志
 		if($type=='html'){
 			@$this->dom->loadHTML($this->_filter_content($html));
 		}
@@ -74,6 +85,8 @@ class Parser{
 		else {
 			exit("Document Type Unknown.");
 		}
+
+		//$this->root=new Element($this->documentElement);
 
 		$this->xp=new \DOMXPath($this->dom);
 	}
@@ -107,17 +120,21 @@ class Parser{
 
 	function xpath_element($xpath, $context=null){
 		if($context==null) $context=$this->dom;
+		else $xpath=preg_replace('/^\/\//', 'descendant-or-self::', $xpath);
+
 		$nodeList=$this->xp->query($xpath, $context);
 
-		return $nodeList->length>0 ? new Element($nodeList->item(0)) : null;
+		return $nodeList->length>0 ? new Element($nodeList->item(0), $this) : null;
 	}
 	function xpath_elements($xpath, $context=null){
 		if($context==null) $context=$this->dom;
+		else $xpath=preg_replace('/^\/\//', 'descendant-or-self::', $xpath);
+
 		$nodeList=$this->xp->query($xpath, $context);
 
 		$result=array();
 		for($i=0; $i<$nodeList->length; $i++){
-			$result[]=new Element($nodeList->item($i));
+			$result[]=new Element($nodeList->item($i), $this);
 		}
 		return $result;
 	}
@@ -140,9 +157,11 @@ class Parser{
 
 class Element extends \DOMElement implements \ArrayAccess{
 	public $el;	// Can be used by Clue_DOM_Parser
+	protected $parser;
 
-	function __construct($el){
+	function __construct($el, $parser){
 		$this->el=$el;
+		$this->parser=$parser;
 	}
 
 	function offsetExists($key){
@@ -169,23 +188,15 @@ class Element extends \DOMElement implements \ArrayAccess{
 		}
 	}
 
-	function get_element($selector){
-		$result=$this->get_elements($selector);
-		return count($result)>0 ? $result[0] : null;
+	function getElement($css){
+		return $this->parser->getElement($css, $this->el);
 	}
 
-	function get_elements($selector){
-		$xp=new \DOMXPath($this->el->ownerDocument);
-		$nodeList=$xp->query($selector, $this->el);
-
-		$result=array();
-		foreach($nodeList as $n){
-			$result[]=new Element($n);
-		}
-		return $result;
+	function getElements($css){
+		return $this->parser->getElements($css, $this->el);
 	}
 
-	function next($selector){
+	function getNext($selector){
 		// TODO
 		$next=$this->el->nextSibling;
 		while($next){
@@ -199,7 +210,7 @@ class Element extends \DOMElement implements \ArrayAccess{
 		return null;
 	}
 
-	function parent(){
+	function getParent(){
 		$parent=$this->el->parentNode;
 		return is_null($parent) ? null : new Element($parent);
 	}
@@ -209,8 +220,9 @@ class Element extends \DOMElement implements \ArrayAccess{
 		if($n->childNodes) foreach($n->childNodes as $c){
 			if($c->nodeType==XML_TEXT_NODE)
 				$text.=trim($c->nodeValue);
-			elseif($c->nodeType==XML_ELEMENT_NODE)
+			elseif($c->nodeType==XML_ELEMENT_NODE){
 				$text.=$this->extract_text($c);
+			}
 		}
 
 		return $text;
@@ -233,7 +245,7 @@ class Element extends \DOMElement implements \ArrayAccess{
 			$cells=array();
 			if($r->childNodes) foreach($r->childNodes as $c){
 				if(in_array($c->nodeName, array('td','th'))){
-					$c=new Element($c);
+					$c=new Element($c, $this->parser);
 					$cells[]=$c->text;
 				}
 			}

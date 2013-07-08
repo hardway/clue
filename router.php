@@ -80,21 +80,30 @@ namespace Clue{
 
 				// detect parameters using reflection
 				$callArgs=array();
-				foreach($rfxMethod->getParameters() as $rfxParam){
+
+				// 1st round, take named variables
+				foreach($rfxMethod->getParameters() as $idx=>$rfxParam){
 					if(isset($params[$rfxParam->name])){
-						$callArgs[]=$params[$rfxParam->name];
+						$callArgs[$idx]=$params[$rfxParam->name];
 						unset($params[$rfxParam->name]);
 					}
-					elseif(count($params)>0){
-						$callArgs[]=array_shift($params);
-					}
-					elseif($rfxParam->isDefaultValueAvailable()){
-						$callArgs[]=$rfxParam->getDefaultValue();
-					}
 					else{
-						$callArgs[]=null;
+						$callArgs[$idx]=null;
 					}
 				}
+
+				// 2nd round, take by position
+				foreach($rfxMethod->getParameters() as $idx=>$rfxParam){
+					if($callArgs[$idx]===null){
+						if(count($params)>0){
+							$callArgs[$idx]=array_shift($params);
+						}
+						elseif($rfxParam->isDefaultValueAvailable()){
+							$callArgs[$idx]=$rfxParam->getDefaultValue();
+						}
+					}
+				}
+
 				$callArgs=array_merge($callArgs, $params);
 
 				$obj=new $class($controller, $action);

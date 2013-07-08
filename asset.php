@@ -14,12 +14,11 @@ namespace Clue{
 
 			while($f=array_shift($files)){
 				if(strpos($f, "*")!==false){
-					foreach(array_reverse(glob($f)) as $_){
+					foreach(array_reverse(glob(DIR_ASSET.'/'.$f)) as $_){
 						array_unshift($files, $_);
 					}
 					continue;
 				}
-
 				if(!file_exists($f)) $f=DIR_ASSET.'/'.$f;
 				if(!file_exists($f)) continue;
 
@@ -78,7 +77,7 @@ namespace{
     function asset($asset=null){
     	$path=DIR_ASSET."/$asset";
 
-    	if(defined("THEME") && file_exists(APP_ROOT.'/'.THEME."/asset/$asset")){
+    	if(defined("THEME") && THEME && file_exists(APP_ROOT.'/'.THEME."/asset/$asset")){
     		$path=APP_ROOT.'/'.THEME."/asset/$asset";
     	}
 
