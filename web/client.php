@@ -36,6 +36,14 @@ namespace Clue\Web{
 			return sprintf("%s/%s/%s", $this->cache_dir, substr($hash, 0, 4), $hash);
 		}
 
+		function destroy($url){
+			$folder=$this->_cache_folder($url);
+			foreach(scandir($folder) as $f){
+				if(is_file("$folder/$f")) @unlink("$folder/$f");
+			}
+			return rmdir($folder);
+		}
+
 		function get($url){
 			$folder=$this->_cache_folder($url);
 
@@ -139,6 +147,10 @@ namespace Clue\Web{
 			$this->cache=null;
 		}
 
+		function destroy_cache($url){
+			$this->cache->destroy($url);
+		}
+
 		function enable_cookie($cookie_file){
 			curl_setopt($this->curl, CURLOPT_COOKIEJAR, $cookie_file);	// write
 			curl_setopt($this->curl, CURLOPT_COOKIEFILE, $cookie_file);	// read
@@ -153,7 +165,7 @@ namespace Clue\Web{
 		}
 
 
-		private function follow_url($base, $url){
+		public function follow_url($base, $url){
 			// TODO: unittest
 			if(preg_match('|(http://[^/]+)([^?#]*)|i', $base, $root)){
 				$path=dirname($root[2])."/";
