@@ -147,7 +147,7 @@ namespace Clue{
 		    $rs=$this->get_results($sql, ARRAY_A);
 
 		    foreach($rs as $row){
-		        $key_name=reset(array_keys($row));
+		        $key_name=array_keys($row)[0];
 		        $key=$row[$key_name];
 
 		        unset($row[$key_name]);
@@ -158,7 +158,7 @@ namespace Clue{
 		        	}
 		        }
 		        else{
-		        	$val=reset(array_values($row));
+		        	$val=array_values($row)[0];
 		        }
 
 		        if(is_null($key)) continue;
