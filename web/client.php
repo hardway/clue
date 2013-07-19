@@ -167,6 +167,8 @@ namespace Clue\Web{
 
 		public function follow_url($base, $url){
 			// TODO: unittest
+			if(preg_match('/^https?\:\/\//', $url)) return $url;
+
 			if(preg_match('|(http://[^/]+)([^?#]*)|i', $base, $root)){
 				$path=dirname($root[2])."/";
 				$root=$root[1];
