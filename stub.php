@@ -26,6 +26,9 @@
     if(!defined('DIR_CACHE')) define('DIR_CACHE', APP_ROOT.'/cache');
     if(!defined('DIR_DATA')) define('DIR_DATA', APP_ROOT.'/data');
 
+    define('BEGIN_TIME', microtime(true));
+    define('BEGIN_MEMORY', memory_get_usage());
+
     if(!CLI){
         if(!is_dir(DIR_CACHE)) mkdir(DIR_CACHE, 0775, true);
     }

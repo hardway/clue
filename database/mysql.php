@@ -126,31 +126,7 @@ namespace Clue\Database{
         $this->_result=mysqli_query($this->dbh, $sql);
         $query_end=microtime(true);
 
-        $this->last_query=$sql;
-
-/*
-        $location=null;
-        $bt=debug_backtrace();
-        for ($i=0; $i<count($bt); $i++) {
-            if (isset($bt[$i]['file']) && $bt[$i]['file']!=__FILE__) {
-                $location=$bt[$i]['file'] .':'.$bt[$i]['line'];
-                break;
-            }
-        }
-
-        if ($this->log_sql_query) {
-            $this->log(
-                $this->log_sql_query, $this->last_query,
-                $query_end - $query_begin, $location
-            );
-        }
-        if ($this->log_slow_query && ($query_end - $query_begin > 0.1)) {
-            $this->log(
-                $this->log_slow_query, $this->last_query,
-                $query_end - $query_begin, $location
-            );
-        }
-*/
+        $this->audit($sql, $query_end - $query_begin);
 
         if (!$this->_result) {
             $this->setError(

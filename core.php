@@ -1,5 +1,23 @@
 <?php
 namespace Clue{
+    // 辅助函数, copied from YYT
+    function time_used(){
+        $currTime = microtime(true);
+        return number_format(($currTime - BEGIN_TIME), 4);
+    }
+
+    function memory_used(){
+        $format = array('B', 'KB', 'MB', 'GB', 'TB', 'PB');
+        $pos = 0;
+        $currMemory = memory_get_usage();
+        $size = $currMemory - BEGIN_MEMORY;
+        while ($size >= 1024) {
+            $size /= 1024;
+            $pos++;
+        }
+        return round($size, 2).' '.$format[$pos];
+    }
+
     /**
      * Bootstrap code, facility to load subsystem here.
      */

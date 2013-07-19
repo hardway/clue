@@ -27,7 +27,7 @@ namespace Clue{
 		function __init(){}
 
 		function get_view($view, $data=array()){
-			$view=new View(str_replace('_','/',$this->controller)."/{$view}");
+			$view=new View($this->controller."/{$view}");
 			if(is_array($data)) foreach($data as $k=>$v){
 				$view->set($k, $v);
 			}

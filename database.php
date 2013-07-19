@@ -53,7 +53,8 @@ namespace Clue{
 
 		protected $setting;
 
-		public $lastquery=null;
+		public $query_count=0;
+		public $last_query=null;
 		protected $queryLog=null;
 
 		public $dbh=null;
@@ -95,6 +96,12 @@ namespace Clue{
 				return $data;
 		}
 
+		function audit($sql, $time=0){
+			// TODO: log slow query
+			$this->last_query=$sql;
+			$this->query_count++;
+		}
+
 		// Basic implementation
 		function escape($data){
 			if(is_null($data))
@@ -115,7 +122,7 @@ namespace Clue{
 				$sql=call_user_func_array(array($this, "format"), func_get_args());
 			}
 
-			$this->lastquery=$sql;
+			$this->last_query=$sql;
 
 			if($this->queryLog){
 			    // TODO.

@@ -58,20 +58,15 @@ namespace Clue{
 		}
 
 		function route($controller, $action, $params=array()){
-			// load controller
-			$class=str_replace('/', '_', "{$controller}_Controller");	// TODO: ucfirst each path segment?
-
 			if($_SERVER['REQUEST_METHOD']=='POST')
 				$action="_$action";
 
-			if(!class_exists($class, false)){
-				$path=DIR_SOURCE . "/control/".strtolower(str_replace('_','/',$controller)).".php";
-				$class='Controller';
+			$path=DIR_SOURCE . "/control/".strtolower($controller).".php";
+			$class='Controller';
 
-			    if(file_exists($path)) require_once $path;
-			    if(!class_exists($class, false))
-			        throw new \Exception("No controller found: $controller");
-			}
+		    if(file_exists($path)) require_once $path;
+		    if(!class_exists($class, false))
+		        throw new \Exception("No controller found: $controller");
 
 			$rfxClass=new \ReflectionClass($class);
 
