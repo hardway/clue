@@ -24,7 +24,20 @@
             $phar = new Phar($dest);
             $phar->convertToExecutable(Phar::PHAR);
             $phar->startBuffering();
-            $phar->buildFromDirectory($this->root);
+
+            # Simple Build whole directory
+            # $phar->buildFromDirectory($this->root, '/\.php$/');
+
+            # TODO: maybe some obfuscation someday?
+            $iter = new RecursiveIteratorIterator (new RecursiveDirectoryIterator ($this->root), RecursiveIteratorIterator::SELF_FIRST);
+
+            foreach ($iter as $file) {
+                if ( preg_match ('/\\.php$/i', $file) ) {
+                    $phar->addFromString (substr ($file, strlen ($this->root) + 1), php_strip_whitespace ($file));
+                }
+            }
+
+            # Add stub to bootstrap
             $phar->setStub('<?php Phar::mapPhar("Clue");
                 define("CLUE_VERSION", "'.CLUE_VERSION.'");
 
@@ -50,6 +63,7 @@
             ');
             $phar->stopBuffering();
             echo "Phar build at: $dest";
+            echo "\n";
         }
 
         function __toString(){
@@ -71,7 +85,8 @@ Usage: clue [command] {arguments...}
                 eg: clue gen_control project view
 
     help        Display this help screen
-            ";
+
+";
         }
 
         function build($dest=null){
