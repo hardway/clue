@@ -206,7 +206,7 @@ namespace{
         $url=APP_BASE.$app['router']->reform($controller, $action, $params);
         $url=preg_replace('/\/+/', '/', $url);
 
-        return $url;
+        return "http://".APP_SERVER.$url;
     }
 
     function url_for_ssl(){
@@ -215,9 +215,9 @@ namespace{
         $url=call_user_func_array("url_for", func_get_args());
 
         if($app['config']['ssl'])
-            return "https://".$_SERVER['HTTP_HOST'].$url;
-        else
-            return $url;
+            $url=preg_replace('/^http/', 'https', $url);
+
+        return $url;
     }
 }
 ?>

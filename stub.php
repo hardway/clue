@@ -15,17 +15,21 @@
     if(!defined('DS'))  define("DS", DIRECTORY_SEPARATOR);  // directory separator
     if(!defined('NS'))  define('NS', "\\");                 // namespace separator
 
-    # 整个项目文件路径
+    # 服务器地址
+    if(!defined('APP_SERVER')) define('APP_SERVER', $_SERVER['HTTP_HOST']);
+    # Disk路径
     if(!defined('APP_ROOT')) define('APP_ROOT', dirname($_SERVER['SCRIPT_FILENAME']));
-    # 项目访问URL根
+    # URL路径
     if(!defined('APP_BASE')) define('APP_BASE', preg_replace('|[\\\/]+|', '/', dirname($_SERVER['SCRIPT_NAME'])));
 
+    # 常用路径
     if(!defined('DIR_SOURCE')) define('DIR_SOURCE', APP_ROOT.'/source');
     if(!defined('DIR_ASSET')) define('DIR_ASSET', APP_ROOT.'/asset');
     if(!defined('DIR_LOG')) define('DIR_LOG', APP_ROOT.'/log');
     if(!defined('DIR_CACHE')) define('DIR_CACHE', APP_ROOT.'/cache');
     if(!defined('DIR_DATA')) define('DIR_DATA', APP_ROOT.'/data');
 
+    # Profiler
     define('BEGIN_TIME', microtime(true));
     define('BEGIN_MEMORY', memory_get_usage());
 
