@@ -16,7 +16,7 @@
     if(!defined('NS'))  define('NS', "\\");                 // namespace separator
 
     # 服务器地址
-    if(!defined('APP_SERVER')) define('APP_SERVER', $_SERVER['HTTP_HOST']);
+    if(!defined('APP_SERVER') && !CLI) define('APP_SERVER', $_SERVER['HTTP_HOST']);
     # Disk路径
     if(!defined('APP_ROOT')) define('APP_ROOT', dirname($_SERVER['SCRIPT_FILENAME']));
     # URL路径

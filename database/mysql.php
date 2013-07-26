@@ -87,6 +87,8 @@ namespace Clue\Database{
 
 	        $idx=1;
 	        $sql=preg_replace_callback('/%(t|c|s|d|f|%)/', function($m) use($me, $args, &$idx){
+	        	if($m[1]=='%') return '%';
+
 	            if(!array_key_exists($idx, $args)){
 	                throw new \Exception("Not enough arguments for SQL statement.");
 	            }
