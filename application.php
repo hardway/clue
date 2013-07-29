@@ -120,6 +120,21 @@ namespace Clue{
             touch($path, $expire);
         }
 
+        function on_http_error($code, $handler){
+            $this->http_handler[$code]=$handler;
+        }
+
+        function http_error($code, $message){
+            header("http/1.0 $code");
+
+            if(isset($this->http_handler[$code]))
+                call_user_func($this->http_handler[$code], $message);
+            else
+                echo $message;
+
+            exit();
+        }
+
         // 一般信息
         function alert($messages, $context='website', $level='alert'){
             if(!is_array($messages)) $messages=array($messages);
@@ -189,8 +204,7 @@ namespace Clue{
             }
             */
 
-            $r=$this['router']->route($this->controller, $this->action, $this->params);
-            $ret=call_user_func_array(array($r['handler'], $r['handler']->action), $r['args']);
+            return $this['router']->route($this->controller, $this->action, $this->params);
         }
     }
 }

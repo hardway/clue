@@ -62,11 +62,23 @@ namespace Clue{
 				$action="_$action";
 
 			$path=DIR_SOURCE . "/control/".strtolower($controller).".php";
-			$class='Controller';
 
-		    if(file_exists($path)) require_once $path;
-		    if(!class_exists($class, false))
-		        throw new \Exception("No controller found: $controller");
+			$candidates=array();
+			$candidates[]=implode("_", explode("/", $controller))."_Controller";
+			$candidates[]='Controller';
+
+			$class=null;
+
+			if(file_exists($path)) require_once $path;
+			foreach($candidates as $class_name){
+			    if(class_exists($class_name, false)){
+			    	$class=$class_name;
+			    	break;
+			    }
+			}
+
+			if(empty($class))
+		    	$this->app->http_error(404, "No controller found: $controller");
 
 			$rfxClass=new \ReflectionClass($class);
 
@@ -109,14 +121,10 @@ namespace Clue{
 				$obj->view=$action;
 				$obj->action=$action;
 
-				return array(
-				    'handler'=>$obj,
-				    'args'=>$callArgs
-				);
+				return call_user_func_array(array($obj, $obj->action), $callArgs);
 			}
 			else{
-				// TODO: goto 404 error
-		        throw new \Exception("Can't find action $action of $controller");
+				$this->app->http_error(404, "Can't find action $action of $controller");
 			}
 		}
 
