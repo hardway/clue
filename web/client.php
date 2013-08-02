@@ -165,38 +165,50 @@ namespace Clue\Web{
 		}
 
 
-		public function follow_url($base, $url){
-			// TODO: unittest
-			if(preg_match('/^https?\:\/\//', $url)) return $url;
+		public function follow_url($url, $current=null){
+			$parts=parse_url(trim($url));
+			if(!isset($parts['path'])) $parts['path']="";
 
-			if(preg_match('|(http://[^/]+)([^?#]*)|i', $base, $root)){
-				$path=dirname($root[2])."/";
-				$root=$root[1];
-				if(substr($url, 0, 1)=='/'){
-					return $root.$url;
+			// Another host
+			if(isset($parts['host'])) return $url;
+
+			$current=parse_url($current ?: end($this->history));
+			$path=isset($current['path']) ? explode("/",  $current['path']) : array("");
+
+			// Jump to root if path begins with '/'
+			if(strpos($parts['path'],'/')===0) $path=array();
+
+			// Normalize path
+			foreach(explode("/", $parts['path']) as $p){
+				if($p=="."){
+					continue;
 				}
-				else if(substr($url, 0, 2)=='..'){
-					exit("Don't know how to handle url like ../../, $url");
+				elseif($p=='..'){
+					if(count($path)>1) array_pop($path);
+					continue;
 				}
 				else{
-					return $root.$path.$url;
+					array_push($path, $p);
 				}
 			}
+
+			// Build url
+			$result=array();
+			$result[]=$current['scheme'].'://';
+			$result[]=$current['host'];
+			$result[]=isset($current['port']) ? $current['port'] : "";
+			$result[]=implode("/", $path);
+			$result[]=isset($parts['query']) ? '?'.$parts['query'] : "";
+			$result[]=isset($parts['fragment']) ? '#'.$parts['fragment'] : '';
+
+			return implode("", $result);
 		}
 
 		private function visit($url, $save_history=true){
-			$url=trim($url);
-
-			// TODO: refactor into method
-			// Encode url
-			$url=str_replace(" ", "%20", $url);
-
-			// TODO: better way to tell if it's absolute and relative url
-			if(substr($url, 0, 7)!='http://'){
-				$url=$this->follow_url(end($this->history), $url);
-			}
+			$url=$this->follow_url(end($this->history), $url);
 
 			if($save_history) $this->history[]=$url;
+
 			return $url;
 		}
 
@@ -205,7 +217,7 @@ namespace Clue\Web{
 			curl_setopt($this->curl, CURLOPT_USERAGENT, $this->agent);
 		}
 
-		function get($url){
+		function get($url, $data=array()){
 			$this->open($url);
 			return $this->content;
 		}
@@ -215,9 +227,10 @@ namespace Clue\Web{
 			curl_setopt($this->curl, CURLOPT_POST, true);
 			curl_setopt($this->curl, CURLOPT_HEADER, true);
 			curl_setopt($this->curl, CURLOPT_RETURNTRANSFER, true);
+			curl_setopt($this->curl, CURLOPT_REFERER, end($this->history));
 
 			$formData=array();
-			foreach($data as $k=>$v){ $formData[]="$k=$v";}
+			foreach($data as $k=>$v){ $formData[]="$k=".rawurlencode($v);}
 			$formData=implode("&", $formData);
 
 			curl_setopt($this->curl, CURLOPT_POSTFIELDS, $formData);
@@ -255,6 +268,7 @@ namespace Clue\Web{
 				curl_setopt($this->curl, CURLOPT_POST, false);
 				curl_setopt($this->curl, CURLOPT_HEADER, true);
 				curl_setopt($this->curl, CURLOPT_RETURNTRANSFER, true);
+				curl_setopt($this->curl, CURLOPT_REFERER, end($this->history));
 
 				$this->_parse_response(curl_exec($this->curl));
 			    // TODO: check curl_errno
