@@ -53,20 +53,6 @@ namespace Clue{
         }
 
         function init(){
-            // Guard is on by default, unless disabled explicitly
-            // TODO: don't use for now
-            /*
-            $guard_config=@$this['config']['guard'];
-            if($guard_config==null || $guard_config['disabled']!=true){
-                $this['guard']=new Guard($guard_config);
-            }
-            */
-
-            if($this['config']['debug']===false){
-                $this->guard->display_level=0;
-                $this->guard->stop_level=0;
-            }
-
             if($this['config']['database']){
                 $cfg=$this['config']['database'];
                 $this['db']=array(

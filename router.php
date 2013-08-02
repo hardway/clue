@@ -129,6 +129,10 @@ namespace Clue{
 		}
 
 		function reform($controller, $action, $params=array()){
+			// one argument shortcut
+			// eg. reform('c', 'a', 'hello') ==> c/a/hello
+			if(is_string($params)) $params=array($params);
+
 			foreach($this->rules as $r){
 				if(
 					isset($r['mapping']['controller']) &&
@@ -217,70 +221,24 @@ namespace Clue{
                 	'params'=>$query
                 );
             }
+
+            if(isset($_SERVER['PATH_INFO']))
+                $uri=$_SERVER['PATH_INFO'];
             else{
-                if(isset($_SERVER['PATH_INFO']))
-                    $uri=$_SERVER['PATH_INFO'];
-                else{
-                    $uri=isset($_SERVER['HTTP_X_REWRITE_URL']) ? $_SERVER['HTTP_X_REWRITE_URL'] : $_SERVER['REQUEST_URI'];
-                    if($uri==$_SERVER['PHP_SELF']) $uri='/';
-                }
-
-                if(APP_BASE!='/' && strpos($uri, APP_BASE)===0){
-                    $uri=substr($uri, strlen(APP_BASE));
-                }
-
-				// strip query from uri
-				if(($p=strpos($uri, '?'))!==FALSE){
-					$uri=substr($uri, 0, $p);
-				}
-
-	            $params=array();
-
-				// try to match against rules
-				foreach($this->rules as $r){
-					if($this->debug) $app['guard']->debug("Testing URL: '$uri' against ".$r['pattern']);
-
-					if(preg_match("!{$r['pattern']}!i", $uri, $match)){
-						if($this->debug) $app['guard']->debug("Match URL: '$uri' against ".$r['pattern']);
-						array_shift($match);
-						$mapping=$r['mapping'];
-
-						$candidateViolated=false;
-						for($i=0; $i<count($match); $i++){
-						    $name=$r['names'][$i];
-						    if(isset($mapping[$name])){
-						        $candidate=$mapping[$name];
-						        if(!preg_match('/'.$candidate.'/i', $match[$i])){
-						            $candidateViolated=true;
-						            break;
-					            }
-						    }
-						    $mapping[$name]=$match[$i];
-						}
-						if($candidateViolated) continue; // Try Next Rule
-
-						// Default controller is Index
-						if(empty($mapping['controller'])) $mapping['controller']='Index';
-						// Default action is index
-						if(empty($mapping['action'])) $mapping['action']='index';
-
-						foreach($mapping as $n=>$v){
-							if($n=='controller'){
-							    $mapping['controller']=$v;
-							    continue;
-							}
-							else if($n=='action') continue;
-
-							$params[$n]=urldecode($v);
-							unset($mapping[$n]);
-						}
-						$params=array_merge($params, $_GET, $_POST);
-
-						$mapping['params']=$params;
-						return $mapping;
-					}
-				}
+                $uri=isset($_SERVER['HTTP_X_REWRITE_URL']) ? $_SERVER['HTTP_X_REWRITE_URL'] : $_SERVER['REQUEST_URI'];
+                if($uri==$_SERVER['PHP_SELF']) $uri='/';
             }
+
+            if(APP_BASE!='/' && strpos($uri, APP_BASE)===0){
+                $uri=substr($uri, strlen(APP_BASE));
+            }
+
+			// strip query from uri
+			if(($p=strpos($uri, '?'))!==FALSE){
+				$uri=substr($uri, 0, $p);
+			}
+
+            $params=array();
 
 			// Translate url
 			foreach($this->translates as $tr){
@@ -302,9 +260,8 @@ namespace Clue{
 
 				$mapping['controller']=$controller ?: 'index';
 				$mapping['action']=$action ?: 'index';
-				$mapping['params']=array_merge($params, $_GET, $_POST);
+				$mapping['params']=array_map('rawurldecode', array_merge($params, $_GET, $_POST));
 
-				//var_dump($mapping);
 				if(file_exists(DIR_SOURCE.'/control/'.$mapping['controller'].".php")){
 					// return with found controller/view
 
