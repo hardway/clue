@@ -81,7 +81,7 @@ namespace{
     		$path=APP_ROOT.'/'.THEME."/asset/$asset";
     	}
 
-		$url=str_replace("\\", '/', str_replace(APP_ROOT, '', $path));
+		$url=str_replace("//", '/', str_replace(APP_ROOT, APP_BASE, $path));
 		return $url.(file_exists($path) ? '?'.filemtime($path) : "");
     }
 }
