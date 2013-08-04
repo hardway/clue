@@ -58,74 +58,59 @@ namespace Clue{
 		}
 
 		function route($controller, $action, $params=array()){
-			if($_SERVER['REQUEST_METHOD']=='POST')
-				$action="_$action";
-
 			$path=DIR_SOURCE . "/control/".strtolower($controller).".php";
 
-			$candidates=array();
-			$candidates[]=implode("_", explode("/", $controller))."_Controller";
-			$candidates[]='Controller';
+			// 确认control所在文件存在
+			if(!file_exists($path))
+				return $this->app->http_error(404, "No controller found: $controller");
 
-			$class=null;
+			// 确认action方法存在
+			$source=file_get_contents($path);
+			if(!preg_match('/function\s+'.$action.'/', $source))
+				return $this->app->http_error(404, "Can't find action $action of $controller");
 
-			if(file_exists($path)) require_once $path;
-			foreach($candidates as $class_name){
-			    if(class_exists($class_name, false)){
-			    	$class=$class_name;
-			    	break;
-			    }
-			}
-
-			if(empty($class))
-		    	$this->app->http_error(404, "No controller found: $controller");
-
+			require_once $path;
+			$class='Controller';
 			$rfxClass=new \ReflectionClass($class);
+			$rfxMethod=new \ReflectionMethod($class, $action);
 
-			if($rfxClass->hasMethod($action)){
-				$rfxMethod=new \ReflectionMethod($class, $action);
+			// detect parameters using reflection
+			$callArgs=array();
 
-				// detect parameters using reflection
-				$callArgs=array();
+			// 1st round, take named variables
+			foreach($rfxMethod->getParameters() as $idx=>$rfxParam){
+				if(isset($params[$rfxParam->name])){
+					$callArgs[$idx]=$params[$rfxParam->name];
+					unset($params[$rfxParam->name]);
+				}
+				else{
+					$callArgs[$idx]=null;
+				}
+			}
 
-				// 1st round, take named variables
-				foreach($rfxMethod->getParameters() as $idx=>$rfxParam){
-					if(isset($params[$rfxParam->name])){
-						$callArgs[$idx]=$params[$rfxParam->name];
-						unset($params[$rfxParam->name]);
+			// 2nd round, take by position
+			foreach($rfxMethod->getParameters() as $idx=>$rfxParam){
+				if($callArgs[$idx]===null){
+					if(count($params)>0){
+						$callArgs[$idx]=array_shift($params);
 					}
-					else{
-						$callArgs[$idx]=null;
+					elseif($rfxParam->isDefaultValueAvailable()){
+						$callArgs[$idx]=$rfxParam->getDefaultValue();
 					}
 				}
-
-				// 2nd round, take by position
-				foreach($rfxMethod->getParameters() as $idx=>$rfxParam){
-					if($callArgs[$idx]===null){
-						if(count($params)>0){
-							$callArgs[$idx]=array_shift($params);
-						}
-						elseif($rfxParam->isDefaultValueAvailable()){
-							$callArgs[$idx]=$rfxParam->getDefaultValue();
-						}
-					}
-				}
-
-				$callArgs=array_merge($callArgs, $params);
-
-				$obj=new $class($controller, $action);
-
-				// invoke action
-				$obj->params=$params;
-				$obj->controller=$controller;
-				$obj->view=$action;
-				$obj->action=$action;
-
-				return call_user_func_array(array($obj, $obj->action), $callArgs);
 			}
-			else{
-				$this->app->http_error(404, "Can't find action $action of $controller");
-			}
+
+			$callArgs=array_merge($callArgs, $params);
+
+			$obj=new $class($controller, $action);
+
+			// invoke action
+			$obj->params=$params;
+			$obj->controller=$controller;
+			$obj->view=$action;
+			$obj->action=$action;
+
+			return call_user_func_array(array($obj, $obj->action), $callArgs);
 		}
 
 		function reform($controller, $action, $params=array()){
@@ -208,11 +193,11 @@ namespace Clue{
 			return $url;
 		}
 
-		function resolve(){
+		function resolve($url){
 			global $app;
 
-            parse_str($_SERVER['QUERY_STRING'], $query);
-
+			$parts=parse_url($url);
+            parse_str($parts['query'], $query);
             // Use controller/action in query string will override PATH_INFO or URL_REWRITE
             if(isset($query['_c'])){
                 return array(
@@ -222,31 +207,24 @@ namespace Clue{
                 );
             }
 
-            if(isset($_SERVER['PATH_INFO']))
-                $uri=$_SERVER['PATH_INFO'];
-            else{
-                $uri=isset($_SERVER['HTTP_X_REWRITE_URL']) ? $_SERVER['HTTP_X_REWRITE_URL'] : $_SERVER['REQUEST_URI'];
-                if($uri==$_SERVER['PHP_SELF']) $uri='/';
+            if(APP_BASE!='/' && strpos($url, APP_BASE)===0){
+                $url=substr($url, strlen(APP_BASE));
             }
 
-            if(APP_BASE!='/' && strpos($uri, APP_BASE)===0){
-                $uri=substr($uri, strlen(APP_BASE));
-            }
-
-			// strip query from uri
-			if(($p=strpos($uri, '?'))!==FALSE){
-				$uri=substr($uri, 0, $p);
+			// strip query from url
+			if(($p=strpos($url, '?'))!==FALSE){
+				$url=substr($url, 0, $p);
 			}
 
             $params=array();
 
 			// Translate url
 			foreach($this->translates as $tr){
-				$uri=preg_replace($tr['from'], $tr['to'], $uri);
+				$url=preg_replace($tr['from'], $tr['to'], $url);
 			}
 
 			# Try default controller
-			$candidates=explode("/", $uri);
+			$candidates=explode("/", $url);
 			$last=array_pop($candidates);
 			$candidates[]=$last?:"index";
 
@@ -260,13 +238,16 @@ namespace Clue{
 
 				$mapping['controller']=$controller ?: 'index';
 				$mapping['action']=$action ?: 'index';
+
+				if($_SERVER['REQUEST_METHOD']=='POST') $mapping['action']="_".$mapping['action'];
+
 				$mapping['params']=array_map('rawurldecode', array_merge($params, $_GET, $_POST));
 
 				if(file_exists(DIR_SOURCE.'/control/'.$mapping['controller'].".php")){
 					// return with found controller/view
 
-					if($mapping['action']=='index' && !preg_match('/\/$/', $uri)){
-						$app->redirect($uri.'/');
+					if($mapping['action']=='index' && !preg_match('/\/$/', $url)){
+						$app->redirect($url.'/');
 					}
 					return $mapping;
 				}

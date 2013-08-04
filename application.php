@@ -174,7 +174,14 @@ namespace Clue{
         }
 
         function run(){
-            $map=$this['router']->resolve();
+            if(isset($_SERVER['PATH_INFO']))
+                $url=$_SERVER['PATH_INFO'];
+            else{
+                $url=isset($_SERVER['HTTP_X_REWRITE_URL']) ? $_SERVER['HTTP_X_REWRITE_URL'] : $_SERVER['REQUEST_URI'];
+                if($url==$_SERVER['PHP_SELF']) $url='/';
+            }
+
+            $map=$this['router']->resolve($url);
 
             $this->controller=$map['controller'];
             $this->action=$map['action'];
