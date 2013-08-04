@@ -130,14 +130,7 @@ namespace Clue{
         }
 
         function display_alerts($context_pattern='.*', $level='alert'){
-            $messages=array();
-            if(is_array($_SESSION['app_msg'][$level])) foreach($_SESSION['app_msg'][$level] as $context=>$msgs){
-                if(!preg_match('/'.$context_pattern.'/i', $context)) continue;
-
-                $messages=array_merge($messages, $msgs);
-                unset($_SESSION['app_msg'][$level][$context]);
-            }
-
+            $messages=$this->get_alerts($context_pattern, $level);
             if(empty($messages)) return false;
 
             $html="";
@@ -151,27 +144,32 @@ namespace Clue{
 
             echo $html;
         }
+
+        function get_alerts($context_pattern=".*", $level='alert'){
+            $messages=array();
+            if(is_array($_SESSION['app_msg'][$level])) foreach($_SESSION['app_msg'][$level] as $context=>$msgs){
+                if(!preg_match('/'.$context_pattern.'/i', $context)) continue;
+
+                $messages=array_merge($messages, $msgs);
+                unset($_SESSION['app_msg'][$level][$context]);
+            }
+            return $messages;
+        }
+
         // 错误信息
-        function error($message, $context='website'){
-            $this->alert($message, $context, 'error');
-        }
-        function display_errors($context_pattern='.*'){
-            $this->display_alerts($context_pattern, 'error');
-        }
+        function error($message, $context='website'){ $this->alert($message, $context, 'error'); }
+        function display_errors($context_pattern='.*'){ $this->display_alerts($context_pattern, 'error'); }
+        function get_errors($context_pattern='.*'){ return $this->get_alerts($context_pattern, 'error'); }
+
         // 成功信息
-        function success($message, $context='website'){
-            $this->alert($message, $context, 'success');
-        }
-        function display_successes($context_pattern='.*'){
-            $this->display_alerts($context_pattern, 'success');
-        }
+        function success($message, $context='website'){ $this->alert($message, $context, 'success'); }
+        function display_succeeds($context_pattern='.*'){ $this->display_alerts($context_pattern, 'success'); }
+        function get_succeeds($context_pattern='.*'){ return $this->get_alerts($context_pattern, 'success'); }
+
         // 辅助信息
-        function info($message, $context='website'){
-            $this->alert($message, $context, 'info');
-        }
-        function display_infos($context_pattern='.*'){
-            $this->display_alerts($context_pattern, 'info');
-        }
+        function info($message, $context='website'){ $this->alert($message, $context, 'info'); }
+        function display_infos($context_pattern='.*'){ $this->display_alerts($context_pattern, 'info'); }
+        function get_infos($context_pattern='.*'){ return $this->get_alerts($context_pattern, 'info'); }
 
         function run(){
             if(isset($_SERVER['PATH_INFO']))

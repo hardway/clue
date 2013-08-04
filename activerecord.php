@@ -242,7 +242,7 @@
 
 		static function count($condition=array()){
 			$model=self::model();
-			return intval(self::db()->get_var("select count(*) from {$model["table"]} ".self::_get_where_clause($condition)));
+			return intval(self::db()->get_var("select count(*) from `{$model["table"]}` ".self::_get_where_clause($condition)));
 		}
 
 
