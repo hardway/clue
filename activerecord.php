@@ -255,11 +255,11 @@
 			if(is_array($data)){
 			    $this->bind($data);
 			}
-			else{
-				$this->init();
-			}
 
-			$this->after_construct();
+			$model=self::model();
+			$pkey=$model['pkey'];
+			if(empty($this->$pkey))
+				$this->after_construct();
 		}
 
 		function __get($key){
@@ -289,10 +289,6 @@
 					$this->$c=$data[$m['name']];
 				}
 			}
-		}
-
-		protected function init(){
-			// Empty.
 		}
 
 		function validate(){
@@ -337,7 +333,7 @@
 
 		function save(){
 		    if(!$this->validate()) return false;
-		if(!$this->before_save()) return false;
+			if(!$this->before_save()) return false;
 
 			// TODO: use prepared statement to improve security and code clearance
 			$model=self::model();
@@ -413,7 +409,6 @@
 
 			$this->add_history($history_data, 'D');
 
-			$this->init();
 			$this->_snap_shot();
 
 			$this->after_destroy();

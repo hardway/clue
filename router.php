@@ -241,7 +241,7 @@ namespace Clue{
 
 				if($_SERVER['REQUEST_METHOD']=='POST') $mapping['action']="_".$mapping['action'];
 
-				$mapping['params']=array_map('rawurldecode', array_merge($params, $_GET, $_POST));
+				$mapping['params']=array_map('rawurldecode', array_filter(array_merge($params, $_GET, $_POST), 'is_string'));
 
 				if(file_exists(DIR_SOURCE.'/control/'.$mapping['controller'].".php")){
 					// return with found controller/view
