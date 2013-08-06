@@ -26,7 +26,7 @@ namespace Clue{
         }
 
         static function flush(){
-            ob_flush();
+            flush(); @ob_flush();
         }
 
         static function warning($str){

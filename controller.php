@@ -11,14 +11,14 @@ namespace Clue{
 			$this->controller=$controller;
 			$this->action=$action;
 
-			$this->layout=new Layout(empty($this->layout) ? 'default' : $this->layout);
+			$this->layout=new View("/layout/$this->layout");
 
 			$this->__init();
 		}
 
 		function __call($name, $args){
 			if(preg_match('/render_(.+)/', $name, $m)){
-				$this->layout=new Layout($m[1]);
+				$this->layout=new View("/layout/{$m[1]}");
 				return call_user_func_array(array($this, "render"), $args);
 			}
 		}

@@ -197,7 +197,7 @@ namespace Clue{
 			global $app;
 
 			$parts=parse_url($url);
-            parse_str($parts['query'], $query);
+            parse_str(@$parts['query'], $query);
             // Use controller/action in query string will override PATH_INFO or URL_REWRITE
             if(isset($query['_c'])){
                 return array(

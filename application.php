@@ -1,13 +1,7 @@
 <?php
 namespace Clue{
     class Application implements \ArrayAccess{
-        private $_values;
-
-        public $config;
-        public $db;
-
-        public $session;
-        public $layout;
+        private $_values;   # DI
 
         public $controller;
         public $action;
@@ -16,22 +10,15 @@ namespace Clue{
         function __construct($values=array()){
             $this->_values=$values;
 
-            if(!isset($this['auth_class'])) $this['auth_class']="Clue\\Auth";
-            if(!isset($this['user_class'])) $this['user_class']="User";
-            if(!isset($this['user'])){
-                $this['user']=$this->share(function($c){
-                    $cls=$c['auth_class'];
-                    return $cls::current();
-                });
-            }
-            if(!isset($this['router'])){
-                $this['router']=new Router($this);
-            }
-
+            $this['router']=new Router($this);
             $this['referer_url']=@$_SERVER['HTTP_REFERER'];
             $this['return_url']=@$_POST['return_url'] ?: @$_GET['return_url'];
 
-            $this->init();
+            if($this['config']['database']){
+                $this['db']=array(
+                    'default'=>Database::create($this['config']['database'])
+                );
+            }
         }
 
         // Dependency Injection, Ref: Pimple
@@ -52,24 +39,6 @@ namespace Clue{
             };
         }
 
-        function init(){
-            if($this['config']['database']){
-                $cfg=$this['config']['database'];
-                $this['db']=array(
-                    'default'=>Database::create($cfg['type'], $cfg)
-                );
-            }
-        }
-
-        function has_layout(){
-            return $this->layout;
-        }
-
-        function set_layout($layout=null){
-            $this->layout=new Clue_Layout($layout);
-            // TODO
-        }
-
         function redirect($url){
             if(!headers_sent()){
                 header("Status: 302 Found");
@@ -87,8 +56,6 @@ namespace Clue{
         function redirect_referer($default_url=null){
             $this->redirect($this['referer_url'] ?: $default_url);
         }
-
-        static protected $instance;
 
         function cache_get($name){
             $path=realpath(DIR_CACHE.'/'.$name);
@@ -184,16 +151,6 @@ namespace Clue{
             $this->controller=$map['controller'];
             $this->action=$map['action'];
             $this->params=$map['params'];
-
-            $resource=$this->controller."::".$this->action;
-            if(count($this->params)>0) $resource.="(".http_build_query($this->params).")";
-
-            // TODO: authorization is optional
-            /*
-            if($this['user'] && !$this['user']->authorize($resource, 'a')){
-                $this['user']->authorize_failed($resource, 'a');
-            }
-            */
 
             return $this['router']->route($this->controller, $this->action, $this->params);
         }

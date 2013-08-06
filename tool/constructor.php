@@ -10,6 +10,14 @@
     class Clue_Tool_Constructor_Minifier{
         protected $root;
 
+        protected $build_exclude=array(
+            '/ui\/(clue|mooeditor|mootools)\//',
+            '/\.hg\//'
+        );
+        protected $strip_exclude=array(
+            "/tool\/skeleton\/.*/"
+        );
+
         function __construct($root){
             $this->root=$root;
         }
@@ -28,12 +36,28 @@
             # Simple Build whole directory
             # $phar->buildFromDirectory($this->root, '/\.php$/');
 
-            # TODO: maybe some obfuscation someday?
             $iter = new RecursiveIteratorIterator (new RecursiveDirectoryIterator ($this->root), RecursiveIteratorIterator::SELF_FIRST);
 
             foreach ($iter as $file) {
-                if ( preg_match ('/\\.php$/i', $file) ) {
-                    $phar->addFromString (substr ($file, strlen ($this->root) + 1), php_strip_whitespace ($file));
+                if(!is_file($file)) continue;
+
+                $exclude=false;
+                foreach($this->build_exclude as $pat){ if(preg_match($pat, $file)) $exclude=true;}
+                if($exclude) continue;
+
+                // PHP file should be stripped
+                $include=preg_match ('/\\.php$/i', $file);
+                $exclude=false;
+                // Files matching "strip_exclude" list shall keep as is
+                foreach($this->strip_exclude as $pat){
+                    if(preg_match($pat, $file)) $exclude=true;
+                }
+
+                if ($include && !$exclude) {
+                    $phar->addFromString(substr($file, strlen ($this->root) + 1), php_strip_whitespace($file));
+                }
+                else{
+                    $phar->addFromString(substr($file, strlen ($this->root) + 1), file_get_contents($file));
                 }
             }
 
@@ -100,11 +124,11 @@ Usage: clue [command] {arguments...}
             $skeleton=__DIR__ . DIRECTORY_SEPARATOR . 'skeleton';
             $site=empty($path) ? getcwd() : $path;
 
-            if(false==$this->_confirm("New application code skeleton will be copied into: \"$site\", continue?")){
+            if(false==Clue\CLI::confirm("New application code skeleton will be copied into: \"$site\", continue? [Y/n]", true)){
                 return $this->_cancel();
             }
 
-            if(!is_dir($site)) mkdir($site, 0755, true);
+            if(!is_dir($site)) mkdir($site, 0775, true);
             $this->_deepcopy($skeleton, $site);
         }
 
@@ -261,7 +285,7 @@ END
             }
             else if(is_dir($src)){	// Directory Mode
                 // Always make sure the destination folder exists
-                if(!is_dir($dest)) mkdir($dest, 755, true);
+                if(!is_dir($dest)) mkdir($dest);
 
                 $dh=opendir($src);
                 while(($file=readdir($dh))!==false){

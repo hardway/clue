@@ -8,17 +8,13 @@ namespace Clue{
 	abstract class Database{
 		protected static $_cons=array();
 
-		static function create($dbms, $param=null){
-            if(is_object($dbms) && isset($dbms->type) && empty($param)){
-                $param=$dbms;
-                $dbms=$param->type;
-            }
+		static function create(array $param){
+			$dbms=$param['type'];
 
 			$factory="Clue\\Database\\".$dbms;
 			if(!class_exists($factory)) throw new \Exception("Database: $dbms is not implemented!");
 
 			// Make sure the parameter is always in array format
-			if(is_object($param)) $param=(array)$param;
 			return new $factory($param);
 		}
 

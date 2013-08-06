@@ -1,17 +1,12 @@
-<?php 
-	session_start();
-	
-	if(file_exists(__DIR__."/clue.phar"))
-		require_once 'clue.phar';
-	else
-		require 'clue/stub.php';
-	
-    $app=new Clue\Application(array(
-    	'config'=>include 'config.php'
-    ));
+<?php
+	require realpath(__DIR__."/clue.phar") ?: 'clue/stub.php';
 
-    include "route.php";
-    include "acl.php";
+	$config=include "config.php";
+
+    $app=new Clue\Application(array(
+    	'config'=>$config
+    ));
+    $db=$app['db']['default'];
 
     $app->run();
 
