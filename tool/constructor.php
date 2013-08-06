@@ -1,10 +1,7 @@
 <?php
     if(!defined("CLUE_VERSION")){
-        $version=exec("hg parent --template {latesttag}.{latesttagdistance} 2>&1", $_, $err);
-        if($err==0)
-            define('CLUE_VERSION', $version);
-        else
-            define("CLUE_VERSION", "DEVELOPMENT");
+        $version=exec("hg parent -R ".dirname(__DIR__)." --template {latesttag}.{latesttagdistance} 2>&1", $_, $err);
+        define('CLUE_VERSION', $err==0 ? $version : "unknown");
     }
 
     class Clue_Tool_Constructor_Minifier{
