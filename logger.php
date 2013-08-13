@@ -7,6 +7,11 @@ class Logger{
         'backtrace'=>false
     );
 
+    static function syslog($message){
+        $bt=debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS|!DEBUG_BACKTRACE_PROVIDE_OBJECT, 1);
+        error_log(sprintf("%s\n [%s:%s]", $message, $bt[0]['file'], $bt[0]['line']));
+    }
+
     protected $file;
 
     function __construct($option){
