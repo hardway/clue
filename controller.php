@@ -27,7 +27,7 @@ namespace Clue{
 		function __init(){}
 
 		function get_view($view, $data=array()){
-			$view=new View($this->controller."/{$view}");
+			$view=new View((strpos($view, '/')===0) ? $view : $this->controller."/{$view}");
 			if(is_array($data)) foreach($data as $k=>$v){
 				$view->set($k, $v);
 			}
@@ -35,6 +35,10 @@ namespace Clue{
 			return $view;
 		}
 
+		/**
+		 * 绝对路径  /product/options    => {VIEWS}/product/options
+		 * 相对路进  options 				=> {VIEWS}/{CONTROLLER}/options
+		 */
         function render($view=null, $data=array()){
             $content=false;
 
