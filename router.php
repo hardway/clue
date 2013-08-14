@@ -105,6 +105,7 @@ namespace Clue{
 			$obj=new $class($controller, $action);
 
 			// invoke action
+			$obj->app=$this->app;
 			$obj->params=$params;
 			$obj->controller=$controller;
 			$obj->view=$action;
