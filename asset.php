@@ -60,7 +60,7 @@ namespace Clue{
 					header("Content-Type: text/css");
 					break;
 				case 'js':
-					header("Content-Type: application/x-javascript");
+					header("Content-Type: application/javascript");
 					break;
 				default:
 					header("Content-Type: text/plain");
