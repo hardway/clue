@@ -19,6 +19,8 @@ namespace Clue{
                     'default'=>Database::create($this['config']['database'])
                 );
             }
+
+            $this['profiler']=new Profiler();
         }
 
         // Dependency Injection, Ref: Pimple

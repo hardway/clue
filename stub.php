@@ -17,6 +17,8 @@
 
     # 服务器地址
     if(!defined('APP_SERVER') && !CLI) define('APP_SERVER', $_SERVER['HTTP_HOST']);
+    if(!defined('APP_NAME')) define('APP_NAME', 'MyApp');
+
     # Disk路径
     if(!defined('APP_ROOT')) define('APP_ROOT', dirname($_SERVER['SCRIPT_FILENAME']));
     # URL路径
@@ -28,10 +30,6 @@
     if(!defined('DIR_LOG')) define('DIR_LOG', APP_ROOT.'/log');
     if(!defined('DIR_CACHE')) define('DIR_CACHE', APP_ROOT.'/cache');
     if(!defined('DIR_DATA')) define('DIR_DATA', APP_ROOT.'/data');
-
-    # Profiler
-    define('BEGIN_TIME', microtime(true));
-    define('BEGIN_MEMORY', memory_get_usage());
 
     if(!CLI){
         if(!is_dir(DIR_CACHE)) mkdir(DIR_CACHE, 0775, true);
