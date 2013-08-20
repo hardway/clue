@@ -150,7 +150,8 @@ namespace Clue{
 		    $rs=$this->get_results($sql, ARRAY_A);
 
 		    foreach($rs as $row){
-		        $key_name=array_keys($row)[0];
+		    	$keys=array_keys($row);
+		        $key_name=$keys[0];
 		        $key=$row[$key_name];
 
 		        unset($row[$key_name]);
@@ -161,7 +162,8 @@ namespace Clue{
 		        	}
 		        }
 		        else{
-		        	$val=array_values($row)[0];
+		        	$vals=array_values($row);
+		        	$val=$vals[0];
 		        }
 
 		        if(is_null($key)) continue;
