@@ -36,9 +36,10 @@
     }
 
     require_once __DIR__."/core.php";
+    spl_autoload_register("Clue\\autoload_load");
+
     require_once __DIR__."/application.php";
     require_once __DIR__."/tool.php";
     require_once __DIR__."/asset.php";
 
-    spl_autoload_register("Clue\\autoload_load");
 ?>

@@ -59,29 +59,18 @@
             }
 
             # Add stub to bootstrap
-            $phar->setStub('<?php Phar::mapPhar("Clue");
+            $phar->setStub('<?php
                 define("CLUE_VERSION", "'.CLUE_VERSION.'");
 
-                require_once "phar://Clue/stub.php";
-                spl_autoload_register("Clue\autoload_load");
-                require_once "phar://Clue/application.php";
-                require_once "phar://Clue/tool.php";
+                Phar::interceptFileFuncs();
+                require_once "phar://".__FILE__."/stub.php";
 
                 if(php_sapi_name()=="cli" && preg_match("/clue/i", $argv[0])){
-                    require_once "phar://Clue/tool/constructor.php";
-
-                    $ctor=new Clue_Tool_Constructor();
-                    $command=isset($argv[1]) ? $argv[1] : "help";
-
-                    if(method_exists($ctor, $command)){
-                        call_user_func_array(array($ctor, $command), array_slice($argv, 2));
-                    }
-                    else{
-                        echo "Unknown command: $command\n";
-                    }
+                    require_once "phar://".__FILE__."/tool/clue.php";
                 }
                 __HALT_COMPILER();
             ');
+
             $phar->stopBuffering();
             echo "Phar build at: $dest";
             echo "\n";
