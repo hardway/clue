@@ -116,6 +116,8 @@ Usage: clue [command] {arguments...}
 
             if(!is_dir($site)) mkdir($site, 0775, true);
             $this->_deepcopy($skeleton, $site);
+
+            printf("\n[DONE]\n");
         }
 
         function gen_sql(){
@@ -263,7 +265,7 @@ END
         }
 
         private function _deepcopy($src, $dest){
-            echo "Copying $src --> $dest \n";
+            printf("[CREATE] %s\n", str_replace(__DIR__.'/skeleton', '', $src));
 
             if(is_file($src)){	// File Mode
                 copy($src, $dest);

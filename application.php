@@ -135,11 +135,6 @@ namespace Clue{
         function display_succeeds($context_pattern='.*'){ $this->display_alerts($context_pattern, 'success'); }
         function get_succeeds($context_pattern='.*'){ return $this->get_alerts($context_pattern, 'success'); }
 
-        // 辅助信息
-        function info($message, $context='website'){ $this->alert($message, $context, 'info'); }
-        function display_infos($context_pattern='.*'){ $this->display_alerts($context_pattern, 'info'); }
-        function get_infos($context_pattern='.*'){ return $this->get_alerts($context_pattern, 'info'); }
-
         function run(){
             if(isset($_SERVER['PATH_INFO']))
                 $url=$_SERVER['PATH_INFO'];

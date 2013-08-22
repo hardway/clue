@@ -233,7 +233,7 @@ namespace Clue{
 			$params=array();
 
 			while(count($candidates)>=2){
-				if(!empty($action)) $params[]=$action;
+				if(!empty($action)) array_unshift($params, $action);
 				$action=array_pop($candidates);
 				$controller=trim(implode('/', $candidates), '/');
 

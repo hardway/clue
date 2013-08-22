@@ -1,4 +1,4 @@
-<?php    
+<?php
     $config=array(
         'debug'=>true,
         'database'=>array(
@@ -9,6 +9,6 @@
             'password'=>''
         ),
     );
-    
+
     return $config;
 ?>

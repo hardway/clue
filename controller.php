@@ -50,6 +50,9 @@ namespace Clue{
                 echo $content;
         }
 
+        function error($message, $context='website'){ global $app; $app->alert($message, $context, 'error'); }
+        function success($message, $context='website'){ global $app; $app->alert($message, $context, 'success'); }
+
 		function redirect($url){
 		    global $app;
 			$app->redirect($url);
