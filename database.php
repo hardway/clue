@@ -6,6 +6,8 @@ namespace Clue{
 	if(!defined('ARRAY_N')) define('ARRAY_N', 'ARRAY_N');
 
 	abstract class Database{
+		use Logger;
+
 		protected static $_cons=array();
 
 		static function create(array $param){
@@ -44,24 +46,22 @@ namespace Clue{
 				self::$_cons[$profile]=new Database($profile);
 			return self::$_cons[$profile];
 		}
-
 		//===========================================================
 
 		protected $setting;
 
 		public $query_count=0;
 		public $last_query=null;
-		protected $queryLog=null;
+
+		public $slow_query_time_limit=0;
 
 		public $dbh=null;
 		public $lasterror=null;
 		public $errors=null;
 
-		public function enable_query_log(IClue_Log $log){
-			$this->queryLog=$log;
-		}
-		public function disable_query_log(){
-			$this->queryLog=null;
+		public function enable_slow_query_log($logfile='', $time_limit=10){
+			$this->enable_log($logfile);
+			$this->slow_query_time_limit=$time_limit;
 		}
 
 		protected function setError($err){
@@ -93,7 +93,12 @@ namespace Clue{
 		}
 
 		function audit($sql, $time=0){
-			// TODO: log slow query
+			$prefix=($this->slow_query_time_limit>0 && $time > $this->slow_query_time_limit) ? "SLOW QUERY" : "SQL";
+
+			if($time > $this->slow_query_time_limit){
+				$this->log("[$prefix ".number_format($time, 4)."] $sql");
+			}
+
 			$this->last_query=$sql;
 			$this->query_count++;
 		}
@@ -119,11 +124,6 @@ namespace Clue{
 			}
 
 			$this->last_query=$sql;
-
-			if($this->queryLog){
-			    // TODO.
-				//$this->queryLog->log($sql);
-			}
 		}
 
 		function query($sql){
@@ -145,9 +145,8 @@ namespace Clue{
 
 		    $hash=($mode==OBJECT) ? new stdClass : array();
 
-		    $sql=call_user_func_array(array($this, 'format'), $args);
-
-		    $rs=$this->get_results($sql, ARRAY_A);
+		    array_push($args, ARRAY_A);
+		    $rs=call_user_func_array(array($this, 'get_results'), $args);
 
 		    foreach($rs as $row){
 		    	$keys=array_keys($row);
@@ -181,9 +180,8 @@ namespace Clue{
 			$args=func_get_args();
 
 			$class=array_pop($args);
-			$sql=call_user_func_array(array($this, 'format'), $args);
-
-		    $r=$this->get_row($sql, ARRAY_A);
+			array_push($args, ARRAY_A);
+			$r=call_user_func_array(array($this, 'get_row'), $args);
 
 		    if(empty($r))
 		    	return null;
@@ -200,10 +198,10 @@ namespace Clue{
 			$args=func_get_args();
 
 			$class=array_pop($args);
-			$sql=call_user_func_array(array($this, 'format'), $args);
+			array_push($args, ARRAY_A);
 
 		    $objs=array();
-		    $rs=$this->get_results($sql, ARRAY_A);
+			$rs=call_user_func_array(array($this, 'get_results'), $args);
 		    if($rs) foreach($rs as $r){
 		    	$obj=new $class($r);
 		    	$obj->_snap_shot();
