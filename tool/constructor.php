@@ -1,10 +1,16 @@
 <?php
+namespace {
     if(!defined("CLUE_VERSION")){
         $version=exec("hg parent -R ".dirname(__DIR__)." --template {latesttag}.{latesttagdistance} 2>&1", $_, $err);
         define('CLUE_VERSION', $err==0 ? $version : "unknown");
     }
+}
 
-    class Clue_Tool_Constructor_Minifier{
+namespace Clue\Tool{
+    use Clue\CLI as CLI;
+    use Clue\Tool as Tool;
+
+    class Constructor_Minifier{
         protected $root;
 
         protected $build_exclude=array(
@@ -20,20 +26,20 @@
         }
 
         function build($dest){
-            if(!Phar::canWrite()) {
+            if(!\Phar::canWrite()) {
                 throw new Exception('Unable to create PHAR archive, must be phar.readonly=Off option in php.ini');
             }
 
             if(file_exists($dest)) unlink($dest);
 
-            $phar = new Phar($dest);
-            $phar->convertToExecutable(Phar::PHAR);
+            $phar = new \Phar($dest);
+            $phar->convertToExecutable(\Phar::PHAR);
             $phar->startBuffering();
 
             # Simple Build whole directory
             # $phar->buildFromDirectory($this->root, '/\.php$/');
 
-            $iter = new RecursiveIteratorIterator (new RecursiveDirectoryIterator ($this->root), RecursiveIteratorIterator::SELF_FIRST);
+            $iter = new \RecursiveIteratorIterator (new \RecursiveDirectoryIterator ($this->root), \RecursiveIteratorIterator::SELF_FIRST);
 
             foreach ($iter as $file) {
                 if(!is_file($file)) continue;
@@ -81,7 +87,7 @@
         }
     }
 
-    class Clue_Tool_Constructor{
+    class Constructor{
         function help(){
             echo "
 Version: ".CLUE_VERSION."
@@ -101,7 +107,7 @@ Usage: clue [command] {arguments...}
 
         function build($dest=null){
             if(empty($dest)) $dest=getcwd().'/clue.phar';
-            $minifier=new Clue_Tool_Constructor_Minifier(dirname(__DIR__));
+            $minifier=new Constructor_Minifier(dirname(__DIR__));
             $minifier->build($dest);
             //file_put_contents($dest, $minifier);
         }
@@ -110,12 +116,12 @@ Usage: clue [command] {arguments...}
             $skeleton=__DIR__ . DIRECTORY_SEPARATOR . 'skeleton';
             $site=empty($path) ? getcwd() : $path;
 
-            if(false==Clue\CLI::confirm("New application code skeleton will be copied into: \"$site\", continue? [Y/n]", true)){
+            if(false==CLI::confirm("New application code skeleton will be copied into: \"$site\", continue? [Y/n]", true)){
                 return $this->_cancel();
             }
 
             if(!is_dir($site)) mkdir($site, 0775, true);
-            $this->_deepcopy($skeleton, $site);
+            Tool::copy_directory($skeleton, $site, 0775);
 
             printf("\n[DONE]\n");
         }
@@ -263,25 +269,6 @@ END
         static function _cancel(){
             echo "Operation Canceled\n";
         }
-
-        private function _deepcopy($src, $dest){
-            printf("[CREATE] %s\n", str_replace(__DIR__.'/skeleton', '', $src));
-
-            if(is_file($src)){	// File Mode
-                copy($src, $dest);
-                touch($dest);
-            }
-            else if(is_dir($src)){	// Directory Mode
-                // Always make sure the destination folder exists
-                if(!is_dir($dest)) mkdir($dest);
-
-                $dh=opendir($src);
-                while(($file=readdir($dh))!==false){
-                    if($file=='.' || $file=='..') continue;
-                    $this->_deepcopy($src.DIRECTORY_SEPARATOR.$file, $dest.DIRECTORY_SEPARATOR.$file);
-                }
-                closedir($dh);
-            }
-        }
     }
+}
 ?>

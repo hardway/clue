@@ -24,6 +24,7 @@ namespace Clue{
         }
     }
 
+
     # 检测浏览器cookie支持
     function cookie_test(){
         if($_COOKIE['cookie_test']=='1'){
@@ -45,38 +46,52 @@ namespace Clue{
     }
 
 	class Tool{
-		static function os(){
-			if(isset($_SERVER['OS'])){
-				$os=strtolower($_SERVER['OS']);
-				if(strpos($os, 'windows')===0){
-					return 'windows';
+	    # 递归删除文件夹
+	    static function remove_directory($dir){
+	    	if(!is_dir($dir)) return false;
+			$iter = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($dir), \RecursiveIteratorIterator::CHILD_FIRST);
+
+			foreach ($iter as $path) {
+				if($path->getFileName()=='.' || $path->getFileName()=='..') continue;
+
+				if ($path->isDir()) {
+					rmdir($path);
+				} else {
+					unlink($path);
 				}
 			}
-			else if(isset($_SERVER['WINDIR'])){
-				return 'windows';
-			}
 
-			return "unknown";
-		}
+			rmdir($dir);
 
-		/**
-		 * Create directory recursively, without warning
-		 */
-		static function mkdir($dir){
-			$dir=str_replace("\\", '/', $dir);
+			return true;
+	    }
 
-			$ds=null;
-			foreach(explode('/', $dir) as $seg){
-				$ds=empty($ds) ? $seg : $ds.'/'.$seg;
-				if(!file_exists($ds)){
-					mkdir($ds);
+	    # 递归复制文件夹
+	    static function copy_directory($src, $dest, $mode=null){
+	    	if(!is_dir($src)) return false;
+
+	    	if(!is_dir($dest)){
+	    		mkdir($dest, $mode, true);
+	    		if(!is_dir($dest)) return false;	// 无法创建目标文件夹
+	    	}
+
+			$iter = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($src), \RecursiveIteratorIterator::SELF_FIRST);
+
+			foreach ($iter as $path) {
+				if($path->getFileName()=='.' || $path->getFileName()=='..') continue;
+
+				$target=str_replace($src, $dest, $path);
+				if ($path->isDir()) {
+					mkdir($target, $mode ?: fileperms($path));
+				} else {
+					copy($path, $target);
 				}
 			}
-		}
 
-		static function uuid(){
-			return sha1(getmypid().uniqid(rand()).@$_SERVER['SERVER_NAME']);
-		}
+			return true;
+	    }
+
+	    # user PHP_OS or php_uname() to get operation system name
 
 		static function nocache(){
 			header( 'Cache-Control: no-store, no-cache, must-revalidate' );
@@ -173,6 +188,7 @@ namespace Clue{
 		}
 	}
 }
+
 namespace{
 	//////////////////////////////////////
 	// Shortcuts

@@ -2,7 +2,7 @@
 	require_once dirname(__DIR__).'/stub.php';
     require_once "constructor.php";
 
-    $ctor=new Clue_Tool_Constructor();
+    $ctor=new Clue\Tool\Constructor();
 
     $command=isset($argv[1]) ? $argv[1] : "help";
 
