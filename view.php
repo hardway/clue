@@ -39,7 +39,7 @@ namespace Clue{
         function incl($view=null, $vars=array()){
             // Special treat
             if($view==null){
-                echo $this->vars['content'];
+                $this->vars['content']->render();
                 return;
             }
 
@@ -69,11 +69,6 @@ namespace Clue{
             if(file_exists($this->template.".htm")){
                 include $this->template.".htm";
             }
-        }
-
-        function __toString(){
-            $this->render();
-            return "";
         }
     }
 }

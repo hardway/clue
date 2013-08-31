@@ -25,6 +25,28 @@ CLUE会被打包为clue.phar发布，可以直接在项目中引用(`include clu
             └── default.htm	# 默认布局
 </pre>
 
+### 文件路径和加载过程
+
+一般来说，PHP类文件是遵循PSR-0规范来保存的，优先顺序为clue.phar > /source/class > /source/model
+
+/source/include目录已经放在PHP的include_path中，可以直接用include或者require加载（用于存放一些函数代码）
+
+应用执行流程
+<pre>
+    .htaccess
+        |
+    index.php               # 可以通过修改.htaccess，指向其他文件，比如admin.php
+        |                   # 在这里可以做一些特定的设置，如Session Name之类
+    stub.php, config.php    # 公用的配置文件（CLI模式也可以用）
+        |
+    /control/foo.php        # 根据Router规则定位到Controller
+        |
+    /view/foo/bar.php       # 根据Controller中Action所调用的视图
+    /view/foo/bar.htm       # .php起到code behind的作用
+        |                   # .htm原则上只输出变量
+    /view/foo/subview.htm   # 视图可以包含其他视图（此时code behind的作用可以发挥出来）
+</pre>
+
 ### 基本MVC
 
 类似与Ruby On Rails，Controller有多个Action，定义在Controller中，例如(index.php):
@@ -86,9 +108,9 @@ MVC不是简单的扁平结构，可以支持层级目录。
     4. 尝试 @controller=index, @action=index, @param=[foo, bar]
 </pre>
 
-### 路由
+### 路由别名（rewrite/alias）
 
-路由的作用就是将非标准的URL转换为符合HMVC的URL而已，例如：
+别名的作用就是将非标准的URL转换为符合HMVC的URL而已，类似apache的mod_rewrite例如：
 <pre>
     $router->alias('/^.*-p-(\d+)$/i', '/product/view/$1');
     $router->alias('/^.*-c-(\d+)$/i', '/category/view/$1');
@@ -124,12 +146,20 @@ MVC不是简单的扁平结构，可以支持层级目录。
 
     $db->delete("table", "id=2");
 
-    $all_rows=$db->get_results("select * from table");
-    $one_row=$db->get_row("select * from table");
-    $one_col=$db->get_col("select name from table");
-    $cell=$db->get_var("select name from table limik 1")
+    $all_rows=$db->get_results("select * from table");      # 返回结果集
+    $one_row=$db->get_row("select * from table");           # 仅返回第一行
+    $one_col=$db->get_col("select name from table");        # 仅返回第一列，形式为数组
+    $cell=$db->get_var("select name from table");           # 仅返回第一个值（第一行，第一列）
+    $hash=$db->get_hash("select name, value from table");   # 以hash形式返回，例如array('a'=>'1', 'b'=>'2')
+    $hash=$db->get_hash("select name, id, value from table"); # 如果有多个值，返回形式为array(
+                                                                    'a'=>array('id'=>46, 'value'=>'1'),
+                                                                    'b'=>array('id'=>89, 'value'=>'2')
+                                                              # )
 
     # 分别获取三种类型的数据库结果
+    # ARRAY_A 哈希数组，列名作为键，数据作为值
+    # ARRAY_N 基本数组，键从0开始
+    # OBJECT 对象，最后一个参数是类名，每一行数据会自动构造为该类的实例
 
     $r=$db->get_row("select * from table limit 1", ARRAY_A);
     # $r=array('name'=>'foo', 'value=>'bar');
@@ -137,8 +167,8 @@ MVC不是简单的扁平结构，可以支持层级目录。
     $r=$db->get_row("select * from table limit 1", ARRAY_N);
     # $r=array('foo', 'bar');
 
-    $r=$db->get_object("select * from table limit 1", 'Table');
-    # typeof $r=="Table"
+    $r=$db->get_object("select * from table limit 1", OBJECT, 'Table');
+    # $r instanceof Table
     # $r->name='foo';
     # $r->value='bar';
 </pre>
@@ -158,25 +188,25 @@ class Article extends Clue\ActiveRecord{
 
 对于Article的操作将自动关联到数据库，例如：
 <pre>
-    $a=new Article();
+    $a=new Article();   # 默认表名为article，主键为id，不过可以在static $model中自定义
     $a->title="Subject Line";
     $a->content="Body Text";
-    $a->save();
+    $a->save();     # 根据是否新记录，调用insert和update语句
 
     $b=Article::find_one(array('id'=>$a->id));
     $b=Article::find_one_by_id($a->id);
 
     $articles=Article::find_all();
 
-    $b->destroy();
+    $b->destroy();  # 删除该记录
 </pre>
 
 对于常用的FORM POST动作，一个方便的绑定方法是:
 <pre>
     # 假设提交的form为title=a&content=b
-    $a=new Article($_POST);
-    # $a->title=='a';
-    # $a->content=='b';
+    $a=new Article($_POST);  # 等效于
+    # $a->title='a';
+    # $a->content='b';
 </pre>
 
 ### Asset
