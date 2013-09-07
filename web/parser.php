@@ -201,7 +201,7 @@ class Element extends \DOMElement implements \ArrayAccess{
 		$next=$this->el->nextSibling;
 		while($next){
 			if($next->nodeName==$selector){
-				return new Element($next);
+				return new Element($next, $this->parser);
 			}
 			else
 				$next=$next->nextSibling;
@@ -212,7 +212,7 @@ class Element extends \DOMElement implements \ArrayAccess{
 
 	function getParent(){
 		$parent=$this->el->parentNode;
-		return is_null($parent) ? null : new Element($parent);
+		return is_null($parent) ? null : new Element($parent, $this->parser);
 	}
 
 	function extract_text($n){

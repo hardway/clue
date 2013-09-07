@@ -50,6 +50,11 @@ namespace Clue{
                 echo $content;
         }
 
+        function http_error($code, $message){
+        	global $app;
+        	$app->http_error($code, $message);
+        }
+
         function error($message, $context='website'){ global $app; $app->alert($message, $context, 'error'); }
         function success($message, $context='website'){ global $app; $app->alert($message, $context, 'success'); }
 

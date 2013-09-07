@@ -71,7 +71,7 @@ namespace Clue{
 	    	if(!is_dir($src)) return false;
 
 	    	if(!is_dir($dest)){
-	    		mkdir($dest, $mode, true);
+	    		mkdir($dest, $mode ?: (fileperms($src) & 0777), true);
 	    		if(!is_dir($dest)) return false;	// 无法创建目标文件夹
 	    	}
 
@@ -82,7 +82,7 @@ namespace Clue{
 
 				$target=str_replace($src, $dest, $path);
 				if ($path->isDir()) {
-					mkdir($target, $mode ?: fileperms($path));
+					mkdir($target, $mode ?: (fileperms($path) & 0777));
 				} else {
 					copy($path, $target);
 				}

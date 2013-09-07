@@ -113,15 +113,23 @@ namespace Clue\Web{
 		*/
 
 		function __construct($config=array()){
+			$default_config=array(
+				'http_proxy'=>getenv("http_proxy"),
+				'connect_timeout'=>15,
+				'timeout'=>60
+			);
+
+			$config=array_merge($default_config, $config);
+
 			$this->curl=curl_init();
 			curl_setopt($this->curl, CURLOPT_RETURNTRANSFER, true);
 			curl_setopt($this->curl, CURLOPT_FOLLOWLOCATION, true);
-			curl_setopt($this->curl, CURLOPT_CONNECTTIMEOUT, 15);
-			curl_setopt($this->curl, CURLOPT_TIMEOUT, 60);
+			curl_setopt($this->curl, CURLOPT_CONNECTTIMEOUT, $config['connect_timeout']);
+			curl_setopt($this->curl, CURLOPT_TIMEOUT, $config['timeout']);
 
-			$http_proxy=getenv('http_proxy');
-			if($http_proxy){
-				list($proxy, $port)=explode(":", $http_proxy);
+			if($config['http_proxy']){
+				list($proxy, $port)=explode(":", $config['http_proxy']);
+				// echo "Using proxy server: $proxy, port: $port\n";
 				curl_setopt($this->curl, CURLOPT_PROXY, $proxy);
 				curl_setopt($this->curl, CURLOPT_PROXYPORT, $port);
 			}
@@ -163,7 +171,6 @@ namespace Clue\Web{
 			}
 			curl_setopt($this->curl, CURLOPT_COOKIE, implode("; ", $pair));
 		}
-
 
 		public function follow_url($url, $current=null){
 			$parts=parse_url(trim($url));

@@ -186,19 +186,25 @@ class Article extends Clue\ActiveRecord{
 }
 </pre>
 
-对于Article的操作将自动关联到数据库，例如：
+对于Article的操作将自动关联到数据库，CRUD操作如下：
 <pre>
     $a=new Article();   # 默认表名为article，主键为id，不过可以在static $model中自定义
     $a->title="Subject Line";
     $a->content="Body Text";
     $a->save();     # 根据是否新记录，调用insert和update语句
-
-    $b=Article::find_one(array('id'=>$a->id));
-    $b=Article::find_one_by_id($a->id);
-
-    $articles=Article::find_all();
-
-    $b->destroy();  # 删除该记录
+    # 获取单个记录
+    $b=Article::get($a->id);    #直接通过主键
+    $b=Article::find_one(array('id'=>$a->id));  #通过一组合条件
+    $b=Article::find_one_by_id($a->id);     # 通过特定单个条件
+    # 获取多个记录
+    $articles=Article::find_all();          # 取得全部记录
+    $articles=Article::find(array("title like 'xxx'"));   # 组合条件
+    # 查询后Upadate
+    $b=Article::get($a->id);
+    $b->title="Changed";
+    $b->save(); #运行SQL UPDATE操作
+    # 删除记录
+    $b->destroy();  # 删除该记录，运行SQL DELETE操作
 </pre>
 
 对于常用的FORM POST动作，一个方便的绑定方法是:
