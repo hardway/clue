@@ -100,9 +100,25 @@ Usage: clue [command] {arguments...}
     gen_control Generate Controller along with Views
                 eg: clue gen_control project view
 
+    compress    build and compress asset files (js, css)
+                last parameter will be the output
+
     help        Display this help screen
 
 ";
+        }
+
+        function compress(){
+            $files=func_get_args();
+            $output=array_pop($files);
+            $input=empty($files) ? array($output) : $files;
+
+            $builder=new \Clue\Asset(func_get_args());
+
+            $origin_content=$builder->compile();
+            $compress_content=$builder->compress($origin_content, $builder->type);
+
+            file_put_contents($output, strlen($origin_content) > strlen($compress_content) ? $compress_content : $origin_content);
         }
 
         function build($dest=null){
