@@ -88,6 +88,7 @@ namespace Clue\Tool{
     }
 
     class Constructor{
+        // TODO: 使用单独的方法族，例如 help_compress()...
         function help(){
             echo "
 Version: ".CLUE_VERSION."
@@ -102,6 +103,9 @@ Usage: clue [command] {arguments...}
 
     compress    build and compress asset files (js, css)
                 last parameter will be the output
+
+    db          Migrate to specified target version
+                Show current version if no version is provided
 
     help        Display this help screen
 
@@ -269,10 +273,70 @@ END
             }
         }
 
-        function db($target){
+        /**
+         * 推断APP ROOT所在目录
+         * 假设config.php在且仅在APP ROOT目录下
+         * @return 返回推测的APP ROOT路径（完整）
+         */
+        function root(){
+            $root=getcwd();
+            while(is_dir($root) && !is_file("$root/config.php")){
+                $root=dirname($root);
+            }
+
+            if($this->command=='root'){
+                exit($root."\n");
+            }
+
+            return realpath($root);
+        }
+
+        function db($target_version=null){
             // Determine app root
+            $app_root=$this->root();
+
+            if(!file_exists("$app_root/config.php")) throw new \Exception("config not found");
+            include "$app_root/config.php" ;
+
             // Detect current database
+            $db=\Clue\Database::create(array('type'=>"mysql", 'host'=>DB_HOST, 'db'=>DB_NAME, 'username'=>DB_USER, 'password'=>DB_PASS));
+            if(!$db) throw new \Exception(sprintf("Can't connect to database %s:\"%s\"@%s/%s", DB_USER, DB_PASS, DB_HOST, DB_NAME));
+
+            $current_version=$db->get_var("select value from config where name='DB_VERSION'");
+            if($current_version===null) throw new \Exception("Can't detect current version through config table (name=DB_VERSION)");
+
+            if(empty($target_version)){
+                echo("Current database scheme version: $current_version\n");
+                exit();
+            }
+
             // Execute Migration
+            $scripts=array();
+
+            if($target_version==$current_version){
+                throw new \Exception("Same version, no need to migrate");
+            }
+            elseif($target_version > $current_version){
+                $range=range($current_version+1, $target_version, 1);
+                $action='upgrade';
+            }
+            else{
+                $range=range($current_version, $target_version+1, -1);
+                $action="downgrade";
+            }
+
+            foreach($range as $v){
+                $t=$action=='upgrade' ? $v : $v - 1;
+
+                $s="$app_root/script/sql/$v.$action.php";
+                if(!file_exists($s)) throw new \Exception("Missing $action script ($s)");
+
+                echo '['.strtoupper($action)."] to version $t\n";
+
+                include $s;
+                // 更新数据库版本
+                $db->exec("update config set value=%d where name='DB_VERSION'", $t);
+            }
         }
 
         static function _confirm($question){
