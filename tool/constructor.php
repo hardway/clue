@@ -291,7 +291,8 @@ END
             return realpath($root);
         }
 
-        function db($target_version=null){
+
+        function _get_db(){
             // Determine app root
             $app_root=$this->root();
 
@@ -302,6 +303,13 @@ END
             $db=\Clue\Database::create(array('type'=>"mysql", 'host'=>DB_HOST, 'db'=>DB_NAME, 'username'=>DB_USER, 'password'=>DB_PASS));
             if(!$db) throw new \Exception(sprintf("Can't connect to database %s:\"%s\"@%s/%s", DB_USER, DB_PASS, DB_HOST, DB_NAME));
 
+            return $db;
+        }
+
+        function db($target_version=null){
+            $db=$this->_get_db();
+            $app_root=$this->root();
+
             $current_version=$db->get_var("select value from config where name='DB_VERSION'");
             if($current_version===null) throw new \Exception("Can't detect current version through config table (name=DB_VERSION)");
 
@@ -309,10 +317,17 @@ END
                 echo("Current database scheme version: $current_version\n");
                 exit();
             }
+            elseif(preg_match('/up/i', $target_version)){
+                $target_version=$current_version+1;
+            }
+            elseif(preg_match('/down/i', $target_version)){
+                $target_version=$current_version-1;
+            }
+            else{
+                $target_version=intval($target_version);
+            }
 
             // Execute Migration
-            $scripts=array();
-
             if($target_version==$current_version){
                 throw new \Exception("Same version, no need to migrate");
             }
@@ -336,6 +351,28 @@ END
                 include $s;
                 // 更新数据库版本
                 $db->exec("update config set value=%d where name='DB_VERSION'", $t);
+            }
+        }
+
+        function db_diag(){
+            $db=$this->_get_db();
+            $stat=$db->get_results("
+                SELECT table_name, table_rows, avg_row_length, data_length, index_length
+                FROM information_schema.tables WHERE table_schema=%s
+                ORDER BY data_length+index_length DESC
+            ", DB_NAME);
+
+            usort($stat, function($a, $b){return $a->table_rows < $b->table_rows;});
+
+            // TODO: use Clue\Text\Table to format and align
+            printf("%30s %10s %10s %10s %10s %10s\n", "Table Name", "Row Cnt", "Row Len", "Data", "Index", "Total");
+            printf(str_repeat('=', 85)."\n");
+            foreach($stat as $r){
+                printf("%30s %10s %10s %10s %10s %10s\n",
+                    $r->table_name, $r->table_rows, $r->avg_row_length,
+                    number_format($r->data_length/1024/1024, 2), number_format($r->index_length/1024/1024, 2),
+                    number_format(($r->data_length + $r->index_length)/1024/1024, 2)
+                );
             }
         }
 
