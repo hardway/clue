@@ -5,7 +5,7 @@
     $ctor=new Clue\Tool\Constructor();
 
     $command=isset($argv[1]) ? $argv[1] : "help";
-    $subcommand=$argv[2];
+    $subcommand=@$argv[2];
 
     try{
         if(method_exists($ctor, $command."_".$subcommand)){

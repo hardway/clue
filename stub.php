@@ -20,7 +20,21 @@
     if(!defined('APP_NAME')) define('APP_NAME', 'MyApp');
 
     # Disk路径
-    if(!defined('APP_ROOT')) define('APP_ROOT', dirname($_SERVER['SCRIPT_FILENAME']));
+    if(!defined('APP_ROOT')){
+        if(CLI){
+            // 推断APP ROOT所在目录
+            // 假设config.php在且仅在APP ROOT目录下
+            $root=getcwd();
+            while(is_dir($root) && !is_file("$root/config.php")){
+                $root=dirname($root);
+            }
+            define('APP_ROOT', realpath($root));
+        }
+        else{
+             define('APP_ROOT', dirname($_SERVER['SCRIPT_FILENAME']));
+        }
+    }
+
     # URL路径
     if(!defined('APP_BASE')) define('APP_BASE', preg_replace('|[\\\/]+|', '/', dirname($_SERVER['SCRIPT_NAME'])));
 

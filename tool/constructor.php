@@ -273,31 +273,9 @@ END
             }
         }
 
-        /**
-         * 推断APP ROOT所在目录
-         * 假设config.php在且仅在APP ROOT目录下
-         * @return 返回推测的APP ROOT路径（完整）
-         */
-        function root(){
-            $root=getcwd();
-            while(is_dir($root) && !is_file("$root/config.php")){
-                $root=dirname($root);
-            }
-
-            if($this->command=='root'){
-                exit($root."\n");
-            }
-
-            return realpath($root);
-        }
-
-
         function _get_db(){
-            // Determine app root
-            $app_root=$this->root();
-
-            if(!file_exists("$app_root/config.php")) throw new \Exception("config not found");
-            include "$app_root/config.php" ;
+            if(!file_exists(APP_ROOT."/config.php")) throw new \Exception("config not found");
+            include APP_ROOT."/config.php" ;
 
             // Detect current database
             $db=\Clue\Database::create(array('type'=>"mysql", 'host'=>DB_HOST, 'db'=>DB_NAME, 'username'=>DB_USER, 'password'=>DB_PASS));
@@ -306,15 +284,29 @@ END
             return $db;
         }
 
+        /**
+         * TODO: This could applies not only to database, but data file structures too.
+         */
         function db($target_version=null){
+            // Variables usable in upgrade/downgrade script
             $db=$this->_get_db();
-            $app_root=$this->root();
 
             $current_version=$db->get_var("select value from config where name='DB_VERSION'");
             if($current_version===null) throw new \Exception("Can't detect current version through config table (name=DB_VERSION)");
 
             if(empty($target_version)){
+                $max_ver=$current_version;
+                $min_ver=$current_version;
+                foreach(scandir(APP_ROOT."/script/sql") as $s){
+                    if(preg_match('/^(\d+)\.(upgrade|downgrade)\.php$/', $s, $m)){
+                        if($m[1]>$max_ver) $max_ver=intval($m[1]);
+                        if($m[1]<$min_ver) $min_ver=intval($m[1]);
+                    }
+                }
                 echo("Current database scheme version: $current_version\n");
+                if($max_ver > $current_version)
+                    echo("Available version to upgrade: $max_ver\n");
+
                 exit();
             }
             elseif(preg_match('/up/i', $target_version)){
@@ -343,7 +335,7 @@ END
             foreach($range as $v){
                 $t=$action=='upgrade' ? $v : $v - 1;
 
-                $s="$app_root/script/sql/$v.$action.php";
+                $s=APP_ROOT."/script/sql/$v.$action.php";
                 if(!file_exists($s)) throw new \Exception("Missing $action script ($s)");
 
                 echo '['.strtoupper($action)."] to version $t\n";
