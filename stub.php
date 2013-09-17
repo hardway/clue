@@ -25,7 +25,7 @@
             // 推断APP ROOT所在目录
             // 假设config.php在且仅在APP ROOT目录下
             $root=getcwd();
-            while(is_dir($root) && !is_file("$root/config.php")){
+            while(is_dir($root) && $root!=DIRECTORY_SEPARATOR && !is_file("$root/config.php")){
                 $root=dirname($root);
             }
             define('APP_ROOT', realpath($root));
