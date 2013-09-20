@@ -333,16 +333,16 @@ END
             }
 
             foreach($range as $v){
-                $t=$action=='upgrade' ? $v : $v - 1;
+                $target_version=$action=='upgrade' ? $v : $v - 1;
 
                 $s=APP_ROOT."/script/sql/$v.$action.php";
                 if(!file_exists($s)) throw new \Exception("Missing $action script ($s)");
 
-                echo '['.strtoupper($action)."] to version $t\n";
+                echo '['.strtoupper($action)."] to version $target_version\n";
 
                 include $s;
                 // 更新数据库版本
-                $db->exec("update config set value=%d where name='DB_VERSION'", $t);
+                $db->exec("update config set value=%d where name='DB_VERSION'", $target_version);
             }
         }
 
