@@ -1,6 +1,8 @@
 <?php
 namespace Clue{
     class Application implements \ArrayAccess{
+        use Logger;
+
         private $_values;   # DI
 
         public $controller;
