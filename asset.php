@@ -127,17 +127,3 @@ namespace Clue{
 		}
 	}
 }
-
-namespace{
-    function asset($asset=null){
-    	$path=DIR_ASSET."/$asset";
-
-    	if(defined("THEME") && THEME && file_exists(APP_ROOT.'/'.THEME."/asset/$asset")){
-    		$path=APP_ROOT.'/'.THEME."/asset/$asset";
-    	}
-
-		$url=str_replace("//", '/', str_replace(APP_ROOT, APP_BASE, $path));
-		return $url.(file_exists($path) ? '?'.filemtime($path) : "");
-    }
-}
-?>

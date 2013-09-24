@@ -49,6 +49,46 @@
         if(!is_dir(DIR_CACHE)) mkdir(DIR_CACHE, 0775, true);
     }
 
+    // 全局函数
+    function url_path($path){
+        return preg_replace('|[\\\/]+|', '/', str_replace(APP_ROOT, APP_BASE, $path));
+    }
+
+    function url_for($controller, $action='index', $params=array()){
+        global $app;
+        $url=APP_BASE.$app['router']->reform($controller, $action, $params);
+        $url=preg_replace('/\/+/', '/', $url);
+
+        return "http://".APP_SERVER.$url;
+    }
+
+    function url_for_ssl(){
+        global $app;
+
+        $url=call_user_func_array("url_for", func_get_args());
+
+        if($app['config']['ssl'])
+            $url=preg_replace('/^http/', 'https', $url);
+
+        return $url;
+    }
+
+    function asset_path($asset){
+        $path=DIR_ASSET."/$asset";
+
+        if(defined("THEME") && THEME && file_exists(APP_ROOT.'/'.THEME."/asset/$asset")){
+            $path=APP_ROOT.'/'.THEME."/asset/$asset";
+        }
+
+        return $path;
+    }
+
+    function asset($asset){
+        $path=asset_path($asset);
+
+        return url_path($path).(file_exists($path) ? '?'.filemtime($path) : "");
+    }
+
     require_once __DIR__."/core.php";
     spl_autoload_register("Clue\\autoload_load");
 

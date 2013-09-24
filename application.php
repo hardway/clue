@@ -104,16 +104,10 @@ namespace Clue{
             $messages=$this->get_alerts($context_pattern, $level);
             if(empty($messages)) return false;
 
-            $html="";
-            foreach($messages as $m){
-                $html.="
-                    <div class='alert alert-$level'>
-                        <button type='button' class='close' data-dismiss='alert'>&times;</button>
-                        $m</div>
-                ";
+            foreach($messages as $message){
+                $alert=new View("clue/alert");
+                $alert->render(compact("message", 'level'));
             }
-
-            echo $html;
         }
 
         function get_alerts($context_pattern=".*", $level='alert'){
@@ -153,32 +147,6 @@ namespace Clue{
 
             return $this['router']->route($this->controller, $this->action, $this->params);
         }
-    }
-}
-
-namespace{
-    // global short cut
-    function relpath($path){
-        return preg_replace('|[\\\/]+|', '/', str_replace(APP_ROOT, APP_BASE, $path));
-    }
-
-    function url_for($controller, $action='index', $params=array()){
-        global $app;
-        $url=APP_BASE.$app['router']->reform($controller, $action, $params);
-        $url=preg_replace('/\/+/', '/', $url);
-
-        return "http://".APP_SERVER.$url;
-    }
-
-    function url_for_ssl(){
-        global $app;
-
-        $url=call_user_func_array("url_for", func_get_args());
-
-        if($app['config']['ssl'])
-            $url=preg_replace('/^http/', 'https', $url);
-
-        return $url;
     }
 }
 ?>

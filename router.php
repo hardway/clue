@@ -70,7 +70,7 @@ namespace Clue{
 				return $this->app->http_error(404, "Can't find action $action of $controller");
 
 			require_once $path;
-			$class='Controller';
+			$class=class_exists($controller.'Controller', false) ? $controller.'Controller' : 'Controller';
 			$rfxClass=new \ReflectionClass($class);
 			$rfxMethod=new \ReflectionMethod($class, $action);
 

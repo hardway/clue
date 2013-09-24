@@ -1,3 +1,0 @@
-RewriteEngine On
-
-RewriteRule ^clue.js$ js.php?files=rpc,dialog,html,editnow,contextmenu,combobox
