@@ -82,7 +82,8 @@ namespace Clue{
 
 				$target=str_replace($src, $dest, $path);
 				if ($path->isDir()) {
-					mkdir($target, $mode ?: (fileperms($path) & 0777));
+					if(!is_dir($target))
+						mkdir($target, $mode ?: (fileperms($path) & 0777));
 				} else {
 					copy($path, $target);
 				}

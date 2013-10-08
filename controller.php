@@ -26,6 +26,17 @@ namespace Clue{
 		// 可以重载
 		function __init(){}
 
+		// 直接显示当前视图，无需定义action
+		// 用下划线分隔action，第一个前缀可以被识别为layout
+		// 默认将GET和POST变量化传入
+		function __default(){
+			if(preg_match('/^([^_]+)_/', $this->view, $m) && View::find_view("/layout/{$m[1]}")){
+				$this->layout=new View("/layout/".$m[1]);
+			}
+
+			$this->render($this->view, array_merge($_GET, $_POST));
+		}
+
 		function get_view($view, $data=array()){
 			$view=new View((strpos($view, '/')===0) ? $view : $this->controller."/{$view}");
 			if(is_array($data)) foreach($data as $k=>$v){

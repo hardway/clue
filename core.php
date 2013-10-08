@@ -41,21 +41,25 @@ namespace Clue{
 
         $class=str_replace(NS, '/', $class);
         $class=str_replace('_', '/', $class);
-        $class=strtolower($class);
 
-        if(substr_compare($class, 'clue/', 0, 5)==0){
+        if(preg_match('/^clue\//i', $class)){
             // Special treat for Clue\ classes. For they might reside in a phar file.
             $class=substr($class, 5);
-            if(file_exists(__DIR__.'/'.$class.".php")){
-                require_once __DIR__.'/'.$class.".php";
-                return;
+
+            foreach(array($class, strtolower($class)) as $cls){
+                if(file_exists(__DIR__.'/'.$cls.".php")){
+                    require_once __DIR__.'/'.$cls.".php";
+                    return;
+                }
             }
         }
         else{
             foreach($_CLASS_PATH as $path){
-                if(file_exists($path.'/'.$class.".php")){
-                    require_once $path.'/'.$class.".php";
-                    return;
+                foreach(array($class, strtolower($class)) as $cls){
+                    if(file_exists($path.'/'.$cls.".php")){
+                        require_once $path.'/'.$cls.".php";
+                        return;
+                    }
                 }
             }
         }

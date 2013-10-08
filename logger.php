@@ -17,6 +17,12 @@ trait Logger{
         if($this->log_file===null) return;
         $type=file_exists($this->log_file) ? 3 : 0;
 
+        // 复杂对象转换为string
+        if(is_array($message) || is_object($message)){
+            $message=var_export($message, true);
+        }
+
+        // 附加log来源
         $caller=$this->_get_caller();
         $message.=$caller ? sprintf(" (%s)", $caller) : "";
 

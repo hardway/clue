@@ -59,6 +59,7 @@ namespace Clue{
 
 		function route($controller, $action, $params=array()){
 			$path=DIR_SOURCE . "/control/".strtolower($controller).".php";
+			$view=$action;
 
 			// 确认control所在文件存在
 			if(!file_exists($path))
@@ -66,12 +67,18 @@ namespace Clue{
 
 			// 确认action方法存在
 			$source=file_get_contents($path);
-			if(!preg_match('/function\s+'.$action.'/', $source))
-				return $this->app->http_error(404, "Can't find action $action of $controller");
+
+			if(!preg_match('/function\s+'.$action.'/', $source)){
+				// 如果view存在，仍然可以直接调用
+				if(View::find_view("/$controller/$action")){
+					$action="__default";
+				}
+				else
+					return $this->app->http_error(404, "Can't find action or view $action of $controller");
+			}
 
 			require_once $path;
 			$class=class_exists($controller.'Controller', false) ? $controller.'Controller' : 'Controller';
-			$rfxClass=new \ReflectionClass($class);
 			$rfxMethod=new \ReflectionMethod($class, $action);
 
 			// detect parameters using reflection
@@ -108,7 +115,7 @@ namespace Clue{
 			$obj->app=$this->app;
 			$obj->params=$params;
 			$obj->controller=$controller;
-			$obj->view=$action;
+			$obj->view=$view;
 			$obj->action=$action;
 
 			return call_user_func_array(array($obj, $obj->action), $callArgs);
@@ -239,6 +246,10 @@ namespace Clue{
 
 				$mapping['controller']=$controller ?: 'index';
 				$mapping['action']=$action ?: 'index';
+
+				// 对于/sitemap.xml的情况,action===sitemap_xml
+				// FUTURE: 考虑另外一种实现, action仍然是sitemap，然后设置controller的content_type属性为xml是否更好
+				$mapping['action']=str_replace('.', '_', $mapping['action']);
 
 				if($_SERVER['REQUEST_METHOD']=='POST') $mapping['action']="_".$mapping['action'];
 
