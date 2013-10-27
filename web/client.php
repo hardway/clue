@@ -133,6 +133,12 @@ namespace Clue\Web{
 				curl_setopt($this->curl, CURLOPT_PROXY, $proxy);
 				curl_setopt($this->curl, CURLOPT_PROXYPORT, $port);
 			}
+			elseif($config['socks_proxy']){
+				list($proxy, $port)=explode(":", $config['socks_proxy']);
+				curl_setopt($this->curl, CURLOPT_PROXY, $proxy);
+				curl_setopt($this->curl, CURLOPT_PROXYPORT, $port);
+				curl_setopt($this->curl, CURLOPT_PROXYTYPE, CURLPROXY_SOCKS5);
+			}
 
 			curl_setopt($this->curl, CURLOPT_USERAGENT, $this->agent);
 		}
@@ -236,9 +242,14 @@ namespace Clue\Web{
 			curl_setopt($this->curl, CURLOPT_RETURNTRANSFER, true);
 			curl_setopt($this->curl, CURLOPT_REFERER, end($this->history));
 
-			$formData=array();
-			foreach($data as $k=>$v){ $formData[]="$k=".rawurlencode($v);}
-			$formData=implode("&", $formData);
+			if(is_array($data)){
+				$formData=array();
+				foreach($data as $k=>$v){ $formData[]="$k=".rawurlencode($v);}
+				$formData=implode("&", $formData);
+			}
+			else{
+				$formData=$data;
+			}
 
 			curl_setopt($this->curl, CURLOPT_POSTFIELDS, $formData);
 			$this->_parse_response(curl_exec($this->curl));
@@ -258,6 +269,7 @@ namespace Clue\Web{
 			// TODO: check curl_errno
 
 			fclose($file);
+			curl_setopt($this->curl, CURLOPT_FILE, STDOUT);
 		}
 
 		function open($url, $forceRefresh=false){

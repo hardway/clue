@@ -68,8 +68,8 @@ namespace Clue{
 			$this->lasterror=$err;
 			$this->errors[]=$err;
 
-			//throw new \Exception("SQL ERROR: {$err['code']} {$err['error']} [$this->last_query]");
-            trigger_error("SQL ERROR: {$err['code']} {$err['error']} [$this->last_query]", E_USER_ERROR);
+			throw new \Exception("SQL ERROR: {$err['code']} {$err['error']} [$this->last_query]");
+            //trigger_error("SQL ERROR: {$err['code']} {$err['error']} [$this->last_query]", E_USER_ERROR);
 		}
 
 		protected function clearError(){

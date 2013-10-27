@@ -11,14 +11,12 @@ namespace Clue{
 			$this->controller=$controller;
 			$this->action=$action;
 
-			$this->layout=new View("/layout/$this->layout");
-
 			$this->__init();
 		}
 
 		function __call($name, $args){
 			if(preg_match('/render_(.+)/', $name, $m)){
-				$this->layout=new View("/layout/{$m[1]}");
+				$this->layout=$m[1];
 				return call_user_func_array(array($this, "render"), $args);
 			}
 		}
@@ -55,8 +53,9 @@ namespace Clue{
 
             $content=$this->get_view($view?:$this->view, $data);
 
-            if($this->layout)
-                $this->layout->render(array('content'=>$content));
+            $layout=new View("/layout/$this->layout");
+            if($layout)
+                $layout->render(array('content'=>$content));
             else
                 echo $content;
         }

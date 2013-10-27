@@ -95,6 +95,11 @@ namespace Clue{
 				}
 			}
 
+			// remove named variables
+			foreach($params as $k=>$v){
+				if(!is_int($k)) unset($params[$k]);
+			}
+
 			// 2nd round, take by position
 			foreach($rfxMethod->getParameters() as $idx=>$rfxParam){
 				if($callArgs[$idx]===null){
@@ -107,7 +112,7 @@ namespace Clue{
 				}
 			}
 
-			$callArgs=array_merge($callArgs, $params);
+			//$callArgs=array_merge($callArgs, $params);
 
 			$obj=new $class($controller, $action);
 

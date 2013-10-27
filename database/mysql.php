@@ -28,7 +28,7 @@ namespace Clue\Database{
 			$this->free_result();
 
 			if($this->dbh){
-				mysqli_close($this->dbh);
+				@mysqli_close($this->dbh);
 				$this->dbh=null;
 			}
 		}
@@ -233,14 +233,21 @@ namespace Clue\Database{
 	    # Memeory optimized
 	    function foreach_row($sql, $handler, $mode=OBJECT)
 	    {
-	        if (!call_user_func_array(array($this, "exec"), func_get_args())) {
+	    	$args=func_get_args();
+
+	    	$mode=array_pop($args);
+	        if($mode!=OBJECT && $mode!=ARRAY_A && $mode!=ARRAY_N){
+	        	array_push($args, $mode);
+	            $mode=OBJECT;
+	        }
+
+	    	$handler=array_pop($args);
+
+	        if (!call_user_func_array(array($this, "exec"), $args)) {
 	            return false;
 	        }
 
 	        $cnt=0;
-
-	        $handler=func_get_arg(func_num_args()-2);
-			$mode=func_get_arg(func_num_args()-1);
 
 	        while (true) {
 	            switch($mode){

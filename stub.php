@@ -68,7 +68,7 @@
         $url=call_user_func_array("url_for", func_get_args());
 
         if($app['config']['ssl'])
-            $url=preg_replace('/^http/', 'https', $url);
+            $url=preg_replace('/^http:/', 'https:', $url);
 
         return $url;
     }
