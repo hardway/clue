@@ -32,10 +32,10 @@ class Client{
 	 */
 	function __construct($endpoint, $options=array()){
 		$this->endpoint=$endpoint;
-		$this->debug=$options['debug']===true;
-		$this->client=$options['client'];		// 客户ID和令牌，用于身份认证
-		$this->token=$options['token'];
-		$this->secret=$options['secret'];		// 预共享密钥，用于加密通信数据
+		$this->debug=@$options['debug']===true;
+		$this->client=@$options['client'];		// 客户ID和令牌，用于身份认证
+		$this->token=@$options['token'];
+		$this->secret=@$options['secret'];		// 预共享密钥，用于加密通信数据
 	}
 
 	function __call($name, $arguments){
@@ -74,6 +74,6 @@ class Client{
 			$this->log(sprintf("[RPC] RESPONSE:\n====================\n%s\n\n", $response));
 		}
 
-		return json_decode($response);
+		return json_decode($response, true);
 	}
 }
