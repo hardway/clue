@@ -6,11 +6,18 @@ namespace Clue\Text{
         public $columns;
         public $rows;
 
-        function __construct($filename, $options=array()){
+        function __construct($filename, $options=array('header'=>true)){
             $this->columns=array();
             $this->rows=array();
 
             $this->filename=$filename;
+
+            // 读取首行，标题
+            $f=fopen($this->filename, "r");
+            if($f){
+                $this->columns=fgetcsv($f);
+                fclose($f);
+            }
         }
 
         function col($name){
@@ -18,7 +25,6 @@ namespace Clue\Text{
             foreach($this->columns as $i=>$col){
                 if(strtolower($col)==strtolower($name)){
                     return $i;
-
                 }
             }
 
@@ -28,21 +34,32 @@ namespace Clue\Text{
                     return $i;
                 }
             }
-            return null;
+
+            return $name;
         }
 
-        function read(){
-            if(file_exists($this->filename)){
-                $f=fopen($this->filename, "r");
+        function read($callback=null){
+            $batch=!is_callable($callback);
 
-                $this->columns=fgetcsv($f);
-                while(!feof($f)){
-                    $r=fgetcsv($f);
-                    if(is_array($r)) $this->rows[]=$r;
+            $f=fopen($this->filename, "r");
+            if(!$f) return false;
+
+            $this->columns=fgetcsv($f);
+            while(!feof($f)){
+                $r=fgetcsv($f);
+                if(!is_array($r)) continue;
+
+                if($batch){
+                    $this->rows[]=$r;
                 }
-
-                fclose($f);
+                else{
+                    $callback($r);
+                }
             }
+
+            fclose($f);
+
+            return $batch ? $this->rows : true;
         }
     }
 }

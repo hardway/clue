@@ -15,7 +15,7 @@ trait Logger{
 
     static function log($message){
         if(self::$log_file===null) return;
-        $type=file_exists(self::$log_file) ? 3 : 0;
+        $type=self::$log_file=='syslog' ? 0 : 3;
 
         // 复杂对象转换为string
         if(is_array($message) || is_object($message)){
@@ -25,6 +25,8 @@ trait Logger{
         // 附加log来源
         $caller=self::_get_caller();
         $message.=$caller ? sprintf(" (%s)", $caller) : "";
+
+        if($type==3) $message.="\n";
 
         error_log($message, $type, self::$log_file);
     }
