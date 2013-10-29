@@ -143,7 +143,7 @@ namespace Clue{
 	            $mode=ARRAY_A;
 	        }
 
-		    $hash=($mode==OBJECT) ? new stdClass : array();
+		    $hash=($mode==OBJECT) ? new \stdClass : array();
 
 		    array_push($args, ARRAY_A);
 		    $rs=call_user_func_array(array($this, 'get_results'), $args);
