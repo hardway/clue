@@ -10,7 +10,6 @@ trait Logger{
 
     static function disable_log(){
         self::$log_file=null;
-
     }
 
     static function log($message){
@@ -22,6 +21,9 @@ trait Logger{
             $message=var_export($message, true);
         }
 
+        // 附加Timestamp
+        $message=str_replace('{TIMESTAMP}', self::timestamp(), $message);
+
         // 附加log来源
         $caller=self::_get_caller();
         $message.=$caller ? sprintf(" (%s)", $caller) : "";
@@ -29,6 +31,12 @@ trait Logger{
         if($type==3) $message.="\n";
 
         error_log($message, $type, self::$log_file);
+    }
+
+    static function timestamp(){
+        $t=microtime(true);
+
+        return sprintf("%s.%03d", date("Y-m-d H:i:s", $t), 1000*($t - floor($t)));
     }
 
     static function _get_caller($level=1){
