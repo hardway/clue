@@ -23,8 +23,7 @@ namespace Clue\Database{
 			}
 		}
 
-		function __destruct(){
-			// echo "Closing MySQL Connection.\n";
+		function close(){
 			$this->free_result();
 
 			if($this->dbh){
@@ -67,7 +66,7 @@ namespace Clue\Database{
 	            where $where
 	        ";
 
-	        $this->exec($sql);
+	        return $this->exec($sql);
 	    }
 
 	    function remove($table, $where){
@@ -142,6 +141,8 @@ namespace Clue\Database{
         }
 
         // NOTE: should not free result since it might be used in get_var...
+        // TODO: caused resouce lock, and leak maybe
+
         return true;
     }
 

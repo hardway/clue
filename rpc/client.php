@@ -1,6 +1,6 @@
 <?php
 namespace Clue\RPC;
-include __DIR__."/common.php";
+include_once __DIR__."/common.php";
 
 /**
  * Example:

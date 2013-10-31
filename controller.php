@@ -29,7 +29,7 @@ namespace Clue{
 		// 默认将GET和POST变量化传入
 		function __default(){
 			if(preg_match('/^([^_]+)_/', $this->view, $m) && View::find_view("/layout/{$m[1]}")){
-				$this->layout=new View("/layout/".$m[1]);
+				$this->layout=$m[1];
 			}
 
 			$this->render($this->view, array_merge($_GET, $_POST));
