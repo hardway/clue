@@ -6,7 +6,6 @@
 	 *
 	 *  DIR_SOURCE	folder of source code (model, view, control)
 	 *	DIR_SKIN	folder of the skin (change this to switch 'template')
-	 *  DIR_CACHE	folder of cache contents
 	 *  DIR_DATA	folder of application data
 	 */
 
@@ -42,12 +41,7 @@
     if(!defined('DIR_SOURCE')) define('DIR_SOURCE', APP_ROOT.'/source');
     if(!defined('DIR_ASSET')) define('DIR_ASSET', APP_ROOT.'/asset');
     if(!defined('DIR_LOG')) define('DIR_LOG', APP_ROOT.'/log');
-    if(!defined('DIR_CACHE')) define('DIR_CACHE', APP_ROOT.'/cache');
     if(!defined('DIR_DATA')) define('DIR_DATA', APP_ROOT.'/data');
-
-    if(!CLI){
-        if(!is_dir(DIR_CACHE)) mkdir(DIR_CACHE, 0775, true);
-    }
 
     // 全局函数
     function url_path($path){

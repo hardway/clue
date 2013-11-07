@@ -16,7 +16,7 @@ class Parser{
 			'/\s*(\+|~|>)\s*/'=>'$1',
 			'/([a-zA-Z0-9\_\-\*])~([a-zA-Z0-9\_\-\*])/'=>'$1/following-sibling::$2',
 			'/([a-zA-Z0-9\_\-\*])\+([a-zA-Z0-9\_\-\*])/'=>'$1/following-sibling::*[1]/self::$2',
-			'/([a-zA-Z0-9\_\-\*])>([a-zA-Z0-9\_\-\*])/'=>'$1/$2',
+			'/>([a-zA-Z0-9\_\-\*])/'=>'/$1',
 			// dedendant of self
 			'/(^|[^a-zA-Z0-9\_\-\*])(#|\.)([a-zA-Z0-9]+)/'=>'$1*$2$3',
 			'/(^|[\>\+\|\~\,\s])([a-zA-Z\*]+)/'=>'$1//$2',
@@ -126,6 +126,7 @@ class Parser{
 
 		return $nodeList->length>0 ? new Element($nodeList->item(0), $this) : null;
 	}
+
 	function xpath_elements($xpath, $context=null){
 		if($context==null) $context=$this->dom;
 		else $xpath=preg_replace('/^\/\//', 'descendant-or-self::', $xpath);
@@ -138,7 +139,6 @@ class Parser{
 		}
 		return $result;
 	}
-
 
 	function get_text($xpath, $context=null){
 		$node=$this->getElement($xpath, $context);
@@ -153,9 +153,45 @@ class Parser{
 		else
 			echo $xpath;
 	}
+
+	function dump($el, $level=0){
+		if($el instanceof Element) $el=$el->el;
+
+		print(str_repeat(' ', $level*4));
+		switch($el->nodeType){
+			case XML_ELEMENT_NODE:
+				$tag=strtoupper($el->tagName);
+				$id=$el->getAttribute("id");
+				if(!empty($id)) $tag.="#$id";
+				$class=$el->getAttribute("class");
+				if(!empty($class)) $tag.=preg_replace("/\s+/",'.'," ".$class);
+
+				$url="";
+				if($el->tagName=='a'){
+					$url=$el->getAttribute("href");
+				}
+				elseif($el->tagName=='img'){
+					$url=$el->getAttribute("img");
+				}
+
+				printf("%s %s\n", $tag, $url);
+
+				foreach($el->childNodes as $c){
+					$this->dump($c, $level+1);
+				}
+				break;
+
+			case XML_TEXT_NODE:
+				printf("text(%d): %s\n", strlen($el->nodeValue), substr(trim(preg_replace('/\n|\r/', '', $el->nodeValue)), 0, 40));
+				break;
+
+			default:
+				exit("UNKNOWN NODE TYPE: ".$el->$nodeType);
+		}
+	}
 }
 
-class Element extends \DOMElement implements \ArrayAccess{
+class Element implements \ArrayAccess{
 	public $el;	// Can be used by Clue_DOM_Parser
 	protected $parser;
 

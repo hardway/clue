@@ -70,30 +70,21 @@ namespace Clue{
 		}
 
 		function compress_js($js){
-			// REST API arguments
-			$apiArgs = array(
-				'compilation_level'=>'SIMPLE_OPTIMIZATIONS',
-				// 'compilation_level'=>'ADVANCED_OPTIMIZATIONS',
-				'output_format' => 'text',
-				'output_info' => 'compiled_code'
-			);
-			$args = 'js_code=' . urlencode($js);
-			foreach($apiArgs as $key => $value) { $args .= '&' . $key .'='. urlencode($value);}
+			// use YUI-compressor
+			$yui=getenv("YUI_COMPRESSOR");
+			if(empty($yui)) throw new \Exception("Please specify location of yui compressor in environment variable YUI_COMPRESSOR");
 
-  			// API call using cURL
-  			$call = curl_init();
-  			curl_setopt_array($call, array(
-  				CURLOPT_URL => 'http://closure-compiler.appspot.com/compile',
-  				CURLOPT_POST => 1,
-  				CURLOPT_POSTFIELDS => $args,
-  				CURLOPT_RETURNTRANSFER => 1,
-  				CURLOPT_HEADER => 0,
-  				CURLOPT_FOLLOWLOCATION => 0
-  			));
-  			$jscomp = curl_exec($call);
-  			curl_close($call);
+			$raw_file=tempnam(sys_get_temp_dir(), 'clue');
+			$min_file=tempnam(sys_get_temp_dir(), 'clue');
 
-  			return $jscomp;
+			file_put_contents($raw_file, $js);
+			$cmd=sprintf("java -jar %s --type js -o %s %s", $yui, $min_file, $raw_file);
+			passthru($cmd);
+			$min=file_get_contents($min_file);
+
+			unlink($min_file);
+			unlink($raw_file);
+			return $min;
 		}
 
 		function compress_css($css){

@@ -27,7 +27,7 @@ namespace Clue\Tool{
 
         function build($dest){
             if(!\Phar::canWrite()) {
-                throw new Exception('Unable to create PHAR archive, must be phar.readonly=Off option in php.ini');
+                throw new \Exception('Unable to create PHAR archive, must be phar.readonly=Off option in php.ini');
             }
 
             if(file_exists($dest)) unlink($dest);

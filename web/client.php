@@ -115,6 +115,7 @@ namespace Clue\Web{
 		function __construct($config=array()){
 			$default_config=array(
 				'http_proxy'=>getenv("http_proxy"),
+				'socks_proxy'=>null,
 				'connect_timeout'=>15,
 				'timeout'=>60
 			);
@@ -218,7 +219,7 @@ namespace Clue\Web{
 		}
 
 		private function visit($url, $save_history=true){
-			$url=$this->follow_url(end($this->history), $url);
+			$url=$this->follow_url($url, end($this->history));
 
 			if($save_history) $this->history[]=$url;
 

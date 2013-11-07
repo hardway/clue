@@ -11,8 +11,11 @@
 				"p"=>"//p",
 				// 包含元素
 				'p *'=>"//p//*",
+				'p a b'=>'//p//a//b',
+
 				// 连续元素
 				'p > *'=>"//p/*",
+				'p > a > b'=>"//p/a/b",
 
 				// 测试属性
 				"p[attr]"=>'//p[@attr]',
@@ -27,7 +30,7 @@
 				'p.hide.again'=>"//p[contains(concat(' ',normalize-space(@class),' '),' hide ') and (contains(concat(' ',normalize-space(@class),' '),' again '))]",
 
 				// 伪元素
-				'span.recom li:last-child a'=>"//span[contains(concat(' ',normalize-space(@class),' '),' recom ')]//[name()='li' and (position()=last())]//a"
+				'span.recom li:last-child a'=>"//span[contains(concat(' ',normalize-space(@class),' '),' recom ')]//li[not(following-sibling::*)]//a"
 			);
 
 			foreach($tests as $css=>$xpath){

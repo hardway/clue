@@ -62,7 +62,8 @@ namespace Clue{
         }
 
         function cache_get($name){
-            $path=realpath(DIR_CACHE.'/'.$name);
+            // TODO: use memcache or apc instead
+            $path=sys_get_temp_dir().'/'.APP_NAME.'/'.$name;
 
             if(empty($path) || !file_exists($path) || time() > filemtime($path)) return false;
 
@@ -70,8 +71,10 @@ namespace Clue{
         }
 
         function cache_set($name, $data, $expire=null){
+            // TODO: use memcache or apc instead
+            $path=sys_get_temp_dir().'/'.APP_NAME.'/'.$name;
+
             $expire=$expire?:time()+3600;   // default expires in 1 hour
-            $path=DIR_CACHE.DS.$name;
 
             file_put_contents($path, $data);
             touch($path, $expire);
