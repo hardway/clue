@@ -67,6 +67,39 @@
         return $url;
     }
 
+    /**
+     * 根据SITE/THEME定义，返回所需要的文件路径
+     * 如果SITE/THEME为找到，返回APP_ROOT下的文件
+     */
+    function site_file($path){
+        if(strpos($path, APP_ROOT)===0) return $path;   // 绝对路径，直接返回
+
+        $path=trim($path, '/');
+
+        if(defined("THEME") && THEME && file_exists(APP_ROOT.'/'.THEME."/$path")){
+            return APP_ROOT.'/'.THEME."/$path";
+        }
+        else
+            return APP_ROOT."/$path";
+    }
+
+    /**
+     * 类似glob()函数，但是同时返回site和default下的文件
+     */
+    function site_glob($pattern){
+        $files=array();
+        foreach(glob(APP_ROOT.'/'.$pattern) as $path){
+            $files[basename($path)]=$path;
+        }
+        foreach(glob(APP_ROOT.'/'.THEME.'/'.$pattern) as $path){
+            $files[basename($path)]=$path;
+        }
+
+        ksort($files);
+
+        return array_values($files);
+    }
+
     function asset_path($asset){
         $path=DIR_ASSET."/$asset";
 

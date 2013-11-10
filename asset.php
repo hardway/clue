@@ -13,14 +13,16 @@ namespace Clue{
 			if(!is_array($files)) $files=array($files);
 
 			while($f=array_shift($files)){
+				# 支持通配符
 				if(strpos($f, "*")!==false){
-					foreach(array_reverse(glob(DIR_ASSET.'/'.$f)) as $_){
+					foreach(array_reverse(site_glob("asset/$f")) as $_){
 						array_unshift($files, $_);
 					}
 					continue;
 				}
-				if(!file_exists($f)) $f=DIR_ASSET.'/'.$f;
-				if(!file_exists($f)) continue;
+
+				if(!file_exists($f)) $f=site_file('asset/'.$f);
+				if(!file_exists($f)) continue; // 找不到资源情况下不会导致错误
 
 				if(!in_array($f, $this->files)){
 					$this->files[]=$f;

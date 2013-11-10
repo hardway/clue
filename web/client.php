@@ -19,11 +19,12 @@ namespace Clue\Web{
 		private $cache_ttl;
 
 		function __construct($cache_dir, $cache_ttl=86400){
+			$cache_dir=realpath($cache_dir);
 			// Make sure the cache directory exists
 			if(!is_dir($cache_dir)){
 				@mkdir($cache_dir, 0775, true);
 				if(!is_dir($cache_dir)){
-					throw new Exception("Cache directory didn't exist and can't be created: $cache_dir");
+					throw new \Exception("Cache directory didn't exist and can't be created: $cache_dir");
 				}
 			}
 			$this->cache_dir=$cache_dir;
@@ -287,6 +288,7 @@ namespace Clue\Web{
 				curl_setopt($this->curl, CURLOPT_URL, $url);
 				curl_setopt($this->curl, CURLOPT_POST, false);
 				curl_setopt($this->curl, CURLOPT_HEADER, true);
+				curl_setopt($this->curl, CURLOPT_ENCODING , "");
 				curl_setopt($this->curl, CURLOPT_RETURNTRANSFER, true);
 				curl_setopt($this->curl, CURLOPT_REFERER, end($this->history));
 

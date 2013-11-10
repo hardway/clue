@@ -154,11 +154,22 @@ class Parser{
 			echo $xpath;
 	}
 
-	function dump($el, $level=0){
-		if($el instanceof Element) $el=$el->el;
+	function dump($el=null, $level=0){
+		if($el==null)
+			$el=$this->dom;
+		elseif($el instanceof Element)
+			$el=$el->el;
 
 		print(str_repeat(' ', $level*4));
+
 		switch($el->nodeType){
+			case XML_DOCUMENT_NODE:
+			case XML_HTML_DOCUMENT_NODE:
+				foreach($el->childNodes as $c){
+					$this->dump($c, $level+1);
+				}
+				break;
+
 			case XML_ELEMENT_NODE:
 				$tag=strtoupper($el->tagName);
 				$id=$el->getAttribute("id");
@@ -185,7 +196,12 @@ class Parser{
 				printf("text(%d): %s\n", strlen($el->nodeValue), substr(trim(preg_replace('/\n|\r/', '', $el->nodeValue)), 0, 40));
 				break;
 
+			case XML_DOCUMENT_TYPE_NODE:
+				// Skip
+				break;
+
 			default:
+				var_dump($el);exit();
 				exit("UNKNOWN NODE TYPE: ".$el->$nodeType);
 		}
 	}

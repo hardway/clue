@@ -27,13 +27,20 @@ namespace Clue{
 		// 直接显示当前视图，无需定义action
 		// 用下划线分隔action，第一个前缀可以被识别为layout
 		// 默认将GET和POST变量化传入
-		function __default(){
+		function __catch_view(){
 			if(preg_match('/^([^_]+)_/', $this->view, $m) && View::find_view("/layout/{$m[1]}")){
 				$this->layout=$m[1];
 			}
 
 			$this->render($this->view, array_merge($_GET, $_POST));
 		}
+
+		/**
+		 * 需要在子类中特别定义，对于/a/b/c的url，允许转换为：controller=a, action=__catch_params, params=array(b,c)
+		 */
+		// function __catch_params(){
+
+		// }
 
 		function get_view($view, $data=array()){
 			$view=new View((strpos($view, '/')===0) ? $view : $this->controller."/{$view}");

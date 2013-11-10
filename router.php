@@ -58,31 +58,40 @@ namespace Clue{
 		}
 
 		function route($controller, $action, $params=array()){
-			$path=DIR_SOURCE . "/control/".strtolower($controller).".php";
+
+			$path=site_file('/source/control/'.strtolower($controller).".php");
 			$view=$action;
 
+			var_dump($path, $controller, $action, $params);exit();
 			// 确认control所在文件存在
 			if(!file_exists($path))
 				return $this->app->http_error(404, "No controller found: $controller");
 
-			// 确认action方法存在
+			require_once $path;
 			$source=file_get_contents($path);
 
-			if(!preg_match('/function\s+'.$action.'/', $source)){
+			// 确定类名
+			preg_match('/class\s+([a-z0-9_]*Controller)/i', $source, $m);
+			$class=$m[1];
+
+			// 确认action方法存在
+			if(!method_exists($class, $action)){
 				// 如果view存在，仍然可以直接调用
 				if(View::find_view("/$controller/$action")){
-					$action="__default";
+					$action="__catch_view";
+				}
+				elseif(method_exists($class, '__catch_params')){
+					array_unshift($params, $action);
+					$action="__catch_params";
 				}
 				else
 					return $this->app->http_error(404, "Can't find action or view $action of $controller");
 			}
 
-			require_once $path;
-			$class=class_exists($controller.'Controller', false) ? $controller.'Controller' : 'Controller';
-			$rfxMethod=new \ReflectionMethod($class, $action);
-
 			// detect parameters using reflection
 			$callArgs=array();
+
+			$rfxMethod=new \ReflectionMethod($class, $action);
 
 			// 1st round, take named variables
 			foreach($rfxMethod->getParameters() as $idx=>$rfxParam){
@@ -94,6 +103,7 @@ namespace Clue{
 					$callArgs[$idx]=null;
 				}
 			}
+
 
 			// remove named variables
 			foreach($params as $k=>$v){
@@ -112,8 +122,11 @@ namespace Clue{
 				}
 			}
 
-			//$callArgs=array_merge($callArgs, $params);
+			// 3rd, append all remaining params
+			$callArgs=array_merge($callArgs, $params);
 
+
+			// Initialize controller and
 			$obj=new $class($controller, $action);
 
 			// invoke action
@@ -206,6 +219,16 @@ namespace Clue{
 			return $url;
 		}
 
+		/**
+		 * 对于/a/b/c的url，应该依次寻找:
+		 *	controller=a/b/c, action=index
+		 * 	controller=a/b, action=c
+		 *	controller=a/b, action=index, param=c 			TODO，等待实现
+		 *	controller=a, action=b, param=c
+		 * 	controller=a, action=index, param=b/c 			TODO，等待实现
+		 *	controller=index, action=a, param=b/c
+		 *	controlelr=index, action=index, param=a/b/c 	所有的not found url都会fallback到这里，反而有副作用，应该禁止
+		 */
 		function resolve($url){
 			global $app;
 
@@ -260,7 +283,9 @@ namespace Clue{
 
 				$mapping['params']=array_map('rawurldecode', array_filter(array_merge($params, $_GET, $_POST), 'is_string'));
 
-				if(file_exists(DIR_SOURCE.'/control/'.$mapping['controller'].".php")){
+				$control_file=site_file('/source/control/'.$mapping['controller'].".php");
+
+				if(file_exists($control_file)){
 					// return with found controller/view
 
 					if($mapping['action']=='index' && !preg_match('/\/$/', $url)){
