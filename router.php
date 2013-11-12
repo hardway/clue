@@ -62,7 +62,6 @@ namespace Clue{
 			$path=site_file('/source/control/'.strtolower($controller).".php");
 			$view=$action;
 
-			var_dump($path, $controller, $action, $params);exit();
 			// 确认control所在文件存在
 			if(!file_exists($path))
 				return $this->app->http_error(404, "No controller found: $controller");
