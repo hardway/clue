@@ -19,7 +19,6 @@ namespace Clue\Web{
 		private $cache_ttl;
 
 		function __construct($cache_dir, $cache_ttl=86400){
-			$cache_dir=realpath($cache_dir);
 			// Make sure the cache directory exists
 			if(!is_dir($cache_dir)){
 				@mkdir($cache_dir, 0775, true);

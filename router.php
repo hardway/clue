@@ -58,8 +58,7 @@ namespace Clue{
 		}
 
 		function route($controller, $action, $params=array()){
-
-			$path=site_file('/source/control/'.strtolower($controller).".php");
+			$path=Controller::find_controller($controller);
 			$view=$action;
 
 			// 确认control所在文件存在
@@ -280,9 +279,9 @@ namespace Clue{
 
 				if($_SERVER['REQUEST_METHOD']=='POST') $mapping['action']="_".$mapping['action'];
 
-				$mapping['params']=array_map('rawurldecode', array_filter(array_merge($params, $_GET, $_POST), 'is_string'));
+				$mapping['params']=array_map(function($v){if(is_string($v)) return rawurldecode($v); else return $v;}, array_merge($params, $_GET, $_POST));
 
-				$control_file=site_file('/source/control/'.$mapping['controller'].".php");
+				$control_file=Controller::find_controller($mapping['controller']);
 
 				if(file_exists($control_file)){
 					// return with found controller/view

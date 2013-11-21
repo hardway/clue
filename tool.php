@@ -1,6 +1,6 @@
 <?php
 /**
- *	工具函数和类
+ *	琐碎的工具函数和类
  */
 namespace Clue{
 	# 将array转换为object
@@ -24,6 +24,16 @@ namespace Clue{
         }
     }
 
+    function readable_bits($size){
+        $format = array('B', 'KB', 'MB', 'GB', 'TB', 'PB');
+        $pos = 0;
+
+        while ($size >= 1024) {
+            $size /= 1024;
+            $pos++;
+        }
+        return round($size, 2).' '.$format[$pos];
+    }
 
     # 检测浏览器cookie支持
     function cookie_test(){

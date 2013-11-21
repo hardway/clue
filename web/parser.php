@@ -236,7 +236,7 @@ class Element implements \ArrayAccess{
 		else if($att=='table')
 			return $this->extract_table($this->el);
 		else if($att=='html'){
-			return $this->extract_array($this->el);
+			return $this->extract_html($this->el);
 		}
 	}
 
@@ -278,6 +278,26 @@ class Element implements \ArrayAccess{
 		}
 
 		return $text;
+	}
+
+	function extract_html($n){
+		$html="";
+		$html="<".$n->tagName;
+		if($n->attributes->length>0) foreach($n->attributes as $attr){
+			$html.=sprintf(" %s=\"%s\"", $attr->name, $attr->value);
+		}
+		$html.=">";
+
+		if($n->childNodes) foreach($n->childNodes as $c){
+			if($c->nodeType==XML_TEXT_NODE)
+				$html.=trim($c->nodeValue);
+			elseif($c->nodeType==XML_ELEMENT_NODE){
+				$html.=$this->extract_html($c);
+			}
+		}
+		$html.="</$n->tagName>";
+
+		return $html;
 	}
 
 	function extract_table($t){

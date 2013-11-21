@@ -5,14 +5,20 @@ namespace Clue{
         protected $template;
         protected $vars;
 
+        /**
+         * 定位view所在路径
+         */
         static function find_view($view, $parent=null){
-            $view_dirs=array(DIR_SOURCE.'/view/');
-            if(defined("THEME")) array_unshift($view_dirs, APP_ROOT.'/'.THEME.'/view/');
-
-            // Convert to absolute path based on VIEW_ROOT
+            // 相对路径的定位
+            // Example:
+            //  find_view('view', '/folder')    ==> /folder/view
+            //  find_view('/view', '/folder')   ==> /view
             if($view[0]!='/' && !preg_match('/:/', $view) && $parent){
                 $view=dirname($parent->view).'/'.$view;
             }
+
+            $view_dirs=array(APP_ROOT.'/source/view/');
+            if(defined("SITE")) array_unshift($view_dirs, APP_ROOT.'/'.SITE.'/view/');
 
             $template=null;
             foreach($view_dirs as $dir){
@@ -32,9 +38,7 @@ namespace Clue{
             $this->template=self::find_view($view, $parent);
 
             if(empty($this->template)){
-                // TODO: is this error tolarable?
-                exit("View didn't exists: $view");
-                //throw new \Exception("View didn't exists: $view");
+                throw new \Exception("View does not exists: $view");
             }
 
             $this->view=strtolower(trim($view, '/'));

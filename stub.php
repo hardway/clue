@@ -1,18 +1,19 @@
 <?php
 	/**
 	 * Definitions before stub
+     *  APP_SERVER  主机名，类似shop4x.net，用于url_for系列函数
+     *  APP_NAME    应用名，比如MyApp，在log/cache或者profile时会用到
 	 *  APP_BASE	base url of the application
 	 * 	APP_ROOT	folder of the application code
-	 *
-	 *  DIR_SOURCE	folder of source code (model, view, control)
-	 *	DIR_SKIN	folder of the skin (change this to switch 'template')
-	 *  DIR_DATA	folder of application data
+     *  SITE        如果有附加WEBSITE主题
 	 */
 
     // Common Definations
     if(!defined('CLI')) define('CLI', php_sapi_name()=="cli");
     if(!defined('DS'))  define("DS", DIRECTORY_SEPARATOR);  // directory separator
     if(!defined('NS'))  define('NS', "\\");                 // namespace separator
+
+    // 自动推断核心definition
 
     # 服务器地址
     if(!defined('APP_SERVER') && !CLI) define('APP_SERVER', $_SERVER['HTTP_HOST']);
@@ -37,11 +38,7 @@
     # URL路径
     if(!defined('APP_BASE')) define('APP_BASE', preg_replace('|[\\\/]+|', '/', dirname($_SERVER['SCRIPT_NAME'])));
 
-    # 常用路径
-    if(!defined('DIR_SOURCE')) define('DIR_SOURCE', APP_ROOT.'/source');
-    if(!defined('DIR_ASSET')) define('DIR_ASSET', APP_ROOT.'/asset');
-    if(!defined('DIR_LOG')) define('DIR_LOG', APP_ROOT.'/log');
-    if(!defined('DIR_DATA')) define('DIR_DATA', APP_ROOT.'/data');
+
 
     // 全局函数
     function url_path($path){
@@ -68,30 +65,32 @@
     }
 
     /**
-     * 根据SITE/THEME定义，返回所需要的文件路径
-     * 如果SITE/THEME为找到，返回APP_ROOT下的文件
+     * 根据SITE定义，返回所需要的文件路径
+     * 如果SITE为找到，返回APP_ROOT下的文件
+     *
+     * @return $path 文件路径
      */
     function site_file($path){
-        if(strpos($path, APP_ROOT)===0) return $path;   // 绝对路径，直接返回
+        if(strpos($path, APP_ROOT)===0) return $path;   // 已经是绝对路径，直接返回
 
         $path=trim($path, '/');
 
-        if(defined("THEME") && THEME && file_exists(APP_ROOT.'/'.THEME."/$path")){
-            return APP_ROOT.'/'.THEME."/$path";
+        if(defined("SITE") && SITE && file_exists(APP_ROOT.'/'.SITE."/$path")){
+            return APP_ROOT.'/'.SITE."/$path";
         }
         else
             return APP_ROOT."/$path";
     }
 
     /**
-     * 类似glob()函数，但是同时返回site和default下的文件
+     * 类似site_file()和glob()合体，同时返回site和default下的匹配文件
      */
-    function site_glob($pattern){
+    function site_file_glob($pattern){
         $files=array();
         foreach(glob(APP_ROOT.'/'.$pattern) as $path){
             $files[basename($path)]=$path;
         }
-        foreach(glob(APP_ROOT.'/'.THEME.'/'.$pattern) as $path){
+        foreach(glob(APP_ROOT.'/'.SITE.'/'.$pattern) as $path){
             $files[basename($path)]=$path;
         }
 
@@ -100,27 +99,25 @@
         return array_values($files);
     }
 
-    function asset_path($asset){
-        $path=DIR_ASSET."/$asset";
-
-        if(defined("THEME") && THEME && file_exists(APP_ROOT.'/'.THEME."/asset/$asset")){
-            $path=APP_ROOT.'/'.THEME."/asset/$asset";
-        }
-
-        return $path;
-    }
-
-    function asset($asset){
-        $path=asset_path($asset);
+    /**
+     * 根据SITE定位Asset
+     * TODO: 根据dev/prod等不同的配置，也可以定位至不同的处理URL（即时生成或者预编译）
+     * @param $asset string
+     * @return $url 文件URL
+     */
+    function site_asset($asset){
+        $path=site_file('asset/'.$asset);
 
         return url_path($path).(file_exists($path) ? '?'.filemtime($path) : "");
     }
 
-    require_once __DIR__."/core.php";
-    spl_autoload_register("Clue\\autoload_load");
+    /**
+     * DEPRECATE, use site_asset and site_file instead
+     */
+    function asset($asset){ return site_asset($asset); }
+    function asset_path($asset){return site_file("asset/".$asset); }
 
+    require_once __DIR__.'/autoload.php';
     require_once __DIR__."/application.php";
     require_once __DIR__."/tool.php";
-    require_once __DIR__."/asset.php";
-
 ?>

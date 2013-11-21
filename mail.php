@@ -1,10 +1,11 @@
-<?php  
+<?php
     namespace Clue;
-    class Mail{   
+    class Mail{
         public $mailer;
 
-        function __construct($options){
+        function __construct($options=array()){
             $this->options=array_merge(array(
+                'host'=>'127.0.0.1',
                 'port'=>25,
                 'charset'=>'UTF-8'
             ), $options);
@@ -24,7 +25,7 @@
                 $this->mailer->SMTPSecure=$this->options['secure'];
             }
         }
-        
+
         function send($subject, $html, $to, $from=null, $reply=null){
             $this->mailer->Subject=$subject;
             $this->mailer->MsgHTML($html);

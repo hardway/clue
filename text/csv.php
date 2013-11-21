@@ -6,7 +6,11 @@ namespace Clue\Text{
         public $columns;
         public $rows;
 
-        function __construct($filename, $options=array('header'=>true)){
+        static $DEFAULT_OPTIONS=array('header'=>true, 'length'=>4096, 'delimiter'=>",", 'enclosure'=>'"', 'escape'=>'\\');
+
+        function __construct($filename, $options=array()){
+            $this->options=array_merge(self::$DEFAULT_OPTIONS, $options);
+
             $this->columns=array();
             $this->rows=array();
 
@@ -15,9 +19,13 @@ namespace Clue\Text{
             // 读取首行，标题
             $f=fopen($this->filename, "r");
             if($f){
-                $this->columns=fgetcsv($f);
+                $this->columns=$this->parse_row($f);
                 fclose($f);
             }
+        }
+
+        function parse_row($f){
+            return fgetcsv($f, $this->options['length'], $this->options['delimiter'], $this->options['enclosure'], $this->options['escape']);
         }
 
         function col($name){
@@ -44,9 +52,9 @@ namespace Clue\Text{
             $f=fopen($this->filename, "r");
             if(!$f) return false;
 
-            $this->columns=fgetcsv($f);
+            $this->columns=$this->parse_row($f);
             while(!feof($f)){
-                $r=fgetcsv($f);
+                $r=$this->parse_row($f);
                 if(!is_array($r)) continue;
 
                 if($batch){

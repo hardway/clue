@@ -15,7 +15,7 @@ namespace Clue{
 			while($f=array_shift($files)){
 				# 支持通配符
 				if(strpos($f, "*")!==false){
-					foreach(array_reverse(site_glob("asset/$f")) as $_){
+					foreach(array_reverse(site_file_glob("asset/$f")) as $_){
 						array_unshift($files, $_);
 					}
 					continue;

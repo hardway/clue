@@ -1,5 +1,7 @@
 <?php
 namespace Clue{
+    require_once __DIR__."/asset.php";
+
     class Application implements \ArrayAccess{
         use Logger;
 
@@ -54,9 +56,18 @@ namespace Clue{
             exit();
         }
 
+        /**
+         * 跳转返回
+         * 优先顺序：$default_url > $app['return_url'] > $_SERVER['HTTP_REFERER']
+         * 典型场景：限制页面跳转到登录页面，成功后返回原页面
+         */
         function redirect_return($default_url=null){
             $this->redirect($this['return_url'] ?: $default_url);
         }
+
+        /**
+         * DEPRECATE
+         */
         function redirect_referer($default_url=null){
             $this->redirect($this['referer_url'] ?: $default_url);
         }
