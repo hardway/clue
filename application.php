@@ -45,6 +45,20 @@ namespace Clue{
             };
         }
 
+        function start_session($timeout=null, $name=null, $storage=null){
+            if($timeout!==null){
+                ini_set('session.gc_maxlifetime', $timeout);
+            }
+
+            if($name!==null){
+                session_name($name);
+            }
+
+            // TODO: session storage
+
+            session_start();
+        }
+
         function redirect($url){
             if(!headers_sent()){
                 header("Status: 302 Found");

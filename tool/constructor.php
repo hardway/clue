@@ -274,8 +274,8 @@ END
         }
 
         function _get_db(){
-            if(!file_exists(APP_ROOT."/config.php")) throw new \Exception("config not found");
-            include APP_ROOT."/config.php" ;
+            define("SITE", isset($_SERVER['SITE']) ? $_SERVER['SITE'] : null);
+            $cfg=include \site_file("config.php");
 
             // Detect current database
             $db=\Clue\Database::create(array('type'=>"mysql", 'host'=>DB_HOST, 'db'=>DB_NAME, 'username'=>DB_USER, 'password'=>DB_PASS));
@@ -284,69 +284,62 @@ END
             return $db;
         }
 
-        /**
-         * TODO: This could applies not only to database, but data file structures too.
-         */
-        function db($target_version=null){
-            // Variables usable in upgrade/downgrade script
+        function db(){
             $db=$this->_get_db();
 
             $current_version=$db->get_var("select value from config where name='DB_VERSION'");
             if($current_version===null) throw new \Exception("Can't detect current version through config table (name=DB_VERSION)");
 
-            if(empty($target_version)){
-                $max_ver=$current_version;
-                $min_ver=$current_version;
-                foreach(scandir(APP_ROOT."/script/sql") as $s){
-                    if(preg_match('/^(\d+)\.(upgrade|downgrade)\.php$/', $s, $m)){
-                        if($m[1]>$max_ver) $max_ver=intval($m[1]);
-                        if($m[1]<$min_ver) $min_ver=intval($m[1]);
-                    }
-                }
-                echo("Current database scheme version: $current_version\n");
-                if($max_ver > $current_version)
-                    echo("Available version to upgrade: $max_ver\n");
+            echo "Database: ".$db->get_var("select database()")."\n";
+            echo "Data Version: $current_version"."\n";
 
-                exit();
-            }
-            elseif(preg_match('/up/i', $target_version)){
-                $target_version=$current_version+1;
-            }
-            elseif(preg_match('/down/i', $target_version)){
-                $target_version=$current_version-1;
-            }
-            else{
-                $target_version=intval($target_version);
-            }
-
-            // Execute Migration
-            if($target_version==$current_version){
-                throw new \Exception("Same version, no need to migrate");
-            }
-            elseif($target_version > $current_version){
-                $range=range($current_version+1, $target_version, 1);
-                $action='upgrade';
-            }
-            else{
-                $range=range($current_version, $target_version+1, -1);
-                $action="downgrade";
-            }
-
-            foreach($range as $v){
-                $target_version=$action=='upgrade' ? $v : $v - 1;
-
-                $s=APP_ROOT."/script/sql/$v.$action.php";
-                if(!file_exists($s)) throw new \Exception("Missing $action script ($s)");
-
-                echo '['.strtoupper($action)."] to version $target_version\n";
-
-                include $s;
-                // 更新数据库版本
-                $db->exec("update config set value=%d where name='DB_VERSION'", $target_version);
-            }
+            exit("\nMore Usage: clue db [upgrade | downgrade | diagnose]\n");
         }
 
-        function db_diag(){
+        function db_up(){return $this->db_upgrade(); }
+        function db_upgrade(){
+            $db=$this->_get_db();
+            $current_version=$db->get_var("select value from config where name='DB_VERSION'");
+
+            $target_version=intval($current_version)+1;
+            foreach(site_file_glob("script/upgrade/*.php") as $file){
+                if(preg_match("/^(\d+)/", basename($file), $m)){
+                    if(intval($m[1])==$target_version){
+                        $ok=include $file;
+                        if($ok===true){
+                            $db->exec("update config set value=%d where name='DB_VERSION'", $target_version);
+                            echo "Upgraded to $target_version\n";
+                        }
+                        return true;
+                    }
+                }
+            }
+            exit("Can't find upgrade script $target_version ...\n");
+        }
+
+        function db_down(){ return $this->db_downgrade(); }
+        function db_downgrade(){
+            $db=$this->_get_db();
+            $current_version=$db->get_var("select value from config where name='DB_VERSION'");
+
+            $target_version=intval($current_version)-1;
+            foreach(site_file_glob("script/downgrade/*.php") as $file){
+                if(preg_match("/^(\d+)/", basename($file), $m)){
+                    if(intval($m[1])==$target_version){
+                        $ok=include $file;
+                        if($ok===true){
+                            $db->exec("update config set value=%d where name='DB_VERSION'", $target_version);
+                            echo "Upgraded to $target_version\n";
+                        }
+                        return true;
+                    }
+                }
+            }
+            exit("Can't find downgrade script $target_version ...\n");
+        }
+
+        function db_diag(){ return $this->db_diagnose(); }
+        function db_diagnose(){
             $db=$this->_get_db();
             $stat=$db->get_results("
                 SELECT table_name, table_rows, avg_row_length, data_length, index_length
@@ -357,7 +350,7 @@ END
             usort($stat, function($a, $b){return $a->table_rows < $b->table_rows;});
 
             // TODO: use Clue\Text\Table to format and align
-            printf("%30s %10s %10s %10s %10s %10s\n", "Table Name", "Row Cnt", "Row Len", "Data", "Index", "Total");
+            printf("%30s %10s %10s %10s %10s %10s\n", "Table Name", "Row Cnt", "Row Len", "Data", "Index", "Total(MB)");
             printf(str_repeat('=', 85)."\n");
             foreach($stat as $r){
                 printf("%30s %10s %10s %10s %10s %10s\n",
