@@ -260,6 +260,7 @@ namespace Clue\Web{
 
 		function download($url, $dest){
 			$file=fopen($dest, 'w');
+
 			curl_setopt($this->curl, CURLOPT_FILE, $file);
 			curl_setopt($this->curl, CURLOPT_POST, false);
 			curl_setopt($this->curl, CURLOPT_URL, $url);
@@ -270,7 +271,7 @@ namespace Clue\Web{
 			// TODO: check curl_errno
 
 			fclose($file);
-			curl_setopt($this->curl, CURLOPT_FILE, STDOUT);
+			@curl_setopt($this->curl, CURLOPT_FILE, null);
 		}
 
 		function open($url, $forceRefresh=false){
