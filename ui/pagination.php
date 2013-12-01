@@ -47,45 +47,55 @@ namespace Clue\UI{
 			return $this->pageSize;
 		}
 
-		function render($urlPattern, $insertPoint="{page}"){
+		/**
+		 * 使用參數爲p
+		 */
+		function page_url($page){
+			$path=parse_url($_SERVER['REQUEST_URI'])['path'];
+			parse_str($_SERVER['QUERY_STRING'], $params);
+			$params['p']=$page;
+			return $path.'?'.http_build_query($params);
+		}
+
+		/**
+		 * 輸出使用Bootstrap結構的HTML
+		 */
+		function render(){
 			if($this->pageCount==1) return;
 
 			if($this->page>1){
-				$prev=$this->page - 1;
-				$prevUrl=str_replace($insertPoint, "$prev", $urlPattern);
-				$prevLink="<a class='prev icon-prev' href='$prevUrl'></a>";
+				$prevLink="<li><a href='".$this->page_url($this->page - 1)."'><i class='icon-chevron-left'></i></a></li>";
 			}
 			else
 				$prevLink="";
 
 			if($this->page<$this->pageCount){
-				$next=$this->page + 1;
-				$nextUrl=str_replace($insertPoint, "$next", $urlPattern);
-				$nextLink="<a class='next icon-next' href='$nextUrl'></a>";
+				$nextLink="<li><a href='".$this->page_url($this->page + 1)."'><i class='icon-chevron-right'></i></a></li>";
 			}
 			else
 				$nextLink="";
 
 			$links="";
-			$begin=$this->page > 10 ? $this->page - 10 : 1;
-			$end=$this->page+9 > $this->pageCount ? $this->pageCount : $this->page+9;
+			$begin=$this->page > $this->navPages/2 ? floor($this->page - $this->navPages/2) : 1;
+			$end=$this->page + $this->navPages/2 > $this->pageCount ? $this->pageCount : floor($this->page + $this->navPages/2);
+
 			for($p=$begin; $p<=$end; $p++){
 				if($p==$this->page){
-					$links.="<a class='current'>$p</a>";
+					$links.="<li class='active'><a>$p</a></li>";
 				}
 				else{
 					$url=str_replace($insertPoint, "$p", $urlPattern);
-					$links.="<a class='link' href='$url'>$p</a>";
+					$links.="<li><a href='".$this->page_url($p)."'>$p</a></li>";
 				}
 			}
 
-			echo <<<END
-		<div class='pagination'>
-			$prevLink
-			$links
-			$nextLink
-		</div>
-END;
+			echo "
+				<div class='pagination'><ul>
+					$prevLink
+					$links
+					$nextLink
+				</ul></div>
+			";
 		}
 	}
 }
