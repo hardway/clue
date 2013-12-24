@@ -81,7 +81,8 @@ namespace Clue{
 	    	if(!is_dir($src)) return false;
 
 	    	if(!is_dir($dest)){
-	    		mkdir($dest, $mode ?: (fileperms($src) & 0777), true);
+	    		@mkdir($dest, $mode ?: (fileperms($src) & 0777), true);
+	    		$dest=realpath($dest);
 	    		if(!is_dir($dest)) return false;	// 无法创建目标文件夹
 	    	}
 
@@ -157,43 +158,42 @@ namespace Clue{
 		}
 	}
 
-	class Clue_BaseCoder{
-		protected $alpha="0123456789";
-		protected $alen = 10;
+	class BaseCoder{
+		static protected $alpha="0123456789";
 
-		function decode($s){
+		static function decode($s){
 			$rv=$pos=0;
+			$alen=strlen(static::$alpha);
 
 			for($i=strlen($s)-1; $i>=0; $i--){
 				$c=$s[$i];
-				$rv+=strpos($this->alpha, $c) * pow($this->alen, $pos);
+				$rv+=strpos(static::$alpha, $c) * pow($alen, $pos);
 				$pos++;
 			}
 
 			return $rv;
 		}
 
-		function encode($num){
+		static function encode($num){
 			$rv = "";
+			$alen=strlen(static::$alpha);
 			while($num!=0){
-				$rv = $this->alpha[$num % $this->alen] . $rv;
-				$num = floor($num/$this->alen);
+				$rv = static::$alpha[$num % $alen] . $rv;
+				$num = floor($num/$alen);
 			}
 			return $rv;
 		}
 	}
 
-	class Clue_Base36 extends Clue_BaseCoder{
-		protected $alpha = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-		protected $alen = 36;
+	class Base32 extends BaseCoder{
+		static protected $alpha = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
 	}
 
-	class Clue_Base62 extends Clue_BaseCoder{
-		protected $alpha = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
-		protected $alen = 62;
+	class Base16 extends BaseCoder{
+		static protected $alpha = "ABCDEF1234567890";
 	}
 
-	class Clue_Browser{
+	class Browser{
 		static function is_ie(){
 			return strpos($_SERVER['HTTP_USER_AGENT'], 'MSIE')!==false;
 		}

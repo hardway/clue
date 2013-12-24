@@ -42,7 +42,7 @@
 
             $ret=$this->mailer->Send();
 
-            return $ret;
+            return $ret ?: $this->mailer->ErrorInfo;
         }
     }
 ?>
