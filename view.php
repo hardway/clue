@@ -1,80 +1,82 @@
-<?php 
+<?php
 namespace Clue{
     class View{
         protected $view;
         protected $template;
         protected $vars;
-        
-        // TODO: use template_dir
 
-        function __construct($view=null){
-            $this->view=strtolower(trim($view, '/'));
+        /**
+         * 定位view所在路径
+         */
+        static function find_view($view, $parent=null){
+            // 相对路径的定位
+            // Example:
+            //  find_view('view', '/folder')    ==> /folder/view
+            //  find_view('/view', '/folder')   ==> /view
+            if($view[0]!='/' && !preg_match('/:/', $view) && $parent){
+                $view=dirname($parent->view).'/'.$view;
+            }
 
-            foreach(array("mustache", "html") as $ext){
-                $this->template=APP_ROOT."/view/".strtolower($view).".$ext";
-                if(file_exists($this->template)){
-                    break;
+            $view_dirs=array(APP_ROOT.'/source/view/');
+            if(defined("SITE")) array_unshift($view_dirs, APP_ROOT.'/'.SITE.'/view/');
+
+            $template=null;
+            foreach($view_dirs as $dir){
+                foreach(array("htm", "php") as $ext){
+                    if(file_exists($dir.strtolower($view).".".$ext)){
+                        $template=$dir.strtolower($view);
+                        break;
+                    }
                 }
+                if($template!=null) break;
             }
 
-            if(!file_exists($this->template)){
-				throw new \Exception("View didn't exists: $view");
+            return $template;
+        }
+
+        function __construct($view=null, $parent=null){
+            $this->template=self::find_view($view, $parent);
+
+            if(empty($this->template)){
+                throw new \Exception("View does not exists: $view");
             }
-            
+
+            $this->view=strtolower(trim($view, '/'));
             $this->vars=array();
         }
-        
+
         function set($name, $value){
             $this->vars[$name]=$value;
         }
 
-        function subview($view, $inherit_vars=true){
-            if($view[0]!='/' && !preg_match('/:/', $view)){
-                // Convert to absolute path based on VIEW_ROOT
-                $view=dirname($this->view).'/'.$view;
+        function incl($view=null, $vars=array()){
+            // 未指定view则默认显示content内容
+            if($view==null){
+                $this->vars['content']->render();
+                return;
             }
 
-            $sv=new View($view);
-            if($inherit_vars) $sv->vars=$this->vars;
+            $sv=new View($view, $this);
+            $sv->vars=array_merge($this->vars, $vars);
 
-            return $sv;
+            return $sv->render();
         }
-        
+
         function render($vars=array()){
             if(is_array($vars))
                 $this->vars=array_merge($this->vars, $vars);
-            else
-                $this->vars=$vars;
 
             // View Logic
-            extract($this->vars);
-            if(file_exists("$this->view.php")){
-                include "$this->view.php";
-            }
+            extract(array_merge($GLOBALS, $this->vars));
 
-            // View Template
-            // TODO: rewrite mustache template engine
-            if(preg_match('/\.mustache$/i', $this->template)){
-                require_once 'Mustache/Autoloader.php';
-                \Mustache_Autoloader::register();
-
-                $mustache_base=dirname(APP_ROOT."/view/".$this->view);
-                $m = new \Mustache_Engine(array(
-                    'loader'=>new \Mustache_Loader_FilesystemLoader($mustache_base),
-                    'partials_loader'=>new \Mustache_Loader_FilesystemLoader($mustache_base)
-                ));
-                echo $m->render(basename($this->view), $this->vars);
+            // Code Behind
+            if(file_exists("$this->template.php")){
+                include "$this->template.php";
             }
-            else{                
-                include $this->template;
+            // View file
+            if(file_exists($this->template.".htm")){
+                include $this->template.".htm";
             }
-        }
-        
-        function parse_var($str){
-            if(preg_match('/\$([a-z0-9_]+)\.([a-z0-9_]+)/i', $str, $m)){
-                return "\${$m[1]}['{$m[2]}']";
-            }
-            else return $str;
         }
     }
 }

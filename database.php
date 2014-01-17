@@ -6,19 +6,17 @@ namespace Clue{
 	if(!defined('ARRAY_N')) define('ARRAY_N', 'ARRAY_N');
 
 	abstract class Database{
+		use Logger;
+
 		protected static $_cons=array();
 
-		static function create($dbms, $param=null){
-            if(is_object($dbms) && isset($dbms->type) && empty($param)){
-                $param=$dbms;
-                $dbms=$param->type;
-            }
+		static function create(array $param){
+			$dbms=$param['type'];
 
 			$factory="Clue\\Database\\".$dbms;
 			if(!class_exists($factory)) throw new \Exception("Database: $dbms is not implemented!");
 
 			// Make sure the parameter is always in array format
-			if(is_object($param)) $param=(array)$param;
 			return new $factory($param);
 		}
 
@@ -48,30 +46,30 @@ namespace Clue{
 				self::$_cons[$profile]=new Database($profile);
 			return self::$_cons[$profile];
 		}
-
 		//===========================================================
 
 		protected $setting;
 
-		public $lastquery=null;
-		protected $queryLog=null;
+		public $query_count=0;
+		public $last_query=null;
+
+		public $slow_query_time_limit=0;
 
 		public $dbh=null;
 		public $lasterror=null;
 		public $errors=null;
 
-		public function enable_query_log(IClue_Log $log){
-			$this->queryLog=$log;
-		}
-		public function disable_query_log(){
-			$this->queryLog=null;
+		public function enable_slow_query_log($logfile='', $time_limit=10){
+			$this->enable_log($logfile);
+			$this->slow_query_time_limit=$time_limit;
 		}
 
 		protected function setError($err){
 			$this->lasterror=$err;
 			$this->errors[]=$err;
 
-            trigger_error("SQL ERROR: {$err['code']} {$err['error']} [$this->last_query]", E_USER_ERROR);
+			throw new \Exception("SQL ERROR: {$err['code']} {$err['error']} [$this->last_query]");
+            //trigger_error("SQL ERROR: {$err['code']} {$err['error']} [$this->last_query]", E_USER_ERROR);
 		}
 
 		protected function clearError(){
@@ -94,6 +92,17 @@ namespace Clue{
 				return $data;
 		}
 
+		function audit($sql, $time=0){
+			$prefix=($this->slow_query_time_limit>0 && $time > $this->slow_query_time_limit) ? "SLOW QUERY" : "SQL";
+
+			if($time > $this->slow_query_time_limit){
+				$this->log("[$prefix ".number_format($time, 4)."] $sql");
+			}
+
+			$this->last_query=$sql;
+			$this->query_count++;
+		}
+
 		// Basic implementation
 		function escape($data){
 			if(is_null($data))
@@ -114,12 +123,7 @@ namespace Clue{
 				$sql=call_user_func_array(array($this, "format"), func_get_args());
 			}
 
-			$this->lastquery=$sql;
-
-			if($this->queryLog){
-			    // TODO.
-				//$this->queryLog->log($sql);
-			}
+			$this->last_query=$sql;
 		}
 
 		function query($sql){
@@ -131,12 +135,35 @@ namespace Clue{
 		abstract function get_row($sql, $mode=OBJECT);
 		abstract function get_results($sql, $mode=OBJECT);
 
-		function get_hash($sql, $mode=ARRAY_A){
-		    $hash=($mode==OBJECT) ? new stdClass : array();
-		    $rs=$this->get_results($sql, ARRAY_N);
+		function get_hash(){
+			$args=func_get_args();
+
+	        $mode=func_get_arg(func_num_args()-1);
+	        if($mode!=OBJECT && $mode!=ARRAY_A){
+	            $mode=ARRAY_A;
+	        }
+
+		    $hash=($mode==OBJECT) ? new \stdClass : array();
+
+		    array_push($args, ARRAY_A);
+		    $rs=call_user_func_array(array($this, 'get_results'), $args);
+
 		    foreach($rs as $row){
-		        $key=$row[0];
-		        $val=$row[1];
+		    	$keys=array_keys($row);
+		        $key_name=$keys[0];
+		        $key=$row[$key_name];
+
+		        unset($row[$key_name]);
+		        if(count($row)>1){
+		        	$val=array_combine(array_keys($row), array_values($row));
+		        	if($mode==OBJECT){
+		        		$val=ary2obj($val);
+		        	}
+		        }
+		        else{
+		        	$vals=array_values($row);
+		        	$val=$vals[0];
+		        }
 
 		        if(is_null($key)) continue;
 
@@ -145,19 +172,41 @@ namespace Clue{
 		        else
 		            $hash[$key]=$val;
 		    }
+
 		    return $hash;
 		}
 
-		function get_object($sql, $class){
-		    $r=$this->get_row($sql, ARRAY_A);
+		function get_object(){
+			$args=func_get_args();
+
+			$class=array_pop($args);
+			array_push($args, ARRAY_A);
+			$r=call_user_func_array(array($this, 'get_row'), $args);
+
+		    if(empty($r))
+		    	return null;
+		    else{
+		    	$obj=new $class($r);
+		    	$obj->_snap_shot();
+		    	$obj->after_retrieve();
+		    }
+
 		    return empty($r) ? null : new $class($r);
 		}
 
-		function get_objects($sql, $class){
+		function get_objects(){
+			$args=func_get_args();
+
+			$class=array_pop($args);
+			array_push($args, ARRAY_A);
+
 		    $objs=array();
-		    $rs=$this->get_results($sql, ARRAY_A);
+			$rs=call_user_func_array(array($this, 'get_results'), $args);
 		    if($rs) foreach($rs as $r){
-		        $objs[]=new $class($r);
+		    	$obj=new $class($r);
+		    	$obj->_snap_shot();
+		    	$obj->after_retrieve();
+		        $objs[]=$obj;
 		    }
 
 		    return $objs;

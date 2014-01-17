@@ -1,30 +1,73 @@
-<?php  
-namespace Clue{
-    class Clue_Text_CSV{
+<?php
+namespace Clue\Text{
+    class CSV{
         public $filename;
-        
+
         public $columns;
         public $rows;
-        
-        function __construct($filename){
+
+        static $DEFAULT_OPTIONS=array('header'=>true, 'length'=>4096, 'delimiter'=>",", 'enclosure'=>'"', 'escape'=>'\\');
+
+        function __construct($filename, $options=array()){
+            $this->options=array_merge(self::$DEFAULT_OPTIONS, $options);
+
             $this->columns=array();
             $this->rows=array();
-            
+
             $this->filename=$filename;
-        }
-        
-        function read(){
-            if(file_exists($this->filename)){
-                $f=fopen($this->filename, "r");
-                
-                $this->columns=fgetcsv($f);
-                while(!feof($f)){
-                    $r=fgetcsv($f);
-                    if(is_array($r)) $this->rows[]=$r;
-                }
-                
+
+            // 读取首行，标题
+            $f=fopen($this->filename, "r");
+            if($f){
+                $this->columns=$this->parse_row($f);
                 fclose($f);
             }
+        }
+
+        function parse_row($f){
+            return fgetcsv($f, $this->options['length'], $this->options['delimiter'], $this->options['enclosure'], $this->options['escape']);
+        }
+
+        function col($name){
+            // Search for exact match
+            foreach($this->columns as $i=>$col){
+                if(strtolower($col)==strtolower($name)){
+                    return $i;
+                }
+            }
+
+            // Search for rough match
+            foreach($this->columns as $i=>$col){
+                if(strpos(strtolower($col), strtolower($name))!==false){
+                    return $i;
+                }
+            }
+
+            return $name;
+        }
+
+        function read($callback=null){
+            $batch=!is_callable($callback);
+
+            $f=fopen($this->filename, "r");
+            if(!$f) return false;
+
+            $this->columns=$this->parse_row($f);
+            while(!feof($f)){
+                $r=$this->parse_row($f);
+                if(!is_array($r)) continue;
+
+                if($batch){
+                    $this->rows[]=$r;
+                }
+                else{
+                    $callback($r);
+                }
+            }
+
+            fclose($f);
+
+            return $batch ? $this->rows : true;
         }
     }
 }

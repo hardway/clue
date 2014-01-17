@@ -1,55 +1,94 @@
-<?php  
-    class Clue_Tool_Constructor_Minifier{
+<?php
+namespace {
+    if(!defined("CLUE_VERSION")){
+        $version=exec("hg parent -R ".dirname(__DIR__)." --template {latesttag}.{latesttagdistance} 2>&1", $_, $err);
+        define('CLUE_VERSION', $err==0 ? $version : "unknown");
+    }
+}
+
+namespace Clue\Tool{
+    use Clue\CLI as CLI;
+    use Clue\Tool as Tool;
+
+    class Constructor_Minifier{
         protected $root;
-        
+
+        protected $build_exclude=array(
+            '/ui\/(clue|mooeditor|mootools)\//',
+            '/\.hg\//'
+        );
+        protected $strip_exclude=array(
+            "/tool\/skeleton\/.*/"
+        );
+
         function __construct($root){
             $this->root=$root;
         }
-        
+
         function build($dest){
-            if(!Phar::canWrite()) {
-                throw new Exception('Unable to create PHAR archive, must be phar.readonly=Off option in php.ini');
+            if(!\Phar::canWrite()) {
+                throw new \Exception('Unable to create PHAR archive, must be phar.readonly=Off option in php.ini');
             }
 
             if(file_exists($dest)) unlink($dest);
 
-            $phar = new Phar($dest);
-            $phar->convertToExecutable(Phar::PHAR);
+            $phar = new \Phar($dest);
+            $phar->convertToExecutable(\Phar::PHAR);
             $phar->startBuffering();
-            $phar->buildFromDirectory($this->root);
-            $phar->setStub('<?php Phar::mapPhar("Clue");                 
+
+            # Simple Build whole directory
+            # $phar->buildFromDirectory($this->root, '/\.php$/');
+
+            $iter = new \RecursiveIteratorIterator (new \RecursiveDirectoryIterator ($this->root), \RecursiveIteratorIterator::SELF_FIRST);
+
+            foreach ($iter as $file) {
+                if(!is_file($file)) continue;
+
+                $exclude=false;
+                foreach($this->build_exclude as $pat){ if(preg_match($pat, $file)) $exclude=true;}
+                if($exclude) continue;
+
+                // PHP file should be stripped
+                $include=preg_match ('/\\.php$/i', $file);
+                $exclude=false;
+                // Files matching "strip_exclude" list shall keep as is
+                foreach($this->strip_exclude as $pat){
+                    if(preg_match($pat, $file)) $exclude=true;
+                }
+
+                if ($include && !$exclude) {
+                    $phar->addFromString(substr($file, strlen ($this->root) + 1), php_strip_whitespace($file));
+                }
+                else{
+                    $phar->addFromString(substr($file, strlen ($this->root) + 1), file_get_contents($file));
+                }
+            }
+
+            # Add stub to bootstrap
+            $phar->setStub('<?php
                 define("CLUE_VERSION", "'.CLUE_VERSION.'");
 
-                require_once "phar://Clue/core.php";
-                spl_autoload_register("Clue\autoload_load");
-                require_once "phar://Clue/application.php";
-                require_once "phar://Clue/tool.php";
-                
+                Phar::interceptFileFuncs();
+                require_once "phar://".__FILE__."/stub.php";
+
                 if(php_sapi_name()=="cli" && preg_match("/clue/i", $argv[0])){
-                    require_once "phar://Clue/tool/constructor.php";
-                    
-                    $ctor=new Clue_Tool_Constructor();
-                    $command=isset($argv[1]) ? $argv[1] : "help";
-                    
-                    if(method_exists($ctor, $command)){
-                        call_user_func_array(array($ctor, $command), array_slice($argv, 2));
-                    }
-                    else{
-                        echo "Unknown command: $command\n";
-                    }        
+                    require_once "phar://".__FILE__."/tool/clue.php";
                 }
-                __HALT_COMPILER(); 
+                __HALT_COMPILER();
             ');
+
             $phar->stopBuffering();
             echo "Phar build at: $dest";
+            echo "\n";
         }
-        
+
         function __toString(){
             return $this->code;
         }
     }
-    
-    class Clue_Tool_Constructor{
+
+    class Constructor{
+        // TODO: 使用单独的方法族，例如 help_compress()...
         function help(){
             echo "
 Version: ".CLUE_VERSION."
@@ -62,29 +101,51 @@ Usage: clue [command] {arguments...}
     gen_control Generate Controller along with Views
                 eg: clue gen_control project view
 
+    compress    build and compress asset files (js, css)
+                last parameter will be the output
+
+    db          Migrate to specified target version
+                Show current version if no version is provided
+
     help        Display this help screen
-            ";
+
+";
         }
-        
+
+        function compress(){
+            $files=func_get_args();
+            $output=array_pop($files);
+            $input=empty($files) ? array($output) : $files;
+
+            $builder=new \Clue\Asset(func_get_args());
+
+            $origin_content=$builder->compile();
+            $compress_content=$builder->compress($origin_content, $builder->type);
+
+            file_put_contents($output, strlen($origin_content) > strlen($compress_content) ? $compress_content : $origin_content);
+        }
+
         function build($dest=null){
             if(empty($dest)) $dest=getcwd().'/clue.phar';
-            $minifier=new Clue_Tool_Constructor_Minifier(dirname(__DIR__));
+            $minifier=new Constructor_Minifier(dirname(__DIR__));
             $minifier->build($dest);
             //file_put_contents($dest, $minifier);
         }
-                
+
         function init($path=null){
             $skeleton=__DIR__ . DIRECTORY_SEPARATOR . 'skeleton';
             $site=empty($path) ? getcwd() : $path;
-            
-            if(false==$this->_confirm("New application code skeleton will be copied into: \"$site\", continue?")){
+
+            if(false==CLI::confirm("New application code skeleton will be copied into: \"$site\", continue? [Y/n]", true)){
                 return $this->_cancel();
             }
-            
-            if(!is_dir($site)) mkdir($site, 0755, true);
-            $this->_deepcopy($skeleton, $site);
+
+            if(!is_dir($site)) mkdir($site, 0775, true);
+            Tool::copy_directory($skeleton, $site, 0775);
+
+            printf("\n[DONE]\n");
         }
-        
+
         function gen_sql(){
             $schema=include "db/schema.php";
             if(!is_array($schema)) die("Schema file not found or invalid.");
@@ -180,7 +241,7 @@ END
                 );
             }
 
-            
+
             foreach($actions as $action){
                 $src=file_get_contents("control/$controller.php");
                 $src=substr($src, 0, strrpos($src, "}"));
@@ -193,7 +254,7 @@ END
         global \$app;
 
         \$data=array();
-        
+
         \$this->render('$action', \$data);
     }
 }
@@ -212,41 +273,104 @@ END
             }
         }
 
-        function db($target){
-            // Determine app root
+        function _get_db(){
+            define("SITE", isset($_SERVER['SITE']) ? $_SERVER['SITE'] : null);
+            $cfg=include \site_file("config.php");
+
             // Detect current database
-            // Execute Migration
+            $db=\Clue\Database::create(array('type'=>"mysql", 'host'=>DB_HOST, 'db'=>DB_NAME, 'username'=>DB_USER, 'password'=>DB_PASS));
+            if(!$db) throw new \Exception(sprintf("Can't connect to database %s:\"%s\"@%s/%s", DB_USER, DB_PASS, DB_HOST, DB_NAME));
+
+            return $db;
         }
-        
+
+        function db(){
+            $db=$this->_get_db();
+
+            $current_version=$db->get_var("select value from config where name='DB_VERSION'");
+            if($current_version===null) throw new \Exception("Can't detect current version through config table (name=DB_VERSION)");
+
+            echo "Database: ".$db->get_var("select database()")."\n";
+            echo "Data Version: $current_version"."\n";
+
+            exit("\nMore Usage: clue db [upgrade | downgrade | diagnose]\n");
+        }
+
+        function db_up(){return $this->db_upgrade(); }
+        function db_upgrade(){
+            $db=$this->_get_db();
+            $current_version=$db->get_var("select value from config where name='DB_VERSION'");
+
+            $target_version=intval($current_version)+1;
+            foreach(site_file_glob("script/upgrade/*.php") as $file){
+                if(preg_match("/^(\d+)/", basename($file), $m)){
+                    if(intval($m[1])==$target_version){
+                        $ok=include $file;
+                        if($ok===true){
+                            $db->exec("update config set value=%d where name='DB_VERSION'", $target_version);
+                            echo "Upgraded to $target_version\n";
+                        }
+                        return true;
+                    }
+                }
+            }
+            exit("Can't find upgrade script $target_version ...\n");
+        }
+
+        function db_down(){ return $this->db_downgrade(); }
+        function db_downgrade(){
+            $db=$this->_get_db();
+            $current_version=$db->get_var("select value from config where name='DB_VERSION'");
+
+            $target_version=intval($current_version)-1;
+            foreach(site_file_glob("script/downgrade/*.php") as $file){
+                if(preg_match("/^(\d+)/", basename($file), $m)){
+                    if(intval($m[1])==$target_version){
+                        $ok=include $file;
+                        if($ok===true){
+                            $db->exec("update config set value=%d where name='DB_VERSION'", $target_version);
+                            echo "Upgraded to $target_version\n";
+                        }
+                        return true;
+                    }
+                }
+            }
+            exit("Can't find downgrade script $target_version ...\n");
+        }
+
+        function db_diag(){ return $this->db_diagnose(); }
+        function db_diagnose(){
+            $db=$this->_get_db();
+            $stat=$db->get_results("
+                SELECT table_name, table_rows, avg_row_length, data_length, index_length
+                FROM information_schema.tables WHERE table_schema=%s
+                ORDER BY data_length+index_length DESC
+            ", DB_NAME);
+
+            usort($stat, function($a, $b){return $a->table_rows < $b->table_rows;});
+
+            // TODO: use Clue\Text\Table to format and align
+            printf("%30s %10s %10s %10s %10s %10s\n", "Table Name", "Row Cnt", "Row Len", "Data", "Index", "Total(MB)");
+            printf(str_repeat('=', 85)."\n");
+            foreach($stat as $r){
+                printf("%30s %10s %10s %10s %10s %10s\n",
+                    $r->table_name, $r->table_rows, $r->avg_row_length,
+                    number_format($r->data_length/1024/1024, 2), number_format($r->index_length/1024/1024, 2),
+                    number_format(($r->data_length + $r->index_length)/1024/1024, 2)
+                );
+            }
+        }
+
         static function _confirm($question){
             printf("%s (Y/n) ", $question);
             $response=fgetc(STDIN);
-            
+
             return $response=='Y';
         }
-        
+
         static function _cancel(){
             echo "Operation Canceled\n";
         }
-        
-        private function _deepcopy($src, $dest){
-            echo "Copying $src --> $dest \n";
-            
-            if(is_file($src)){	// File Mode
-                copy($src, $dest);
-                touch($dest);
-            }
-            else if(is_dir($src)){	// Directory Mode
-                // Always make sure the destination folder exists
-                if(!is_dir($dest)) mkdir($dest, 755, true);
-                
-                $dh=opendir($src);
-                while(($file=readdir($dh))!==false){
-                    if($file=='.' || $file=='..') continue;
-                    $this->_deepcopy($src.DIRECTORY_SEPARATOR.$file, $dest.DIRECTORY_SEPARATOR.$file);
-                }
-                closedir($dh);
-            }
-        }
     }
+}
 ?>

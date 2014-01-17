@@ -6,7 +6,7 @@ namespace Clue\Database{
 		function __construct(array $param){
 			// Make sure mysqli extension is enabled
 			if(!extension_loaded('mysqli'))
-				throw new Exception(__CLASS__.": extension mysqli is missing!");
+				throw new \Exception(__CLASS__.": extension mysqli is missing!");
 
 			// Check Parameter, TODO
 			// echo "Creating MySQL Connection.\n";
@@ -23,12 +23,11 @@ namespace Clue\Database{
 			}
 		}
 
-		function __destruct(){
-			// echo "Closing MySQL Connection.\n";
+		function close(){
 			$this->free_result();
 
 			if($this->dbh){
-				mysqli_close($this->dbh);
+				@mysqli_close($this->dbh);
 				$this->dbh=null;
 			}
 		}
@@ -48,7 +47,7 @@ namespace Clue\Database{
 			$cols=array();
 			$vals=array();
 			foreach($fields as $c=>$v){
-				$cols[]=$c;
+				$cols[]='`'.trim($c, '`').'`';
 				$vals[]=$this->quote($v);
 			}
 			$sql="insert into `$table`(".implode(',', $cols).") values(".implode(',', $vals).")";
@@ -67,7 +66,7 @@ namespace Clue\Database{
 	            where $where
 	        ";
 
-	        $this->exec($sql);
+	        return $this->exec($sql);
 	    }
 
 	    function remove($table, $where){
@@ -87,7 +86,9 @@ namespace Clue\Database{
 
 	        $idx=1;
 	        $sql=preg_replace_callback('/%(t|c|s|d|f|%)/', function($m) use($me, $args, &$idx){
-	            if($m[1]!='%' && !array_key_exists($idx, $args)){
+	        	if($m[1]=='%') return '%';
+
+	            if(!array_key_exists($idx, $args)){
 	                throw new \Exception("Not enough arguments for SQL statement.");
 	            }
 
@@ -106,12 +107,9 @@ namespace Clue\Database{
 	                case 'f':
 	                    $var=floatval($args[$idx]);
 	                    break;
-	                case '%':
-	                	$var='%';
-	                	break;
 	            }
 
-	            if($m[1]!='%') $idx++;
+	            $idx++;
 	            return $var;
 	        }, $sql);
 	        return $sql;
@@ -129,31 +127,7 @@ namespace Clue\Database{
         $this->_result=mysqli_query($this->dbh, $sql);
         $query_end=microtime(true);
 
-        $this->last_query=$sql;
-
-/*
-        $location=null;
-        $bt=debug_backtrace();
-        for ($i=0; $i<count($bt); $i++) {
-            if (isset($bt[$i]['file']) && $bt[$i]['file']!=__FILE__) {
-                $location=$bt[$i]['file'] .':'.$bt[$i]['line'];
-                break;
-            }
-        }
-
-        if ($this->log_sql_query) {
-            $this->log(
-                $this->log_sql_query, $this->last_query,
-                $query_end - $query_begin, $location
-            );
-        }
-        if ($this->log_slow_query && ($query_end - $query_begin > 0.1)) {
-            $this->log(
-                $this->log_slow_query, $this->last_query,
-                $query_end - $query_begin, $location
-            );
-        }
-*/
+        $this->audit($sql, $query_end - $query_begin);
 
         if (!$this->_result) {
             $this->setError(
@@ -167,6 +141,8 @@ namespace Clue\Database{
         }
 
         // NOTE: should not free result since it might be used in get_var...
+        // TODO: caused resouce lock, and leak maybe
+
         return true;
     }
 
@@ -258,14 +234,21 @@ namespace Clue\Database{
 	    # Memeory optimized
 	    function foreach_row($sql, $handler, $mode=OBJECT)
 	    {
-	        if (!call_user_func_array(array($this, "exec"), func_get_args())) {
+	    	$args=func_get_args();
+
+	    	$mode=array_pop($args);
+	        if($mode!=OBJECT && $mode!=ARRAY_A && $mode!=ARRAY_N){
+	        	array_push($args, $mode);
+	            $mode=OBJECT;
+	        }
+
+	    	$handler=array_pop($args);
+
+	        if (!call_user_func_array(array($this, "exec"), $args)) {
 	            return false;
 	        }
 
 	        $cnt=0;
-
-	        $handler=func_get_arg(func_num_args()-2);
-			$mode=func_get_arg(func_num_args()-1);
 
 	        while (true) {
 	            switch($mode){
