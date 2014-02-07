@@ -49,14 +49,28 @@ namespace Clue{
             $this->vars[$name]=$value;
         }
 
-        function incl($view=null, $vars=array()){
+        function incl($view=null, $vars=array(), $default_view=null){
             // 未指定view则默认显示content内容
             if($view==null){
                 $this->vars['content']->render();
                 return;
             }
 
-            $sv=new View($view, $this);
+            $vars=$vars?:array();
+
+            try{
+                $sv=new View($view, $this);
+            }
+            catch(\Exception $e){
+                if($default_view){
+                    $sv=new View($default_view, $this);
+                    $vars['missing_view']=$view;
+                }
+                else{
+                    throw $e;
+                }
+            }
+
             $sv->vars=array_merge($this->vars, $vars);
 
             return $sv->render();

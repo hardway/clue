@@ -331,6 +331,23 @@
 			self::db()->insert($model['history_table'], $data);
 		}
 
+		function to_array(){
+			$ary=array();
+			foreach(array_keys(self::model()['columns']) as $col){
+				$ary[$col]=$this->$col;
+			}
+			return $ary;
+		}
+
+		/**
+		 * 创建一个副本
+		 */
+		function duplicate(){
+			$class=get_class($this);
+			$new=new $class($this->to_array());
+			return $new;
+		}
+
 		function save(){
 		    if(!$this->validate()) return false;
 			if(!$this->before_save()) return false;
@@ -433,14 +450,6 @@
 			return count($this->_errors)>0;
 		}
 
-		function setBindError($column, $err){
-			$this->_errors[]=array('type'=>'bind', 'column'=>$column, 'error'=>$err);
-		}
-
-		function setDBError($sql, $err){
-			$this->_errors[]=array('type'=>'db', 'sql'=>$sql, 'error'=>$err);
-		}
-
 		function setError($err, $type='other'){
 			$this->_errors[]=array('type'=>$type, 'error'=>$err);
 		}
@@ -451,112 +460,6 @@
 
 		function clearError(){
 			$this->_errors=array();
-		}
-
-		/**
-		 * Bind data value from database into attributes
-		 *
-		 * @param string $name
-		 * @param string $value
-		 * @param string $type
-		 * @return mixed data types
-		 */
-		function dbbind($name, $value){
-			if($value===null) return null;
-
-			// Name will be ignored in this base class.
-			$meta=$this->getMeta();
-
-			switch($meta['columns'][$name]['type']){
-				case 'int':
-					return intval($value);
-				case 'string':
-					return strval($value);
-				case 'bool':
-				case 'boolean':
-					return intval($value)>0;
-				case 'time':
-				case 'datetime':
-				case 'date':
-				case 'timestamp':
-					return new Time($value);
-				default:
-					$type=$meta['columns'][$name]['type'];
-					return new $type($value);
-			}
-		}
-
-		/**
-		 * Cast attribute value into database data types
-		 *
-		 * @param string $name
-		 * @param string $value
-		 * @param string $type
-		 * @return mixed number or string (that's the only types database will accept)
-		 */
-		function dbcast($name, $value){
-			$meta=$this->getMeta();
-			$db=&$this->_db;
-			// Name will be ignored in this base class.
-
-			$type=null;
-			if(array_key_exists($name, $meta['columns'])){
-				$type=$meta['columns'][$name]['type'];
-			}
-			else{	// Iterate to find the name as db field name
-				foreach($meta['columns'] as $n=>$m){
-					if($n==$name){
-						$type=$m['type'];
-						break;
-					}
-				}
-			}
-
-			switch($type){
-				case 'time':
-				case 'datetime':
-				case 'date':
-				case 'timestamp':
-					$value=$value->format(DATETIME_LONG, null);
-					return ($value===NULL) ? 'null' : $db->quote($value, Database::PARAM_STR);
-				case 'bool':
-				case 'boolean':
-					return $value?1:0;
-				case 'int':
-					return $value===NULL ? 'null' : $db->quote($value, Database::PARAM_INT);
-				default:
-					return $value===NULL ? 'null' : $db->quote($value);
-			}
-		}
-
-		/**
-            * TODO: move to database
-		 * Bind data value from web input into attributes, typically HTTP
-		 *
-		 * @param string $name attribute name
-		 * @param string $type data type
-		 * @return typed data after bind mapping
-		 */
-		function webbind($name, $value){
-			// Name will be ignored in this base class.
-			$meta=$this->getMeta();
-
-			switch($meta['columns'][$name]['type']){
-				case 'time':
-				case 'datetime':
-				case 'date':
-				case 'timestamp':
-					return new Time($value);
-				case 'int':
-					return intval($value);
-				case 'string':
-					return strval($value);
-				case 'bool':
-				case 'boolean':
-					return $value=='on';
-				default:
-					return $value;
-			}
 		}
 	}
 ?>
