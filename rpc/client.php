@@ -56,6 +56,9 @@ class Client{
 		curl_setopt($c, CURLOPT_POST, 1);
 		curl_setopt($c, CURLOPT_RETURNTRANSFER, 1);
 		curl_setopt($c, CURLOPT_POSTFIELDS, $payload);
+		// RPC不能超过5秒
+		curl_setopt($c, CURLOPT_CONNECTTIMEOUT, 5);
+		curl_setopt($c, CURLOPT_TIMEOUT, 5);
 
 		$response=curl_exec($c);
 		$header = curl_getinfo($c);

@@ -98,6 +98,7 @@ namespace Clue\Web{
 		public $responseHeader;
 		public $content;
 		public $agent="ClueHTTPClient";
+		public $inprivate=false;
 
 		private $cache;
 
@@ -241,7 +242,8 @@ namespace Clue\Web{
 			curl_setopt($this->curl, CURLOPT_POST, true);
 			curl_setopt($this->curl, CURLOPT_HEADER, true);
 			curl_setopt($this->curl, CURLOPT_RETURNTRANSFER, true);
-			curl_setopt($this->curl, CURLOPT_REFERER, end($this->history));
+			if(!$this->inprivate)
+				curl_setopt($this->curl, CURLOPT_REFERER, end($this->history));
 
 			if(is_array($data)){
 				$formData=array();
@@ -265,7 +267,8 @@ namespace Clue\Web{
 			curl_setopt($this->curl, CURLOPT_POST, false);
 			curl_setopt($this->curl, CURLOPT_URL, $url);
 			curl_setopt($this->curl, CURLOPT_HEADER, false);
-			curl_setopt($this->curl, CURLOPT_REFERER, end($this->history));
+			if(!$this->inprivate)
+				curl_setopt($this->curl, CURLOPT_REFERER, end($this->history));
 
 			curl_exec($this->curl);
 			// TODO: check curl_errno
@@ -290,7 +293,8 @@ namespace Clue\Web{
 				curl_setopt($this->curl, CURLOPT_HEADER, true);
 				curl_setopt($this->curl, CURLOPT_ENCODING , "");
 				curl_setopt($this->curl, CURLOPT_RETURNTRANSFER, true);
-				curl_setopt($this->curl, CURLOPT_REFERER, end($this->history));
+				if(!$this->inprivate)
+					curl_setopt($this->curl, CURLOPT_REFERER, end($this->history));
 
 				$this->_parse_response(curl_exec($this->curl));
 			    // TODO: check curl_errno
