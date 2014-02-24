@@ -173,6 +173,10 @@ namespace Clue{
             $this->action=$map['action'];
             $this->params=$map['params'];
 
+            if(isset($this['authenticator']) && is_callable($this['authenticator'])){
+                call_user_func_array($this['authenticator'], $this);
+            }
+
             return $this['router']->route($this->controller, $this->action, $this->params);
         }
     }

@@ -15,13 +15,12 @@ namespace Clue\Text{
             $this->rows=array();
 
             $this->filename=$filename;
-
             // 读取首行，标题
             $f=fopen($this->filename, "r");
-            if($f){
-                $this->columns=$this->parse_row($f);
-                fclose($f);
-            }
+            if(!$f) throw new Exception("Can't open CSV file: $this->filename");
+
+            $this->columns=$this->parse_row($f);
+            fclose($f);
         }
 
         function parse_row($f){
@@ -46,28 +45,26 @@ namespace Clue\Text{
             return $name;
         }
 
-        function read($callback=null){
-            $batch=!is_callable($callback);
-
+        function read(){
             $f=fopen($this->filename, "r");
-            if(!$f) return false;
 
-            $this->columns=$this->parse_row($f);
-            while(!feof($f)){
-                $r=$this->parse_row($f);
-                if(!is_array($r)) continue;
+            try{
+                $this->columns=$this->parse_row($f);
+                while(!feof($f)){
+                    $r=$this->parse_row($f);
+                    if(!is_array($r)) continue;
 
-                if($batch){
-                    $this->rows[]=$r;
-                }
-                else{
-                    $callback($r);
+                    if($batch){
+                        $this->rows[]=$r;
+                    }
+                    else{
+                        yield $r;
+                    }
                 }
             }
-
-            fclose($f);
-
-            return $batch ? $this->rows : true;
+            finally{
+                fclose($f);
+            }
         }
     }
 }
