@@ -38,6 +38,19 @@ class Client{
 		$this->secret=@$options['secret'];		// 预共享密钥，用于加密通信数据
 	}
 
+	function enable_cache($cache_dir, $cache_ttl=3600){
+        if(!is_dir($cache_dir)){
+            mkdir($cache_dir, 0775, true);
+        }
+        $this->cache_dir=$cache_dir;
+        $this->cache_ttl=$cache_ttl;
+    }
+
+	function disable_cache(){
+		$this->cache_dir=null;
+		$this->cache_ttl=0;
+	}
+
 	function __call($name, $arguments){
 		$this->log("[RPC] Connecting to $this->endpoint");
 
@@ -48,6 +61,16 @@ class Client{
 		}
 
 		$payload=json_encode($payload);
+
+		// 检查cache是否命中
+		if($this->cache_dir){
+			$cache_file="$this->cache_dir/".md5($this->endpoint.$this->client.$this->token.$payload);
+
+			if(is_file($cache_file) && time()-filemtime($cache_file)<$this->cache_ttl){
+				return json_decode(file_get_contents($cache_file), true);
+			}
+		}
+
 		if($this->secret){
 			$payload=clue_rpc_encrypt($payload, $this->secret);
 		}
@@ -75,6 +98,11 @@ class Client{
 
 		if($this->debug){
 			$this->log(sprintf("[RPC] RESPONSE:\n====================\n%s\n\n", $response));
+		}
+
+		if($this->cache_dir){
+			$cache_file="$this->cache_dir/".md5($this->endpoint.$this->client.$this->token.$payload);
+			file_put_contents($cache_file, $response);
 		}
 
 		return json_decode($response, true);
