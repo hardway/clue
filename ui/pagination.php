@@ -84,7 +84,6 @@ namespace Clue\UI{
 					$links.="<li class='active'><a>$p</a></li>";
 				}
 				else{
-					$url=str_replace($insertPoint, "$p", $urlPattern);
 					$links.="<li><a href='".$this->page_url($p)."'>$p</a></li>";
 				}
 			}
