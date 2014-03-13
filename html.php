@@ -1,9 +1,9 @@
-<?php  
+<?php
 namespace Clue{
     class HTML{
         static function select_options($options, $selected=null, $singleOrPair=null){
 		    if(!is_array($selected)) $selected=array($selected);
-		    
+
 		    $html="";
 		    foreach($options as $value=>$name){
 		        if($name instanceof ActiveRecord){  // 自动处理activerecord对象
@@ -19,20 +19,29 @@ namespace Clue{
 		            $value=$value;
 		        else
 		            $value=is_int($value) ? $name : $value;
-		        
+
 		        $html.="<option value='$value' ".(in_array($value, $selected) ? "selected='1'":"").">$name</option>";
 		    }
-		    
+
 		    return $html;
         }
-        
+
         static function format_text($text){
             $text=str_replace(
-                    array('<', '>', "\n", ' ', "\r"), 
-                    array("&lt;", '&gt;', "<br/>\n", '&nbsp;', ''), 
+                    array('<', '>', "\n", ' ', "\r"),
+                    array("&lt;", '&gt;', "<br/>\n", '&nbsp;', ''),
                     $text
             );
             return $text;
+        }
+
+        static function attribute_string($attrs){
+        	$str=[];
+        	foreach($attrs as $k=>$v){
+        		$str[]=$k.'="'.htmlspecialchars($v).'"';
+        	}
+
+        	return implode(' ', $str);
         }
     }
 }
