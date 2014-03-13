@@ -46,7 +46,8 @@ namespace Clue{
 
     class FormElementText extends FormElement{
         function input_html(){
-            return "<input type='text' name='{$this->prop['name']}' value='{$this->prop['value']}' />";
+            $extra=$this->build_tag_prop($this->filter_prop());
+            return "<input type='text' name='{$this->prop['name']}' value='{$this->prop['value']}' $extra/>";
         }
     }
 
