@@ -38,10 +38,9 @@
     # URL路径
     if(!defined('APP_BASE')) define('APP_BASE', preg_replace('|[\\\/]+|', '/', dirname($_SERVER['SCRIPT_NAME'])));
 
-
-
     // 全局函数
     function url_path($path){
+        $path=str_replace(' ', '%20', $path);
         return preg_replace('|[\\\/]+|', '/', str_replace(APP_ROOT, APP_BASE, $path));
     }
 
