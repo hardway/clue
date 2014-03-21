@@ -181,29 +181,31 @@ namespace Clue\Web{
 		}
 
 		public function follow_url($url, $current=null){
+			if(empty($url)) return $current;
+
 			$parts=parse_url(trim($url));
-			if(!isset($parts['path'])) $parts['path']="";
 
 			// Another host
 			if(isset($parts['host'])) return $url;
 
 			$current=parse_url($current ?: end($this->history));
 			$path=isset($current['path']) ? explode("/",  $current['path']) : array("");
+			if(isset($parts['path'])){
+				// Jump to root if path begins with '/'
+				if(strpos($parts['path'],'/')===0) $path=array();
 
-			// Jump to root if path begins with '/'
-			if(strpos($parts['path'],'/')===0) $path=array();
-
-			// Normalize path
-			foreach(explode("/", $parts['path']) as $p){
-				if($p=="."){
-					continue;
-				}
-				elseif($p=='..'){
-					if(count($path)>1) array_pop($path);
-					continue;
-				}
-				else{
-					array_push($path, $p);
+				// Normalize path
+				foreach(explode("/", $parts['path']) as $p){
+					if($p=="."){
+						continue;
+					}
+					elseif($p=='..'){
+						if(count($path)>1) array_pop($path);
+						continue;
+					}
+					else{
+						array_push($path, $p);
+					}
 				}
 			}
 

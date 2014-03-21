@@ -275,11 +275,11 @@ class Element implements \ArrayAccess{
 			if($c->nodeType==XML_TEXT_NODE)
 				$text.=trim($c->nodeValue);
 			elseif($c->nodeType==XML_ELEMENT_NODE){
-				$text.=$this->extract_text($c);
+				$text.="\e".$this->extract_text($c)."\e";
 			}
 		}
 
-		return $text;
+		return preg_replace("/\e+/", "\n", $text);
 	}
 
 	function extract_html($n){
