@@ -19,6 +19,8 @@
 
 				// 测试属性
 				"p[attr]"=>'//p[@attr]',
+				"p[attr=abc]"=>'//p[@attr=\'abc\']',
+
 				// 属性包含单词
 				'p[class~="hide"]'=>"//p[contains(concat(' ',normalize-space(@class),' '),concat(' ',\"hide\",' '))]",
 				// 属性包含字符

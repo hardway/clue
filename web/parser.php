@@ -26,6 +26,8 @@ class Parser{
 			// :last-child
 			'/([a-zA-Z0-9\_\-\*]+):last-child/'=>'$1[not(following-sibling::*)]',
 
+			// =attrib
+			'/\[@([a-zA-Z0-9\_\-]+)=([^\]]+)\]/'=>"[@$1='$2']",
 			// *=attrib
 			'/\[([a-zA-Z0-9\_\-]+)\*=([^\]]+)\]/'=>"[contains(@$1,$2)]",
 			// ~=attrib
