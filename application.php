@@ -140,7 +140,7 @@ namespace Clue{
 
         function get_alerts($context_pattern=".*", $level='alert'){
             $messages=array();
-            if(is_array($_SESSION['app_msg'][$level])) foreach($_SESSION['app_msg'][$level] as $context=>$msgs){
+            if(is_array(@$_SESSION['app_msg'][$level])) foreach($_SESSION['app_msg'][$level] as $context=>$msgs){
                 if(!preg_match('/'.$context_pattern.'/i', $context)) continue;
 
                 $messages=array_merge($messages, $msgs);

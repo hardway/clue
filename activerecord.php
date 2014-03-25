@@ -87,6 +87,26 @@
 				return null;
 		}
 
+		/**
+		 * 获得constant列表
+		 * 例如
+		 * const STATUS_ON=1;
+		 * const STATUS_OFF=0;
+		 * AR::constants('status') ==> ['on'=>1, 'off'=>0]
+		 *
+		 * Inspired from http://www.yiiframework.com/wiki/288/managing-constants-easily/
+		 */
+	    static function constants($prefix){
+	        $r=new \ReflectionClass(get_called_class());
+	        $found=[];
+	        foreach($r->getConstants() as $name=>$value){
+	            if(preg_match('/'.$prefix.'_(.*)/i', $name, $m)){
+	                $found[strtolower($m[1])]=$value;
+	            }
+	        }
+	        return $found;
+	    }
+
 		static function get($id){
 		    $model=self::model();
 

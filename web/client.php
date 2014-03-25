@@ -95,7 +95,7 @@ namespace Clue\Web{
 	}
 
 	class Client{
-		public $responseHeader;
+		public $header;
 		public $content;
 		public $agent="ClueHTTPClient";
 		public $inprivate=false;
@@ -310,12 +310,18 @@ namespace Clue\Web{
 		private function _parse_response($response){
 			$sep=strpos($response, "\r\n\r\n");
 
+			$this->header=[];
 			if(substr($response, 0, 4)=='HTTP' && $sep>0){
-				$this->responseHeader=substr($response, 0, $sep);
+				$response_header=substr($response, 0, $sep);
 				$this->content=substr($response, $sep);
+
+				foreach(explode("\n", $response_header) as $row){
+					if(preg_match('/^([a-z-]+):(.+)$/i', $row, $m)){
+						$this->header[trim($m[1])]=trim($m[2]);
+					}
+				}
 			}
 			else{
-				$this->responseHeader=null;
 				$this->content=$response;
 			}
 		}
