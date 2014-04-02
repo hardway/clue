@@ -123,7 +123,7 @@
 		}
 
 		static function delete($ids){
-			if(!array($ids)) $ids=array($ids);
+			if(!is_array($ids)) $ids=array($ids);
 			$class=get_called_class();
 
 			$cnt=0;
