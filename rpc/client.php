@@ -82,12 +82,14 @@ class Client{
 		// RPC不能超过5秒
 		curl_setopt($c, CURLOPT_CONNECTTIMEOUT, 5);
 		curl_setopt($c, CURLOPT_TIMEOUT, 5);
+		// curl_setopt($c, CURLOPT_HTTPHEADER, array("Expect:"));
+		// curl_setopt($c, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_0);
 
 		$response=curl_exec($c);
 		$header = curl_getinfo($c);
 		curl_close($c);
 
-		if($header['http_code']!=200) throw new \Exception("HTTP {$header['http_code']} $response");
+		if($header['http_code']>=400) throw new \Exception("HTTP {$header['http_code']} $response");
 
 		if($this->secret){
 			if($this->debug){
