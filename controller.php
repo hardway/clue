@@ -73,6 +73,11 @@ namespace Clue{
 
             $content=$this->get_view($view?:$this->view, $data);
 
+            // 允许前置执行 {$view}.meta 作为修改META定义或者执行一些特殊修改
+            if($meta=View::find_view($this->controller.'/'.$view?:$this->view, null, 'meta')){
+            	include $meta.".meta";
+            }
+
             $layout=new View("/layout/$this->layout");
             if($layout)
                 $layout->render(array('content'=>$content));

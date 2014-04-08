@@ -8,7 +8,7 @@ namespace Clue{
         /**
          * 定位view所在路径
          */
-        static function find_view($view, $parent=null){
+        static function find_view($view, $parent=null, $extension="htm|php"){
             // 相对路径的定位
             // Example:
             //  find_view('view', '/folder')    ==> /folder/view
@@ -22,7 +22,7 @@ namespace Clue{
 
             $template=null;
             foreach($view_dirs as $dir){
-                foreach(array("htm", "php") as $ext){
+                foreach(explode("|", $extension) as $ext){
                     if(file_exists($dir.strtolower($view).".".$ext)){
                         $template=$dir.strtolower($view);
                         break;
