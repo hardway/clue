@@ -45,7 +45,7 @@ namespace Clue\Text{
             return $name;
         }
 
-        function read(){
+        function read($batch=false){
             $f=fopen($this->filename, "r");
 
             try{
