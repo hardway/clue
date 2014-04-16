@@ -7,7 +7,7 @@ namespace Clue{
     $_CLASS_PATH=array();
 
     function add_include_path($path){
-        set_include_path(get_include_path().PATH_SEPARATOR.$path);
+        set_include_path($path.PATH_SEPARATOR.get_include_path());
     }
 
     function add_class_path($path){
@@ -30,7 +30,6 @@ namespace Clue{
         global $_CLASS_PATH;
 
         $class=str_replace(NS, '/', $class);
-        $class=str_replace('_', '/', $class);
 
         if(preg_match('/^clue\//i', $class)){
             // Special treat for Clue\ classes. For they might reside in a phar file.
@@ -45,7 +44,7 @@ namespace Clue{
         }
         else{
             foreach($_CLASS_PATH as $path){
-                foreach(array($class, strtolower($class)) as $cls){
+                foreach([$class, strtolower($class), str_replace('_', '/', $class), str_replace('_', '/', strtolower($class))] as $cls){
                     if(file_exists($path.'/'.$cls.".php")){
                         require_once $path.'/'.$cls.".php";
                         return;
