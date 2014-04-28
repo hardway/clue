@@ -342,7 +342,7 @@ END
         function db_diagnose(){
             $db=$this->_get_db();
             $stat=$db->get_results("
-                SELECT table_name, table_rows, avg_row_length, data_length, index_length
+                SELECT table_name, engine, table_rows, avg_row_length, data_length, index_length
                 FROM information_schema.tables WHERE table_schema=%s
                 ORDER BY data_length+index_length DESC
             ", DB_NAME);
@@ -350,11 +350,11 @@ END
             usort($stat, function($a, $b){return $a->table_rows < $b->table_rows;});
 
             // TODO: use Clue\Text\Table to format and align
-            printf("%30s %10s %10s %10s %10s %10s\n", "Table Name", "Row Cnt", "Row Len", "Data", "Index", "Total(MB)");
+            printf("%30s %10s %10s %10s %10s %10s %10s\n", "Table Name", "Engine", "Row Cnt", "Row Len", "Data", "Index", "Total(MB)");
             printf(str_repeat('=', 85)."\n");
             foreach($stat as $r){
-                printf("%30s %10s %10s %10s %10s %10s\n",
-                    $r->table_name, $r->table_rows, $r->avg_row_length,
+                printf("%30s %10s %10s %10s %10s %10s %10s\n",
+                    $r->table_name, $r->engine, $r->table_rows, $r->avg_row_length,
                     number_format($r->data_length/1024/1024, 2), number_format($r->index_length/1024/1024, 2),
                     number_format(($r->data_length + $r->index_length)/1024/1024, 2)
                 );
