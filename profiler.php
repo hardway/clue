@@ -4,7 +4,7 @@ class Profiler{
     function __construct(){
     	$this->xhprof=extension_loaded("xhprof");
 
-    	$this->start_native();
+    	$this->start();
     }
 
     function __destruct(){
@@ -17,8 +17,12 @@ class Profiler{
 	    if($this->xhprof) $this->start_xhprof();
     }
 
-    function stop($func="MyFunc"){
-    	if($this->xhprof) $this->stop_xhprof($func);
+    function stop($source='unknown'){
+        $this->stop_native();
+
+    	if($this->xhprof) $this->stop_xhprof($source);
+
+        return $this->summary();
     }
 
     function start_native(){
@@ -35,11 +39,16 @@ class Profiler{
 		xhprof_enable(XHPROF_FLAGS_CPU + XHPROF_FLAGS_MEMORY);
     }
 
-    function stop_xhprof($func){
+    function stop_xhprof($source){
 		$data = xhprof_disable();
 
 		$this->xhprof_run=date("mdHis").uniqid();
-		$file=sprintf("%s/%s.%s-%s.xhprof", ini_get("xhprof.output_dir"), $this->xhprof_run, APP_NAME, $func);
+        $this->xhprof_source=$source;
+
+        $dir=ini_get("xhprof.output_dir");
+        if(!is_dir($dir)) @mkdir($dir, 775, true);
+
+		$file=sprintf("%s/%s.%s.xhprof", $dir, $this->xhprof_run, $this->xhprof_source);
 		file_put_contents($file, serialize($data));
     }
 
@@ -47,7 +56,7 @@ class Profiler{
     	return array(
     		'time'=>$this->stop_time - $this->start_time,
     		'memory'=>$this->stop_memory - $this->start_memory,
-    		'xhprof'=>$this->xhprof ? "http://localhost/xhprof/xhprof_html/index.php?run=$this->xhprof_run&source=".APP_NAME : null
+    		'xhprof'=>$this->xhprof ? "http://localhost/xhprof/xhprof_html/index.php?run=$this->xhprof_run&source=".$this->xhprof_source : null
     	);
     }
 }
