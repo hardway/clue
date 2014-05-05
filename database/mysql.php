@@ -250,16 +250,17 @@ namespace Clue\Database{
 
 	        $cnt=0;
 
+	        $res=$this->_result; $this->_result=null;
 	        while (true) {
 	            switch($mode){
 	            case OBJECT:
-	                $r=mysqli_fetch_object($this->_result);
+	                $r=mysqli_fetch_object($res);
 	                break;
 	            case ARRAY_A:
-	                $r=mysqli_fetch_assoc($this->_result);
+	                $r=mysqli_fetch_assoc($res);
 	                break;
 	            case ARRAY_N:
-	                $r=mysqli_fetch_row($this->_result);
+	                $r=mysqli_fetch_row($res);
 	                break;
 	            }
 
@@ -269,6 +270,7 @@ namespace Clue\Database{
 
 	            $handler($r); $cnt++;
 	        }
+	        $res->close();
 
 	        return $cnt;
 	    }
