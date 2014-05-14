@@ -1,15 +1,15 @@
 <?php
-namespace Clue{
-    class Clue_CLI_Flag{
+namespace Clue\CLI{
+    class Flag{
         protected $flagDef;
 
         function __construct(){
             $flagDef=array();
         }
 
-        function add_switch($name, $value, $usage){
+        function add_switch($name, $usage){
             $this->flagDef[$name]=array(
-                'default'=>$value,
+                'default'=>true,
                 'usage'=>$usage
             );
         }
