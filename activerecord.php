@@ -406,26 +406,28 @@
 				}
 				else{
 				    // Nothing has changed.
-				    return true;
+				    $sql=null;
 				}
 			}
 
-			$success=self::db()->exec($sql);
+			if($sql){
+				$success=self::db()->exec($sql);
 
-			// Update or Insert is successful.
-			// Update the primary key if new record inserted.
-			if($success){
-    			if(empty($this->$pk)){
-    				$this->$pk=self::db()->insert_id();
-    			}
+				// Update or Insert is successful.
+				// Update the primary key if new record inserted.
+				if($success){
+	    			if(empty($this->$pk)){
+	    				$this->$pk=self::db()->insert_id();
+	    			}
 
-    			$history_data[$pk]=$this->$pk;
-    			$this->add_history($history_data, $history_action);
+	    			$history_data[$pk]=$this->$pk;
+	    			$this->add_history($history_data, $history_action);
 
-    			$this->_snap_shot();
+	    			$this->_snap_shot();
+				}
 			}
 
-		$this->after_save();
+			$this->after_save();
 
 			return $success;
 		}

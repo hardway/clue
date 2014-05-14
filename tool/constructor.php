@@ -275,11 +275,12 @@ END
 
         function _get_db(){
             define("SITE", isset($_SERVER['SITE']) ? $_SERVER['SITE'] : null);
-            $cfg=include \site_file("config.php");
+            $this->appcfg=include \site_file("config.php");
+            $cfg=$this->appcfg['database'];
 
             // Detect current database
-            $db=\Clue\Database::create(array('type'=>"mysql", 'host'=>DB_HOST, 'db'=>DB_NAME, 'username'=>DB_USER, 'password'=>DB_PASS));
-            if(!$db) throw new \Exception(sprintf("Can't connect to database %s:\"%s\"@%s/%s", DB_USER, DB_PASS, DB_HOST, DB_NAME));
+            $db=\Clue\Database::create($cfg);
+            if(!$db) throw new \Exception(sprintf("Can't connect to database %s:\"%s\"@%s/%s", $cfg['username'], $cfg['password'], $cfg['host'], $cfg['db']));
 
             return $db;
         }
@@ -345,7 +346,7 @@ END
                 SELECT table_name, table_rows, avg_row_length, data_length, index_length
                 FROM information_schema.tables WHERE table_schema=%s
                 ORDER BY data_length+index_length DESC
-            ", DB_NAME);
+            ", $this->appcfg['database']['db']);
 
             usort($stat, function($a, $b){return $a->table_rows < $b->table_rows;});
 

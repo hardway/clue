@@ -89,7 +89,8 @@
         foreach(glob(APP_ROOT.'/'.$pattern) as $path){
             $files[basename($path)]=$path;
         }
-        foreach(glob(APP_ROOT.'/'.SITE.'/'.$pattern) as $path){
+
+        if(defined('SITE')) foreach(glob(APP_ROOT.'/'.SITE.'/'.$pattern) as $path){
             $files[basename($path)]=$path;
         }
 
