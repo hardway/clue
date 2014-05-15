@@ -189,10 +189,14 @@ namespace Clue\Web{
 			if(isset($parts['host'])) return $url;
 
 			$current=parse_url($current ?: end($this->history));
+
 			$path=isset($current['path']) ? explode("/",  $current['path']) : array("");
 			if(isset($parts['path'])){
 				// Jump to root if path begins with '/'
 				if(strpos($parts['path'],'/')===0) $path=array();
+
+				// Remove tip file
+				if(count($path)>1) array_pop($path);
 
 				// Normalize path
 				foreach(explode("/", $parts['path']) as $p){
@@ -285,7 +289,7 @@ namespace Clue\Web{
 			$this->content=null;
 
 			// 尝试从cache获取
-			if($this->cache){
+			if(!$forceRefresh && $this->cache){
 				$this->content=$this->cache->get($url);
 			}
 

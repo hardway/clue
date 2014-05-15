@@ -60,12 +60,12 @@ class Parser{
 			else if(preg_match('|encoding="([0-9a-zA-Z\-]+)"|i', $html, $match))
 				$encoding=$match[1];
 			else
-				$encoding=array("utf-8", "gbk");
+				$encoding='utf-8';
 		}
 
 		// Need to insert meta tag at first in case some of the webpage didn't have that.
 		$html='<meta http-equiv="Content-Type" content="text/html; charset=utf-8">'.$html;
-		$html=mb_convert_encoding($html, 'utf-8', $encoding);
+		if(strtolower($encoding)!='utf-8') $html=mb_convert_encoding($html, 'utf-8', $encoding);
 
 		$this->dom=new \DOMDocument();
 		$this->dom->strictErrorChecking=false;
@@ -232,13 +232,9 @@ class Element implements \ArrayAccess{
 	}
 
 	function __get($att){
-		if($att=='text'){
-			return $this->extract_text($this->el);
-		}
-		else if($att=='table')
-			return $this->extract_table($this->el);
-		else if($att=='html'){
-			return $this->extract_html($this->el);
+		$action="get_$att";
+		if(method_exists($this, $action)){
+			return $this->$action($this->el);
 		}
 	}
 
@@ -264,25 +260,30 @@ class Element implements \ArrayAccess{
 		return null;
 	}
 
-	function getParent(){
+	function getParent($filter='.*'){
 		$parent=$this->el->parentNode;
+		while($parent!=null && !preg_match('/^'.$filter.'/', $parent->tagName)){
+			var_dump($parent->tagName);
+			$parent=$parent->parentNode;
+		}
+
 		return is_null($parent) ? null : new Element($parent, $this->parser);
 	}
 
-	function extract_text($n){
+	function get_text($n){
 		$text="";
 		if($n->childNodes) foreach($n->childNodes as $c){
 			if($c->nodeType==XML_TEXT_NODE)
 				$text.=trim($c->nodeValue);
 			elseif($c->nodeType==XML_ELEMENT_NODE){
-				$text.="\e".$this->extract_text($c)."\e";
+				$text.="\e".$this->get_text($c)."\e";
 			}
 		}
 
 		return preg_replace("/\e+/", "\n", $text);
 	}
 
-	function extract_html($n){
+	function get_html($n){
 		$html="";
 		$html="<".$n->tagName;
 		if($n->attributes->length>0) foreach($n->attributes as $attr){
@@ -294,7 +295,7 @@ class Element implements \ArrayAccess{
 			if($c->nodeType==XML_TEXT_NODE)
 				$html.=trim($c->nodeValue);
 			elseif($c->nodeType==XML_ELEMENT_NODE){
-				$html.=$this->extract_html($c);
+				$html.=$this->get_html($c);
 			}
 		}
 		$html.="</$n->tagName>";
@@ -302,7 +303,7 @@ class Element implements \ArrayAccess{
 		return $html;
 	}
 
-	function extract_table($t){
+	function get_table($t){
 		$rows=array();
 		if($t->childNodes) foreach($t->childNodes as $c){
 			if(in_array($c->nodeName, array('tbody','thead','tfoot'))){
@@ -328,10 +329,8 @@ class Element implements \ArrayAccess{
 		return $table;
 	}
 
-	private function _get_inner_html(){
+	function get_inner_html(){
 		$html="";
-
-		return $this->get_text($this->el);
 
 		foreach($this->el->childNodes as $n){
 			$d=new \DOMDocument();

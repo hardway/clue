@@ -19,6 +19,7 @@
 				array("#t", "http://host.com/folder/", "http://host.com/folder/#t"),
 				array("", "http://no-slash.com", "http://no-slash.com"),
 				array("", "http://keep-slash.com/", "http://keep-slash.com/"),
+				array('images/2013-07-Mold-7.jpg', 'http://www.abc.com/dimensional/articles/2013-07-01.php3', 'http://www.abc.com/dimensional/articles/images/2013-07-Mold-7.jpg'),
 			);
 
 			foreach($tests as list($href, $current, $expected)){
