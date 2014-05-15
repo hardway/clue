@@ -410,6 +410,7 @@
 				}
 			}
 
+			$success=true;
 			if($sql){
 				$success=self::db()->exec($sql);
 
