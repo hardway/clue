@@ -36,6 +36,7 @@ class Client{
 		$this->client=@$options['client'];		// 客户ID和令牌，用于身份认证
 		$this->token=@$options['token'];
 		$this->secret=@$options['secret'];		// 预共享密钥，用于加密通信数据
+		$this->timeout=@$options['timeout'] ?: 5;
 	}
 
 	function enable_cache($cache_dir, $cache_ttl=3600){
@@ -76,17 +77,28 @@ class Client{
 		}
 
 		$c=curl_init($this->endpoint);
+
 		curl_setopt($c, CURLOPT_POST, 1);
 		curl_setopt($c, CURLOPT_RETURNTRANSFER, 1);
 		curl_setopt($c, CURLOPT_POSTFIELDS, $payload);
+
 		// RPC不能超过5秒
-		curl_setopt($c, CURLOPT_CONNECTTIMEOUT, 5);
-		curl_setopt($c, CURLOPT_TIMEOUT, 5);
+		curl_setopt($c, CURLOPT_CONNECTTIMEOUT, $this->timeout);
+		curl_setopt($c, CURLOPT_TIMEOUT, $this->timeout);
+
+		// No SSL Verification
+		curl_setopt($c, CURLOPT_SSL_VERIFYHOST, false);
+		curl_setopt($c, CURLOPT_SSL_VERIFYPEER, false);
+
 		// curl_setopt($c, CURLOPT_HTTPHEADER, array("Expect:"));
-		// curl_setopt($c, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_0);
+		curl_setopt($c, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_0);
 
 		$response=curl_exec($c);
 		$header = curl_getinfo($c);
+
+		if(curl_errno($c)){
+			throw new \Exception(sprintf("NETWORK %d: %s", curl_errno($c), curl_error($c)));
+		}
 		curl_close($c);
 
 		if($header['http_code']>=400) throw new \Exception("HTTP {$header['http_code']} $response");

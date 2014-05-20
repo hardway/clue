@@ -293,7 +293,11 @@ namespace Clue\Web{
 				$this->content=$this->cache->get($url);
 			}
 
+			$this->cache_hit=true;
+
 			if(!$this->content){
+				$this->cache_hit=false;
+
 				curl_setopt($this->curl, CURLOPT_URL, $url);
 				curl_setopt($this->curl, CURLOPT_POST, false);
 				curl_setopt($this->curl, CURLOPT_HEADER, true);

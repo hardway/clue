@@ -76,6 +76,7 @@ class Parser{
 		$tidy = new \tidy;
 		$html=$tidy->repairString($html);
 		*/
+		$html=str_replace('&nbsp;', ' ', $html);
 
 		# TODO: 如何纠错，发现错误如何记录日志
 		if($type=='html'){
