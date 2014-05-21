@@ -89,10 +89,16 @@ namespace Clue\Tool{
 
     class Constructor{
         // TODO: 使用单独的方法族，例如 help_compress()...
+        function version(){
+            echo "CLUE Version: ".CLUE_VERSION."\n";
+        }
+
         function help(){
+            $this->version();
+            echo "--------------------------------------------\n";
+            echo $this->opt->get_usage("Options Available:");
             echo "
-Version: ".CLUE_VERSION."
-Usage: clue [command] {arguments...}
+Commands Available:
     init        Initialize application skeleton
 
     gen_sql     Generate SQL Script based on db/schema.php
