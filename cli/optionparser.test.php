@@ -97,5 +97,17 @@
             $this->assertEquals($options['verbose'], true);
             $this->assertEquals($args, ['get', 'next']);
         }
+
+        function test_case_1(){
+            $op=new Clue\CLI\OptionParser();
+            $op->add_option(['name'=>'rebuild', 'long'=>'rebuild', 'help'=>'Rebuild usermessage queue']);
+            $op->add_option(['name'=>'test', 'short'=>'t', 'long'=>'test', 'help'=>'Fake Send']);
+            $op->add_option(['name'=>'help', 'short'=>'h', 'long'=>'help', 'help'=>'Display this help']);
+
+            list($options, $args)=$op->parse(['-t', '100']);
+            $this->assertEquals($options['rebuild'], false);
+            $this->assertEquals($options['test'], true);
+            $this->assertEquals($options['help'], false);
+        }
     }
 ?>

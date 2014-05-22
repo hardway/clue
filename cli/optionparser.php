@@ -98,13 +98,20 @@ namespace Clue\CLI{
 
                 if($a[0]=='-'){
                     foreach($this->options as $o){
-                        $pattern= $a[1]=='-' ? '--'.$o['long'].'=?' : '-'.$o['short'];
+                        if($a[1]=='-' && $o['long']){
+                            $pattern='--'.$o['long'].'=?';
+                        }
+                        elseif($o['short']){
+                            $pattern='-'.$o['short'];
+                        }
+                        else continue;
+
                         if(preg_match('/'.$pattern.'(.*)/', $a, $m)){
                             if($o['type']=='flag'){
                                 $results[$o['name']]+=1;
 
                                 if($a[1]!='-'){ // Set shrink short flags
-                                    foreach(str_split($m[1]) as $c){
+                                    if(strlen($m[1])>0) foreach(str_split($m[1]) as $c){
                                         foreach($this->options as $o){
                                             if($o['type']=='flag' && $o['short']==$c){
                                                 $results[$o['name']]+=1;
