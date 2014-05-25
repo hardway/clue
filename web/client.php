@@ -239,8 +239,30 @@ namespace Clue\Web{
 		}
 
 		function get($url, $data=array()){
+			if($data){
+				$info=parse_url($url);
+				parse_str(@$info['query'], $query);
+				$info['query']=http_build_query($data+$query);
+
+				$url=$this->_build_url($info);
+			}
+
+     		// Build the the final output URL
 			$this->open($url);
 			return $this->content;
+		}
+
+		function _build_url(array $info){
+			$url=(isset($info["scheme"])?$info["scheme"]."://":"").
+				(isset($info["user"])?$info["user"].":":"").
+				(isset($info["pass"])?$info["pass"]."@":"").
+				(isset($info["host"])?$info["host"]:"").
+				(isset($info["port"])?":".$info["port"]:"").
+				(isset($info["path"])?$info["path"]:"").
+				(isset($info["query"])?"?".$info["query"]:"").
+				(isset($info["fragment"])?"#".$info["fragment"]:"");
+
+			return $url;
 		}
 
 		function post($url, $data){
