@@ -57,7 +57,8 @@
 
         $url=call_user_func_array("url_for", func_get_args());
 
-        if($app['config']['ssl'])
+        // DEPRECATED，不再使用['config']['ssl']
+        if($app['config']['ssl'] || $app['has_ssl'])
             $url=preg_replace('/^http:/', 'https:', $url);
 
         return $url;
