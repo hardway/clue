@@ -4,14 +4,14 @@ namespace Clue{
     /**
      * Bootstrap code, facility to load subsystem here.
      */
-    $_CLASS_PATH=array();
-
     function add_include_path($path){
         set_include_path($path.PATH_SEPARATOR.get_include_path());
     }
 
     function add_class_path($path){
         global $_CLASS_PATH;
+
+        if($_CLASS_PATH==null) $_CLASS_PATH=array();
 
         // Normalize path
         $path=realpath($path);

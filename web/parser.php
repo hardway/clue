@@ -53,11 +53,13 @@ class Parser{
 		$this->html=$html;
 		// Prepare the raw html, convert to utf-8 encoding.
 
+
 		// Detect encoding
 		if($encoding==null){
-			if(preg_match('|charset=([0-9a-zA-Z\-]+)|i', $html, $match))
+			if(preg_match('/meta charset\=[\"\']?([0-9a-zA-Z\-]+)/i', $html, $match)){
 				$encoding=$match[1];
-			else if(preg_match('|encoding="([0-9a-zA-Z\-]+)"|i', $html, $match))
+			}
+			else if(preg_match('/encoding=[\"\']?([0-9a-zA-Z\-]+)/i', $html, $match))
 				$encoding=$match[1];
 			else
 				$encoding='utf-8';
@@ -263,8 +265,7 @@ class Element implements \ArrayAccess{
 
 	function getParent($filter='.*'){
 		$parent=$this->el->parentNode;
-		while($parent!=null && !preg_match('/^'.$filter.'/', $parent->tagName)){
-			var_dump($parent->tagName);
+		while($parent!=null && !preg_match('/^'.$filter.'/', @$parent->tagName)){
 			$parent=$parent->parentNode;
 		}
 

@@ -285,7 +285,7 @@ namespace Clue\Web{
 			curl_setopt($this->curl, CURLOPT_POSTFIELDS, $formData);
 			$this->_parse_response(curl_exec($this->curl));
 
-			// TODO: check curl_errno
+			return $this->content;
 		}
 
 		function download($url, $dest){
@@ -329,9 +329,11 @@ namespace Clue\Web{
 					curl_setopt($this->curl, CURLOPT_REFERER, end($this->history));
 
 				$this->_parse_response(curl_exec($this->curl));
-			    // TODO: check curl_errno
 
-				if($this->cache){
+			    $this->errno=curl_errno($this->curl);
+			    $this->error=curl_error($this->curl);
+
+				if($this->errno==0 && $this->cache){
 					$this->cache->put($url, $this->content);
 				}
 			}
