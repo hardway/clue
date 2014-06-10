@@ -200,21 +200,9 @@
 			return $sql;
 		}
 
-		/**
-		 * Find records based on condition
-		 * eg.  $condition=array("name like 'tom%'", "sex='M'")
-		 *      $condition="age>18"
-    	 *      $condition=array("sex"=>'F', "order by name")
-    	 *      $range="all"
-    	 *      $range='1-20'
-		 */
-		static function find($condition, $range='all'){
-		    $model=self::model();
-		    $class=get_called_class();
-
-			$sql="select * from `{$model["table"]}` ";
-			$sql.=self::_get_where_clause($condition, $range);
-
+		static function raw_find($sql,$range='all')
+		{
+			$class=get_called_class();
 			switch(strtolower($range)){
 				default:
 					$range='all';
@@ -250,6 +238,23 @@
 					}
 					break;
 			}
+		}
+
+		/**
+		 * Find records based on condition
+		 * eg.  $condition=array("name like 'tom%'", "sex='M'")
+		 *      $condition="age>18"
+    	 *      $condition=array("sex"=>'F', "order by name")
+    	 *      $range="all"
+    	 *      $range='1-20'
+		 */
+		static function find($condition, $range='all'){
+		    $model=self::model();
+
+			$sql="select * from `{$model["table"]}` ";
+			$sql.=self::_get_where_clause($condition, $range);
+
+			return self::raw_find($sql,$range);
 		}
 
 		static function find_all($condition=array()){
