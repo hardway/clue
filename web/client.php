@@ -343,12 +343,17 @@ namespace Clue\Web{
 			$sep=strpos($response, "\r\n\r\n");
 
 			$this->header=[];
+			$this->response=[];
+
 			if(substr($response, 0, 4)=='HTTP' && $sep>0){
 				$response_header=substr($response, 0, $sep);
 				$this->content=substr($response, $sep);
 
 				foreach(explode("\n", $response_header) as $row){
-					if(preg_match('/^([a-z-]+):(.+)$/i', $row, $m)){
+					if(preg_match('/http\/(\d+\.\d+)\s+(\d+)\s+/i', $row, $m)){
+						$this->response['status']=$m[2];
+					}
+					elseif(preg_match('/^([a-z-]+):(.+)$/i', $row, $m)){
 						$this->header[trim($m[1])]=trim($m[2]);
 					}
 				}
