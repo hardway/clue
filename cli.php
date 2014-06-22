@@ -29,6 +29,10 @@ namespace Clue{
             flush(); @ob_flush();
         }
 
+        static function log($str){
+            error_log($str);
+        }
+
         static function warning($str){
             self::ansi("yellow");
             echo $str;
@@ -41,10 +45,14 @@ namespace Clue{
             self::ansi();
         }
 
-        static function alert($str){
+        static function error($str){
             self::ansi("red");
             echo $str;
             self::ansi();
+        }
+
+        static function alert($str){
+            self::error($str);
         }
 
         static function ansi($code=""){

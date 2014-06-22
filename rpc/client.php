@@ -37,6 +37,8 @@ class Client{
 		$this->token=@$options['token'];
 		$this->secret=@$options['secret'];		// 预共享密钥，用于加密通信数据
 		$this->timeout=@$options['timeout'] ?: 5;
+
+		$this->cache_dir=null;
 	}
 
 	function enable_cache($cache_dir, $cache_ttl=3600){

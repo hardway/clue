@@ -361,7 +361,7 @@ class Beanstalk {
      * @param integer $pri *New* priority to assign to the job.
      * @return boolean `false` on error, `true` on success.
      */
-    public function bury($id, $pri) {
+    public function bury($id, $pri=0) {
         $this->_write(sprintf('bury %d %d', $id, $pri));
         $status = $this->_read();
 

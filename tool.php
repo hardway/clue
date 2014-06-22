@@ -24,7 +24,7 @@ namespace Clue{
         }
     }
 
-    function readable_bits($size){
+    function readable_bytes($size){
         $format = array('B', 'KB', 'MB', 'GB', 'TB', 'PB');
         $pos = 0;
 
