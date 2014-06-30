@@ -254,7 +254,10 @@ namespace Clue{
 
 			// Translate url
 			foreach($this->translates as $tr){
-				$url=preg_replace($tr['from'], $tr['to'], $url);
+				if(preg_match($tr['from'], $url)){
+					$url=preg_replace($tr['from'], $tr['to'], $url);
+					break;	// Only
+				}
 			}
 
 			# Try default controller
