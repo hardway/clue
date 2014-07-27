@@ -310,7 +310,7 @@
 		function bind(array $data){
 			$model=self::model();
 			foreach($model['columns'] as $c=>$m){
-				if(array_key_exists($c, $data)){
+				if(array_key_exists($m['name'], $data)){
 					$this->$c=$data[$m['name']];
 				}
 			}

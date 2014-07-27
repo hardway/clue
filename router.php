@@ -241,8 +241,10 @@ namespace Clue{
                 );
             }
 
-            if(APP_BASE!='/' && strpos($url, APP_BASE)===0){
-                $url=substr($url, strlen(APP_BASE));
+            // Strip base directory, eg, the application is located at http://localhost/portal/app
+            $base=preg_replace('|[\\\/]+|', '/', dirname($_SERVER['SCRIPT_NAME']));
+            if($base!='/' && strpos($url, $base)===0){
+                $url=substr($url, strlen($base));
             }
 
 			// strip query from url
