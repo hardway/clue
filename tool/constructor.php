@@ -280,8 +280,7 @@ END
         }
 
         function _get_db(){
-            define("SITE", isset($_SERVER['SITE']) ? $_SERVER['SITE'] : null);
-            $this->appcfg=include \site_file("config.php");
+            $this->appcfg=include \Clue\site_file("config.php");
             $cfg=$this->appcfg['database'];
 
             // Detect current database

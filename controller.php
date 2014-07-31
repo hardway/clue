@@ -10,14 +10,7 @@ namespace Clue{
 		static function find_controller($controller){
 			$controller=strtolower($controller);
 
-			$candidates=array(APP_ROOT."/source/control/$controller.php");
-			if(defined("SITE") && SITE){
-				array_unshift($candidates, APP_ROOT.'/'.SITE."/control/$controller.php");
-			}
-
-			foreach ($candidates as $path) {
-				if(file_exists($path)) return $path;
-			}
+            return site_file("source/control/$controller.php");
 		}
 
 		function __construct($controller=null, $action=null){

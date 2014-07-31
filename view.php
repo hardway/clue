@@ -9,6 +9,8 @@ namespace Clue{
          * 定位view所在路径
          */
         static function find_view($view, $parent=null, $extension="htm|php"){
+            global $_SITE_PATH;
+
             // 相对路径的定位
             // Example:
             //  find_view('view', '/folder')    ==> /folder/view
@@ -17,18 +19,15 @@ namespace Clue{
                 $view=dirname($parent->view).'/'.$view;
             }
 
-            $view_dirs=array(APP_ROOT.'/source/view/');
-            if(defined("SITE")) array_unshift($view_dirs, APP_ROOT.'/'.SITE.'/view/');
+            $view="/source/view/".$view;
 
             $template=null;
-            foreach($view_dirs as $dir){
+            foreach($_SITE_PATH as $dir){
                 foreach(explode("|", $extension) as $ext){
                     if(file_exists($dir.strtolower($view).".".$ext)){
-                        $template=$dir.strtolower($view);
-                        break;
+                        return $dir.strtolower($view);
                     }
                 }
-                if($template!=null) break;
             }
 
             return $template;

@@ -1,4 +1,4 @@
-<?php 
+<?php
 namespace Clue;
 
 # This is a sample implementation
@@ -40,7 +40,7 @@ class Auth{
             $_SESSION['user']=serialize($this);
 
             return true;
-        }       
+        }
         return false;
     }
 

@@ -17,6 +17,7 @@ class Server{
 
 	static function error_500($err){
 		header("HTTP/1.0 500 Application error.");
+		error_log($err);
 		exit($err);
 	}
 

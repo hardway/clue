@@ -15,6 +15,10 @@ namespace Clue{
             $this->_values=$values;
 
             $this['router']=new Router($this);
+            foreach($this['config']['route'] as $pattern=>$route){
+                $this['router']->alias($pattern, $route);
+            }
+
             $this['referer_url']=@$_SERVER['HTTP_REFERER'];
             $this['return_url']=urldecode(@$_POST['return_url'] ?: @$_GET['return_url'] ?: $this['referer_url']);
 
