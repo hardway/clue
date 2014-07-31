@@ -1,6 +1,7 @@
 <?php
 namespace Clue{
     require_once __DIR__."/asset.php";
+    require_once __DIR__."/url.php";
 
     class Application implements \ArrayAccess{
         use Logger;
