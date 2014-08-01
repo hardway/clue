@@ -308,7 +308,7 @@ END
             $current_version=$db->get_var("select value from config where name='DB_VERSION'");
 
             $target_version=intval($current_version)+1;
-            foreach(site_file_glob("script/upgrade/*.php") as $file){
+            foreach(\Clue\site_file_glob("script/upgrade/*.php") as $file){
                 if(preg_match("/^(\d+)/", basename($file), $m)){
                     if(intval($m[1])==$target_version){
                         $ok=include $file;
@@ -329,7 +329,7 @@ END
             $current_version=$db->get_var("select value from config where name='DB_VERSION'");
 
             $target_version=intval($current_version)-1;
-            foreach(site_file_glob("script/downgrade/*.php") as $file){
+            foreach(\Clue\site_file_glob("script/downgrade/*.php") as $file){
                 if(preg_match("/^(\d+)/", basename($file), $m)){
                     if(intval($m[1])==$target_version){
                         $ok=include $file;
