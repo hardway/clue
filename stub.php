@@ -16,9 +16,9 @@
     if(!defined('APP_ROOT')){
         if(CLI){
             // 推断APP ROOT所在目录
-            // 假设config.php在且仅在APP ROOT目录下
+            // 假设stub.php在且仅在APP ROOT目录下
             $root=getcwd();
-            while(is_dir($root) && $root!=DIRECTORY_SEPARATOR && !is_file("$root/config.php")){
+            while(is_dir($root) && $root!=DIRECTORY_SEPARATOR && !is_file("$root/stub.php")){
                 $root=dirname($root);
             }
             define('APP_ROOT', realpath($root));

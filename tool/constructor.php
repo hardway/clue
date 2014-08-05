@@ -88,6 +88,12 @@ namespace Clue\Tool{
     }
 
     class Constructor{
+        function __construct(){
+            if(isset($_SERVER['SITE'])){
+                \Clue\add_site_path(APP_ROOT.'/'.$_SERVER['SITE']);
+            }
+        }
+
         // TODO: 使用单独的方法族，例如 help_compress()...
         function version(){
             echo "CLUE Version: ".CLUE_VERSION."\n";
