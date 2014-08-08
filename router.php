@@ -236,6 +236,20 @@ namespace Clue{
 		function resolve($url){
 			global $app;
 
+            // Strip base directory, eg, the application is located at http://localhost/portal/app
+            $base=preg_replace('|[\\\/]+|', '/', dirname($_SERVER['SCRIPT_NAME']));
+            if($base!='/' && strpos($url, $base)===0){
+                $url=substr($url, strlen($base));
+            }
+
+			// Translate url
+			foreach($this->translates as $tr){
+				if(preg_match($tr['from'], $url)){
+					$url=preg_replace($tr['from'], $tr['to'], $url);
+					break;	// Only match first one
+				}
+			}
+
 			$parts=parse_url($url);
             parse_str(@$parts['query'], $query);
             // Use controller/action in query string will override PATH_INFO or URL_REWRITE
@@ -247,11 +261,8 @@ namespace Clue{
                 );
             }
 
-            // Strip base directory, eg, the application is located at http://localhost/portal/app
-            $base=preg_replace('|[\\\/]+|', '/', dirname($_SERVER['SCRIPT_NAME']));
-            if($base!='/' && strpos($url, $base)===0){
-                $url=substr($url, strlen($base));
-            }
+            // url translate后生成的?query也要合并到GET中
+            $_GET=array_merge($_GET, $query);
 
 			// strip query from url
 			if(($p=strpos($url, '?'))!==FALSE){
@@ -259,14 +270,6 @@ namespace Clue{
 			}
 
             $params=array();
-
-			// Translate url
-			foreach($this->translates as $tr){
-				if(preg_match($tr['from'], $url)){
-					$url=preg_replace($tr['from'], $tr['to'], $url);
-					break;	// Only
-				}
-			}
 
 			# Try default controller
 			$candidates=explode("/", $url);
@@ -303,7 +306,6 @@ namespace Clue{
 					return $mapping;
 				}
 			}
-
 			throw new \Exception("No route found.");
 		}
 	}

@@ -10,26 +10,22 @@
     }
 
     // TODO: move these to url.php ?
-    function url_for($controller, $action='index', $params=array(), $base=APP_BASE){
+    function url_for($controller, $action='index', $params=array()){
         global $app;
         $url=$app['router']->reform($controller, $action, $params);
-        return $base.$url;
-    }
-
-    function abs_url_for($controller, $action='index', $params=array()){
-        return APP_URL.url_for($controller, $action, $params);
+        return APP_URL.$url;
     }
 
     function url_for_ssl($controller, $action='index', $params=array()){
         global $config;
 
-        $ssl=$config['ssl'];
-        $base=$ssl ? preg_replace('/^http:/', 'https:', APP_BASE) : APP_BASE;
-        return url_for($controller, $action, $params, $base);
-    }
+        $url=url_for($controller, $action, $params);
 
-    function abs_url_for_ssl($controller, $action='index', $params=array()){
-        return APP_URL.url_for($controller, $action, $params);
+        if($config['ssl']){
+            $url=preg_replace('/^http:/', 'https:', $url);
+        }
+
+        return $url;
     }
 
 
