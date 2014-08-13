@@ -109,7 +109,7 @@
             $model=self::model();
             $pkey=$model['columns'][$model['pkey']]['name'];
 
-            $row=self::db()->get_row("select * from {$model['table']} where `$pkey`='".self::db()->escape($id)."'", ARRAY_A);
+            $row=self::db()->get_row("select * from `{$model['table']}` where `$pkey`='".self::db()->escape($id)."'", ARRAY_A);
             if($row){
                 $class=get_called_class();
                 $r=new $class($row);
@@ -408,7 +408,6 @@
 
     		// TODO: use prepared statement to improve security and code clearance
     		$model=self::model();
-    		$table=$model['table'];
 
     		$pkey=$model['pkey'];
     		$pkfield=$model['columns'][$model['pkey']]['name'];
@@ -424,7 +423,7 @@
                     $vlist[]=self::db()->quote($this->$c);
                     $history_data[$m['name']]=$this->$c;
                 }
-                $sql="insert into `$table` (".join(", ", $clist).") values(".join(",", $vlist).")";
+                $sql="insert into `{$model['table']}` (".join(", ", $clist).") values(".join(",", $vlist).")";
                 $history_action='C';
             }
             else{ // Update Value
@@ -437,7 +436,7 @@
                     $history_data[$m['name']]=$this->$c;
                 }
                 if(count($list)>0){
-                    $sql="update `$table` set ".join(",", $list)." where `$pkfield`='".$this->$pkey."'";
+                    $sql="update `{$model['table']}` set ".join(",", $list)." where `$pkfield`='".$this->$pkey."'";
                     $history_action='U';
                 }
                 else{
