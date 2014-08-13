@@ -265,6 +265,14 @@ namespace{
 		return isset($_SERVER[$name]) ? $_SERVER[$name] : $default;
 	}
 
+    function SESSION($name=null, $default=false){
+        return isset($_SESSION[$name]) ? $_SESSION[$name] : $default;
+    }
+
+    function COOKIE($name=null, $default=false){
+        return isset($_COOKIE[$name]) ? $_COOKIE[$name] : $default;
+    }
+
 	function REQS(){
 		$n=func_num_args();
 		$a=func_get_args();

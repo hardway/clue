@@ -79,6 +79,7 @@ namespace Clue{
 					$action="__catch_view";
 				}
 				elseif(method_exists($class, '__catch_params')){
+					if($params[0]=='index') array_shift($params);	// eg, /controller/test/ ==> controller::__catch_params('test')
 					array_unshift($params, $action);
 					$action="__catch_params";
 				}
@@ -128,7 +129,6 @@ namespace Clue{
 
 			// 3rd, append all remaining params
 			$callArgs=array_merge($callArgs, $params);
-
 
 			// Initialize controller and
 			$obj=new $class($controller, $action);
