@@ -72,10 +72,19 @@ namespace Clue{
 			preg_match('/class\s+([a-z0-9_]*Controller)/i', $source, $m);
 			$class=$m[1];
 
+			// 形如 abc.htm 的Action将被拆分为 action=abc, layout=htm
+			if(preg_match("/(.+?)\.(.+)/", $action, $m)){
+				$action=$m[1];
+				$layout=$m[2];
+			}
+
 			// 确认action方法存在
 			if(!method_exists($class, $action)){
 				// 如果view存在，仍然可以直接调用
+
+				// TODO: __catch_view和__catch_params两个名字不好，换一下?
 				if(View::find_view("/$controller/$action")){
+					$view=$action;
 					$action="__catch_view";
 				}
 				elseif(method_exists($class, '__catch_params')){
@@ -109,7 +118,6 @@ namespace Clue{
 				}
 			}
 
-
 			// remove named variables
 			foreach($params as $k=>$v){
 				if(!is_int($k)) unset($params[$k]);
@@ -139,6 +147,7 @@ namespace Clue{
 			$obj->controller=$controller;
 			$obj->view=$view;
 			$obj->action=$action;
+			if($layout) $obj->layout=$layout;
 
 			return call_user_func_array(array($obj, $obj->action), $callArgs);
 		}
@@ -286,10 +295,6 @@ namespace Clue{
 
 				$mapping['controller']=$controller ?: 'index';
 				$mapping['action']=$action ?: 'index';
-
-				// 对于/sitemap.xml的情况,action===sitemap_xml
-				// FUTURE: 考虑另外一种实现, action仍然是sitemap，然后设置controller的content_type属性为xml是否更好
-				$mapping['action']=str_replace('.', '_', $mapping['action']);
 
 				if($_SERVER['REQUEST_METHOD']=='POST') $mapping['action']="_".$mapping['action'];
 

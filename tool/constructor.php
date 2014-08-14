@@ -286,7 +286,12 @@ END
         }
 
         function _get_db(){
-            $this->appcfg=include \Clue\site_file("config.php");
+            $config=\Clue\site_file("config.php");
+            if(!$config){
+                exit(sprintf("Can't find config.php in following path: %s\n", implode(";", \Clue\get_site_path())));
+            }
+
+            $this->appcfg=include $config;
             $cfg=$this->appcfg['database'];
 
             // Detect current database

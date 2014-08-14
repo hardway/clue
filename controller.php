@@ -5,7 +5,7 @@ namespace Clue{
 		public $action;
 		public $view;
 
-		protected $layout="default";
+		public $layout="default";
 
 		static function find_controller($controller){
 			$controller=strtolower($controller);
@@ -30,14 +30,10 @@ namespace Clue{
 		// 可以重载
 		function __init(){}
 
-		// 直接显示当前视图，无需定义action
-		// 用下划线分隔action，第一个前缀可以被识别为layout
+		// 没有找到定义action，但是存在view
+        // 直接显示当前视图
 		// 默认将GET和POST变量化传入
 		function __catch_view(){
-			if(preg_match('/^([^_]+)_/', $this->view, $m) && View::find_view("/layout/{$m[1]}")){
-				$this->layout=$m[1];
-			}
-
 			$this->render($this->view, array_merge($_GET, $_POST));
 		}
 

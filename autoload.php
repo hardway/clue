@@ -117,6 +117,7 @@ namespace Clue{
     $_CLASS_PATH=[];
 
     add_site_path(APP_ROOT);
+    add_site_path('./');
 
     #第三方库应该放在lib目录
     add_class_path(APP_ROOT."/lib");
