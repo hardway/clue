@@ -96,11 +96,14 @@ namespace Clue\Web{
 
 	class Client{
 		public $header;
+		public $status=null;			// 返回的HTTP状态
 		public $content;
+
 		public $agent="ClueHTTPClient";
 		public $inprivate=false;
 
 		private $cache;
+		private $http_proxy=false;		// 使用http_proxy会影响后续解析response header
 
 		private $curl;
 		private $history=array();
@@ -134,12 +137,17 @@ namespace Clue\Web{
 				// echo "Using proxy server: $proxy, port: $port\n";
 				curl_setopt($this->curl, CURLOPT_PROXY, $proxy);
 				curl_setopt($this->curl, CURLOPT_PROXYPORT, $port);
+				$this->http_proxy="$proxy:$port";
 			}
 			elseif($config['socks_proxy']){
 				list($proxy, $port)=explode(":", $config['socks_proxy']);
 				curl_setopt($this->curl, CURLOPT_PROXY, $proxy);
 				curl_setopt($this->curl, CURLOPT_PROXYPORT, $port);
-				curl_setopt($this->curl, CURLOPT_PROXYTYPE, CURLPROXY_SOCKS5);
+
+				// Use socks5-hostname to prevent GFW DNS attack
+				if(!defined('CURLPROXY_SOCKS5_HOSTNAME')) define('CURLPROXY_SOCKS5_HOSTNAME', 7);
+				// curl_setopt($this->curl, CURLOPT_PROXYTYPE, CURLPROXY_SOCKS5);
+				curl_setopt($this->curl, CURLOPT_PROXYTYPE, CURLPROXY_SOCKS5_HOSTNAME);
 			}
 
 			curl_setopt($this->curl, CURLOPT_USERAGENT, $this->agent);
@@ -342,8 +350,11 @@ namespace Clue\Web{
 		private function _parse_response($response){
 			$sep=strpos($response, "\r\n\r\n");
 
+			if($this->http_proxy){	// 去除Proxy产生的Response Header
+				$sep=strpos($response, "\r\n\r\n", $sep+4);
+			}
+
 			$this->header=[];
-			$this->response=[];
 
 			if(substr($response, 0, 4)=='HTTP' && $sep>0){
 				$response_header=substr($response, 0, $sep);
@@ -351,9 +362,9 @@ namespace Clue\Web{
 
 				foreach(explode("\n", $response_header) as $row){
 					if(preg_match('/http\/(\d+\.\d+)\s+(\d+)\s+/i', $row, $m)){
-						$this->response['status']=$m[2];
+						$this->status=$m[2];
 					}
-					elseif(preg_match('/^([a-z-]+):(.+)$/i', $row, $m)){
+					elseif(preg_match('/^([a-z0-9-]+):(.+)$/i', $row, $m)){
 						$this->header[trim($m[1])]=trim($m[2]);
 					}
 				}
