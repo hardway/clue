@@ -16,7 +16,7 @@ namespace Clue{
             $this->_values=$values;
 
             $this['router']=new Router($this);
-            foreach($this['config']['route'] as $pattern=>$route){
+            if(is_array(@$this['config']['route'])) foreach($this['config']['route'] as $pattern=>$route){
                 $this['router']->alias($pattern, $route);
             }
 

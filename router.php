@@ -147,7 +147,7 @@ namespace Clue{
 			$obj->controller=$controller;
 			$obj->view=$view;
 			$obj->action=$action;
-			if($layout) $obj->layout=$layout;
+			if(@$layout) $obj->layout=$layout;
 
 			return call_user_func_array(array($obj, $obj->action), $callArgs);
 		}
