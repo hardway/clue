@@ -13,12 +13,14 @@ namespace Clue\UI{
 		 *			navPages 导航显示多少页，默认为10
 		 */
 		function __construct($page, $total, $options=array()){
-			$this->page=$page;
 			$this->size=$total;
 			$this->pageSize=isset($options["pageSize"]) ? $options['pageSize'] : 10;
 			$this->navPages=isset($options["navPages"]) ? $options['navPages'] : 10;
 
 			$this->pageCount=ceil($this->size / $this->pageSize);
+
+			// 确保page始终在有效范围内
+			$this->page=max(1, min($page, $this->pageCount));
 		}
 
 		// range:String for sql usage
