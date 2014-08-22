@@ -1,4 +1,7 @@
 <?php
+/**
+ * REF: http://www.termsys.demon.co.uk/vtansi.htm
+ */
 namespace Clue{
     class CLI{
         static function init($consoleEncoding="UTF-8", $internalEncoding="UTF-8"){
@@ -49,6 +52,14 @@ namespace Clue{
             self::ansi("red");
             echo $str;
             self::ansi();
+        }
+
+        static function erase_line(){
+            echo "\x1b[1K\x1b[999D";
+        }
+
+        static function erase_screen(){
+            echo "\x1b[2J\x1b[H";
         }
 
         static function alert($str){
