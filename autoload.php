@@ -9,6 +9,8 @@ namespace Clue{
         global $_SITE_PATH, $_SITE_PATH_MAPPING;
 
         $path=realpath($path);
+        if(!isset($_SITE_PATH)) $_SITE_PATH=[];
+
         if($path && !in_array($path, $_SITE_PATH)){
             array_unshift($_SITE_PATH, $path);
             $_SITE_PATH_MAPPING[$path]=$mapping;
