@@ -10,39 +10,47 @@
                 'charset'=>'UTF-8'
             ), $options);
 
-            $this->mailer=new \PHPMailer();
-            $this->mailer->IsSMTP();
-            $this->mailer->Host=$this->options['host'];
-            $this->mailer->Port=$this->options['port'];
-            $this->mailer->CharSet=$this->options['charset'];
+            if(class_exists('PHPMailer')){  // TODO集成简化版PHPMailer
+                $this->mailer=new \PHPMailer();
 
-            if(!empty($this->options['username'])){
-                $this->mailer->SMTPAuth=true;
-                $this->mailer->Username=$this->options['username'];
-                $this->mailer->Password=$this->options['password'];
-            }
-            if(!empty($this->options['secure'])){
-                $this->mailer->SMTPSecure=$this->options['secure'];
+                $this->mailer->IsSMTP();
+                $this->mailer->Host=$this->options['host'];
+                $this->mailer->Port=$this->options['port'];
+                $this->mailer->CharSet=$this->options['charset'];
+
+                if(!empty($this->options['username'])){
+                    $this->mailer->SMTPAuth=true;
+                    $this->mailer->Username=$this->options['username'];
+                    $this->mailer->Password=$this->options['password'];
+                }
+                if(!empty($this->options['secure'])){
+                    $this->mailer->SMTPSecure=$this->options['secure'];
+                }
             }
         }
 
         function send($subject, $html, $to, $from=null, $reply=null){
-            $this->mailer->Subject=$subject;
-            $this->mailer->MsgHTML($html);
-            $this->mailer->ClearAllRecipients();
+            if($this->mailer){
+                $this->mailer->Subject=$subject;
+                $this->mailer->MsgHTML($html);
+                $this->mailer->ClearAllRecipients();
 
-            if(!empty($from)){
-                $this->mailer->SetFrom($from);
+                if(!empty($from)){
+                    $this->mailer->SetFrom($from);
+                }
+
+                if(!empty($reply))
+                    $this->mailer->AddReplyTo($reply);
+
+                $this->mailer->AddAddress($to);
+
+                $ret=$this->mailer->Send();
+
+                return $ret ?: $this->mailer->ErrorInfo;
             }
-
-            if(!empty($reply))
-                $this->mailer->AddReplyTo($reply);
-
-            $this->mailer->AddAddress($to);
-
-            $ret=$this->mailer->Send();
-
-            return $ret ?: $this->mailer->ErrorInfo;
+            else{
+                mail($to, $subject, $html);
+            }
         }
     }
 ?>

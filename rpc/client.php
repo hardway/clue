@@ -33,6 +33,7 @@ class Client{
 	function __construct($endpoint, $options=array()){
 		$this->endpoint=$endpoint;
 		$this->debug=@$options['debug']===true;
+
 		$this->client=@$options['client'];		// 客户ID和令牌，用于身份认证
 		$this->token=@$options['token'];
 		$this->secret=@$options['secret'];		// 预共享密钥，用于加密通信数据
@@ -62,6 +63,8 @@ class Client{
 			$payload['client']=$this->client;
 			$payload['token']=$this->token;
 		}
+
+		if($this->debug) $this->log("[RPC] Payload: ".json_encode($payload));
 
 		$payload=json_encode($payload);
 

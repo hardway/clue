@@ -51,7 +51,7 @@ class Guard{
 			'mail_to'=>null,
 			'mail_from'=>null,
 
-			'log_file'=>"log/".date("Ymd").".log"
+			'log_file'=>APP_ROOT."/log/".date("Ymd").".log"
 		);
 
 		if(is_array($option)){
@@ -88,7 +88,6 @@ class Guard{
 				'type'=>self::$PHP_ERROR_MAP[$fatal_error['type']],
 				'message'=>$fatal_error['message'],
 				'trace'=>array(array('file'=>$fatal_error['file'], 'line'=>$fatal_error['line'])),
-				'context'=>$this->filter_context_vars($GLOBALS)
 			);
 		}
 
@@ -99,38 +98,61 @@ class Guard{
 		foreach($this->errors as $err){
 			if($err['level'] <= $this->display_level){
 				$to_display[]=$this->error_html($err);
+				$show_environment_html=true;
 			}
 
 			if($err['level'] <= $this->log_level){
 				$to_log[]=$this->error_text($err);
+				$show_environment_text=true;
 			}
 
 			if($err['level'] <= $this->email_level){
 				$to_email[]=$this->error_text($err);
+				$show_environment_text=true;
+			}
+		}
+
+		// 包含全部Session/Get/Post/Cookie信息
+		if($show_environment_html || $show_environment_text){
+			$env=$this->filter_context_vars($GLOBALS);
+			if($show_environment_text){
+				$env_text="Environment: \n"."-------------\n".print_r($env, true);
+			}
+			if($show_environment_html){
+				$env_html ="<div style='padding:1em; background:#666; color:#FFF; cursor:pointer;' onclick='clue_guard_toggle(\"clue-guard-ul-env\");'>Environment</div>";
+				$env_html.="<ul id='clue-guard-ul-env' style='background:#FFF; border:1px solid #666; margin:0; padding:1em; display:none;'>";
+				$env_html.=$this->var_to_html($env);
+				$env_html.="</ul>";
 			}
 		}
 
 		if(count($to_display)>0){
 			echo "
 				<script>
-					function toggle(id){
+					function clue_guard_toggle(id){
 						var el = document.getElementById(id);
 						el.style.display = el.style.display === 'none' ? '' : 'none';
 					}
 				</script>
 			";
-			echo implode("", $to_display);
+			echo "<div style='font:1em monospace;'>".implode("", $to_display).$env_html."</div>";
 		}
+
 		if(!empty($this->log_file) && count($to_log)>0){
 			$f=fopen($this->log_file, "a");
 			if($f){
-				fwrite($f, implode("\n\n", $to_log));
+				$r=fwrite($f, implode("\n\n", $to_log)."\n$env_text");
 				fclose($f);
 			}
 		}
 		if(!empty($this->mail_to) && count($to_email)>0){
-			Email::send_mail("Developer", $this->mail_to, "Error Report", $this->mail_from,
-				count($to_email)." error occured recently.", "<pre>".implode("\n\n", $to_email))."</pre>";
+			global $app;
+			$m=new Mail;
+			$m->send(
+				count($to_email)." error occured recently.",
+				"<pre>".implode("\n\n", $to_email)."\n$env_text"."</pre>",
+				$this->mail_to, $this->mail_from
+			);
 		}
 
 		$this->errors=array();
@@ -217,43 +239,42 @@ class Guard{
 		}
 		$text[]="";
 
-		$text[]="Environment: ";
-		$text[]="-------------";
-		$text[]=print_r($err['context'], true);
-
 		return implode("\r\n", $text);
 	}
 
 	function error_html($err){
-		$html="<div style='text-align: left; padding: 1em;'>";
-		$html.="<h2 style='margin: 0;padding: 1em;font-size: 1em;font-weight: normal;background: #911;color: #fff;'><strong>{$err['type']}</strong>: {$err['message']}</h2>";
+		if(isset($err['trace'][0]['file']))
+			$error_position=$err['trace'][0]['file'].':'.$err['trace'][0]['line'];
+		else
+			$error_position=$err['trace'][0]['class'].$err['trace'][0]['type'].$err['trace'][0]['function'].'('.')';
 
-		$html.="<ul style='background: #EEE; margin: 0; padding: 1em;'>";
+		$uid="clue-guard-err-".uniqid();
+		$html="
+			<div style='padding:1em; background:#911; color:#fff; border-bottom:1px solid #CCC; cursor:pointer;' onclick='clue_guard_toggle(\"$uid\");'>
+				<div style='float:right;'>$error_position</div>
+				<strong>{$err['type']}</strong>: {$err['message']}
+			</div>
+		";
+
+		$html.="<ul id='$uid' style='background:#EEE; margin:0; padding:1em; display:none;'><a name='$uid'></a>";
 		if(is_array($err['trace'])) foreach($err['trace'] as $t){
-			$html.="<li style='list-style: none;'>";
-			if(isset($t['file']) || isset($t['line'])){
-				$html.="<strong>{$t['file']}:{$t['line']}</strong> &gt;&gt; ";
-			}
-			$uid="ol_".uniqid();
-			$html.="{$t['class']}{$t['type']}{$t['function']}(".(is_array($t['args']) ? "<a style='cursor: pointer;' onclick='toggle(\"$uid\");'>".count($t['args'])." arguments</a>":"").")";
+			$uid="clue-guard-arg-".uniqid();
+			$html.="<li style='list-style:none; cursor:pointer;' onclick='clue_guard_toggle(\"$uid\")'>";
+
+			if(isset($t['file']) || isset($t['line'])) $html.="<strong>{$t['file']}:{$t['line']}</strong> &gt;&gt; ";
+			$html.="{$t['class']}{$t['type']}{$t['function']}";
+			if(is_array($t['args'])) $html.="(".count($t['args'])." args)";
+
 			if(is_array($t['args'])){
-				$html.="<ol id='$uid' style='display: none;'>";
+				$html.="<table id='$uid' border='0' cellspacing='0' cellpadding='3' style='display:none; margin-left:5em; border-left:1px dashed #CCC;'>";
 				foreach($t['args'] as $idx=>$a){
-					$html.="<li><ul style='margin: 0; padding: 0;'>".$this->var_to_html($a)."</ul></li>";
+					$html.="<tr><td valign='top'><b>".($idx+1)."</b></td><td valign='top'>".$this->var_to_html($a)."</td></tr>";
 				}
-				$html.="</ol>";
+				$html.="</table>";
 			}
 			$html.="</li>";
 		}
 		$html.="</ul>";
-
-		$uid="ul_".uniqid();
-		$html.="<h2 style='margin: 0;padding: 1em;font-size: 1em;font-weight: normal;background: #666;'><a onclick='toggle(\"$uid\");' style='cursor: pointer; color: #FFF;'>Environment</a></h2>";
-		$html.="<ul id='$uid' style='background: #FFF; border: 1px solid #666; margin: 0; padding: 1em; display: none;'>";
-		$html.=$this->var_to_html($err['context']);
-		$html.="</ul>";
-
-		$html.="</div>";
 
 		return $html;
 	}
@@ -270,7 +291,9 @@ class Guard{
 	}
 
 	function on_exception($e){
-		return $this->on_error(E_ERROR, $e->getMessage(), $e->getFile(), $e->getLine(), $GLOBALS, $e->getTrace());
+		$trace=$e->getTrace();
+		array_unshift($trace, ["file"=>$e->getFile(), 'line'=>$e->getLine()]);
+		return $this->on_error(E_ERROR, "Exception: ".$e->getMessage(), $e->getFile(), $e->getLine(), $GLOBALS, $trace);
 	}
 
 	function on_error($errno, $errstr, $errfile=null, $errline=null, array $errcontext=null, array $errtrace=array()){
@@ -284,11 +307,10 @@ class Guard{
 
 		if(empty($errtrace)) $errtrace=debug_backtrace();
 		# Unset $errcontext for this function ($GLOBALS is too big to display)
-		for($i=0; $i<count($errtrace); $i++){
-			if(@$errtrace[$i]['class']=='Guard' && @$errtrace[$i]['function']=='on_error'){
-				unset($errtrace[$i]['args'][4]);
-			}
-		}
+
+		$errtrace=array_values(array_filter($errtrace, function($t){
+			return !(!isset($t['file']) && isset($t['class']) && $t['class']==__CLASS__ && in_array($t['function'], ['on_error', 'on_exception']));
+		}));
 
 		# Filter Context
 		$context=array();

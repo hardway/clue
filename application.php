@@ -21,7 +21,7 @@ namespace Clue{
             }
 
             $this['referer_url']=@$_SERVER['HTTP_REFERER'];
-            $this['return_url']=urldecode(@$_POST['return_url'] ?: @$_GET['return_url'] ?: $this['referer_url']);
+            $this['return_url']=urldecode(POST('return_url') ?: GET('return_url') ?: $this['referer_url']);
 
             if($this['config']['database']){
                 $this['db']=array(
