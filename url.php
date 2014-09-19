@@ -28,6 +28,16 @@
         return $url;
     }
 
+    // 根据title和id生成slug
+    function url_slug($title){
+        // 拆分为单词
+        preg_match_all('/[a-z0-9\-_]+/i', $title, $m);
+        $words=array_map('strtolower', array_filter($m[0], 'strlen'));
+
+        // 合并
+        return implode("-", $words);
+    }
+
 
     /**
      * 定位Asset

@@ -20,7 +20,7 @@ namespace Clue{
                 $this['router']->alias($pattern, $route);
             }
 
-            $this['referer_url']=@$_SERVER['HTTP_REFERER'];
+            $this['referer_url']=isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : null;
             $this['return_url']=urldecode(POST('return_url') ?: GET('return_url') ?: $this['referer_url']);
 
             if($this['config']['database']){

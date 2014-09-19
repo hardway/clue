@@ -88,7 +88,7 @@ namespace Clue{
 					$action="__catch_view";
 				}
 				elseif(method_exists($class, '__catch_params')){
-					if($params[0]=='index') array_shift($params);	// eg, /controller/test/ ==> controller::__catch_params('test')
+					if(isset($params[0]) && $params[0]=='index') array_shift($params);	// eg, /controller/test/ ==> controller::__catch_params('test')
 					array_unshift($params, $action);
 					$action="__catch_params";
 				}
