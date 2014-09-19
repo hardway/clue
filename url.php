@@ -35,7 +35,10 @@
         $words=array_map('strtolower', array_filter($m[0], 'strlen'));
 
         // 合并
-        return implode("-", $words);
+        $slug=implode("-", $words);
+        $slug=preg_replace('/-+/', '-', $slug);
+
+        return $slug;
     }
 
 
