@@ -1,18 +1,19 @@
 <?php
     # URL路径
-    if(!CLI && !defined('APP_BASE')) define('APP_BASE', trim(dirname($_SERVER['SCRIPT_NAME']), '/'));
+    if(!CLI && !defined('APP_BASE')) define('APP_BASE', dirname($_SERVER['SCRIPT_NAME']));
     if(!CLI && !defined('APP_URL')) define('APP_URL', 'http://'.$_SERVER['SERVER_NAME'].APP_BASE);
 
     // 全局函数
     function url_path($path){
         $path=str_replace(' ', '%20', $path);
-        return str_replace(APP_ROOT, APP_BASE, $path);
+        return str_replace(APP_ROOT, APP_URL, $path);
     }
 
     // TODO: move these to url.php ?
     function url_for($controller, $action='index', $params=array()){
         global $app;
         $url=$app['router']->reform($controller, $action, $params);
+
         return APP_URL.$url;
     }
 

@@ -228,6 +228,7 @@ namespace Clue{
 			}
 
 			$url=implode("/", $path) . (empty($query) ? "" : '?'.http_build_query($query));
+			$url=preg_replace('/\/+/', '/', $url);
 
 			return $url;
 		}
