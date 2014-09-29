@@ -8,7 +8,6 @@ namespace Clue{
     function add_site_path($path, $mapping=''){
         global $_SITE_PATH, $_SITE_PATH_MAPPING;
 
-        $path=realpath($path);
         if(!isset($_SITE_PATH)) $_SITE_PATH=[];
 
         if($path && !in_array($path, $_SITE_PATH)){
@@ -86,6 +85,7 @@ namespace Clue{
         $path=trim($path, '/ ');
 
         $candidates=array_map(function($d) use($path){return $d.'/'.$path;}, get_site_path());
+
         foreach($candidates as $f){
             if(file_exists($f)) return $f;
         }
@@ -118,6 +118,7 @@ namespace Clue{
     $_SITE_PATH_MAPPING=[];
     $_CLASS_PATH=[];
 
+    add_site_path(__DIR__);
     add_site_path(APP_ROOT);
 
     #第三方库应该放在lib目录

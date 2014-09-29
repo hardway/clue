@@ -33,6 +33,7 @@ namespace Clue{
 		// 没有找到定义action，但是存在view
         // 直接显示当前视图
 		// 默认将GET和POST变量化传入
+        // TODO: view可以使用view.php进行code前置加载
 		function __catch_view(){
 			$this->render($this->view, array_merge($_GET, $_POST));
 		}

@@ -69,32 +69,45 @@ namespace Clue{
 			$source=file_get_contents($path);
 
 			// 确定类名
-			preg_match('/class\s+([a-z0-9_]*Controller)/i', $source, $m);
-			$class=$m[1];
+			// TODO: 更好的reflective或者规定controller的类名必须符合PSR-0
+			preg_match('/namespace\s+([a-z0-9_\\\\]+)/i', $source, $n);
+			preg_match('/class\s+([a-z0-9_]*)/i', $source, $m);
+			$class=($n?$n[1].'\\':'').$m[1];
 
 			// 形如 abc.htm 的Action将被拆分为 action=abc, layout=htm
 			if(preg_match("/(.+?)\.(.+)/", $action, $m)){
-				$action=$m[1];
+				$core_action=$m[1];
 				$layout=$m[2];
 			}
 
-			// 确认action方法存在
-			if(!method_exists($class, $action)){
-				// 如果view存在，仍然可以直接调用
+			// action方法存在
+			if(method_exists($class, $action)){
 
-				// TODO: __catch_view和__catch_params两个名字不好，换一下?
-				if(View::find_view("/$controller/$action")){
-					$view=$action;
-					$action="__catch_view";
-				}
-				elseif(method_exists($class, '__catch_params')){
-					if(isset($params[0]) && $params[0]=='index') array_shift($params);	// eg, /controller/test/ ==> controller::__catch_params('test')
-					array_unshift($params, $action);
-					$action="__catch_params";
-				}
-				else
-					return $this->app->http_error(404, "Can't find action or view $action of $controller");
 			}
+			// 或者action.layout存在
+			elseif(method_exists($class, $core_action)){
+				$action=$core_action;
+			}
+			// 如果view存在，仍然可以直接调用
+			elseif(View::find_view("/$controller/$action")){
+				$view=$action;
+				$action="__catch_view";
+			}
+			// 或者core_action视图存在
+			elseif(View::find_view("/$controller/$core_action")){
+				$view=$core_action;
+				$action="__catch_view";
+			}
+			// 最后的尝试
+			// 访问 /catch_controller/a/b/c ==> 调用 catch_controller::__catch_params(['a', 'b', 'c'])
+			elseif(method_exists($class, '__catch_params')){
+				if(isset($params[0]) && $params[0]=='index') array_shift($params);	// eg, /controller/test/ ==> controller::__catch_params('test')
+
+				array_unshift($params, $action);
+				$action="__catch_params";
+			}
+			else
+				return $this->app->http_error(404, "Can't find action or view $action of $controller");
 
 			// detect parameters using reflection
 			$callArgs=array();
