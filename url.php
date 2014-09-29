@@ -6,13 +6,14 @@
     // 全局函数
     function url_path($path){
         $path=str_replace(' ', '%20', $path);
-        return str_replace(APP_ROOT, APP_BASE, $path);
+        return str_replace(APP_ROOT, APP_URL, $path);
     }
 
     // TODO: move these to url.php ?
     function url_for($controller, $action='index', $params=array()){
         global $app;
         $url=$app['router']->reform($controller, $action, $params);
+
         return APP_URL.$url;
     }
 
