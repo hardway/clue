@@ -97,6 +97,34 @@ namespace Clue{
             return $dash_str;
         }
 
+        static function compress_zip($folder, $filename){
+            $zip = new \ZipArchive();
+
+            if ($zip->open($filename, \ZipArchive::CREATE)!==TRUE) {
+                exit("cannot open <$filename>\n");
+            }
+
+            if(!is_dir($folder)) return false;
+            $iter = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($folder), \RecursiveIteratorIterator::CHILD_FIRST);
+            foreach ($iter as $path) {
+                if($path->getFileName()=='.' || $path->getFileName()=='..') continue;
+
+                if($path->isFile()){
+                    $zip->addFile($path, str_replace($folder, '', $path));
+                }
+            }
+
+            $zip->close();
+        }
+
+        static function decompress_zip($filename, $folder){
+            $zip = new \ZipArchive();
+
+            $zip->open($filename);
+            $zip->extractTo($folder);
+            $zip->close();
+        }
+
 	    # 递归删除文件夹
 	    static function remove_directory($dir){
 	    	if(!is_dir($dir)) return false;
