@@ -1,7 +1,10 @@
 <?php
     # URL路径
     if(!CLI && !defined('APP_BASE')) define('APP_BASE', trim(dirname($_SERVER['SCRIPT_NAME']), '/'));
-    if(!CLI && !defined('APP_URL')) define('APP_URL', $_SERVER['REQUEST_SCHEME'].'://'.$_SERVER['SERVER_NAME'].APP_BASE);
+    if(!CLI && !defined('APP_URL')){
+        $app_scheme=isset($_SERVER['REQUEST_SCHEME']) ? $_SERVER['REQUEST_SCHEME'] : "http";
+        define('APP_URL', $app_scheme.'://'.$_SERVER['SERVER_NAME'].APP_BASE);
+    }
 
     // 全局函数
     function url_path($path){

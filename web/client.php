@@ -101,12 +101,12 @@ namespace Clue\Web{
 
 		public $agent="ClueHTTPClient";
 		public $inprivate=false;
+		public $history=array();
 
 		private $cache;
 		private $http_proxy=false;		// 使用http_proxy会影响后续解析response header
 
 		private $curl;
-		private $history=array();
 
 		/**
 		 * Example of config file:
@@ -314,8 +314,6 @@ namespace Clue\Web{
 		}
 
 		function open($url, $forceRefresh=false){
-			$url=$this->visit($url);
-
 			$this->content=null;
 
 			// 尝试从cache获取
@@ -333,15 +331,17 @@ namespace Clue\Web{
 				curl_setopt($this->curl, CURLOPT_HEADER, true);
 				curl_setopt($this->curl, CURLOPT_ENCODING , "");
 				curl_setopt($this->curl, CURLOPT_RETURNTRANSFER, true);
-				if(!$this->inprivate)
+				if(!$this->inprivate){
 					curl_setopt($this->curl, CURLOPT_REFERER, end($this->history));
+				}
 
 				$this->_parse_response(curl_exec($this->curl));
 
 			    $this->errno=curl_errno($this->curl);
 			    $this->error=curl_error($this->curl);
 
-				if($this->errno==0 && $this->cache){
+			    if($this->errno==0 && $this->cache){
+					$url=$this->visit($url);
 					$this->cache->put($url, $this->content);
 				}
 			}
