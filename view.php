@@ -48,6 +48,10 @@ namespace Clue{
             $this->vars[$name]=$value;
         }
 
+        /**
+         * @param $view 如果是数组则按照顺序依次尝试
+         * DEPRECATE: $default_view可以在$view数组中，不用作为单独参数
+         */
         function incl($view=null, $vars=array(), $default_view=null){
             // 未指定view则默认显示content内容
             if($view==null){
@@ -55,23 +59,20 @@ namespace Clue{
                 return;
             }
 
-            $vars=$vars?:array();
+            $view_candidates=is_string($view) ? [$view] : $view;
+            if($default_view) $view_candidates[]=$default_view; // TODO: deprecate $default_view
 
-            try{
-                $sv=new View($view, $this);
-            }
-            catch(\Exception $e){
-                if($default_view){
-                    $sv=new View($default_view, $this);
-                    $vars['missing_view']=$view;
-                }
-                else{
-                    throw $e;
+            $sv=null;
+            foreach($view_candidates as $view){
+                if(self::find_view($view, $this)){
+                    $sv=new View($view, $this);
+                    break;
                 }
             }
 
-            $sv->vars=array_merge($this->vars, $vars);
+            if(!$sv) throw new \Exception("View does not found: ", implode(", ", $view_candidates));
 
+            $sv->vars=array_merge($this->vars, $vars ?: []);
             return $sv->render();
         }
 
