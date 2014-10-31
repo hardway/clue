@@ -93,10 +93,10 @@ namespace Clue{
 		}
 
 		function audit($sql, $time=0){
-			$prefix=($this->slow_query_time_limit>0 && $time > $this->slow_query_time_limit) ? "SLOW QUERY" : "SQL";
+			// $this->log("[SQL ".number_format($time, 4)."] $sql");
 
-			if($time > $this->slow_query_time_limit){
-				$this->log("[$prefix ".number_format($time, 4)."] $sql");
+			if($this->slow_query_time_limit>0 && $time>$this->slow_query_time_limit){
+				$this->log("[SLOW QUERY ".number_format($time, 4)."] $sql");
 			}
 
 			$this->last_query=$sql;

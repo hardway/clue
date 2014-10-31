@@ -355,7 +355,7 @@
         function after_construct(){}    // new AR()
         function after_retrieve(){}     // AR::get(id)
         function before_save(){ return true; }
-        function after_save(){}
+        function after_save(){} // TODO: transaction integrity
         function before_destroy(){ return true; }
         function after_destroy(){}
 

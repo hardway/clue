@@ -10,7 +10,7 @@ namespace Clue\Database{
 
 			// Check Parameter, TODO
 			// echo "Creating MySQL Connection.\n";
-			$this->dbh=mysqli_connect($param['host'], $param['username'], $param['password'], $param['db']);
+			$this->dbh=mysqli_connect($param['host'], $param['username'], $param['password'], $param['db'], $param['port'] ?: null);
 
 			if(!$this->dbh){
 				$this->setError(array('code'=>mysqli_connect_errno(), 'error'=>mysqli_connect_error()));
