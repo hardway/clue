@@ -37,7 +37,7 @@ class Client{
 		$this->client=@$options['client'];		// 客户ID和令牌，用于身份认证
 		$this->token=@$options['token'];
 		$this->secret=@$options['secret'];		// 预共享密钥，用于加密通信数据
-		$this->timeout=@$options['timeout'] ?: 5;
+		$this->timeout=@$options['timeout'] ?: 30;
 
 		$this->cache_dir=null;
 	}

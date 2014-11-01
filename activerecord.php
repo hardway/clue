@@ -417,7 +417,7 @@
                 $vlist=array();
                 $history_data=array();
                 foreach($model['columns'] as $c=>$m){
-                    if(isset($m['readonly']) || $this->_snap[$c]==$this->$c) continue;
+                    if(isset($m['readonly']) || $this->_snap[$c]===$this->$c) continue;
 
                     $clist[]="`".$m['name']."`";
                     $vlist[]=self::db()->quote($this->$c);

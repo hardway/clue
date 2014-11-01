@@ -304,6 +304,11 @@ END
         function db(){
             $db=$this->_get_db();
 
+            if(!$db->has_table("config")){
+                $db->exec("create table config(name varchar(128) not null primary key, value varchar(4096))");
+                $db->exec("insert into config(name, value) values('DB_VERSION', 0)");
+            }
+
             $current_version=$db->get_var("select value from config where name='DB_VERSION'");
             if($current_version===null) throw new \Exception("Can't detect current version through config table (name=DB_VERSION)");
 
