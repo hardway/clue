@@ -70,7 +70,7 @@ namespace Clue{
                 }
             }
 
-            if(!$sv) throw new \Exception("View does not found: ", implode(", ", $view_candidates));
+            if(!$sv) throw new \Exception("View does not found: ". implode(", ", $view_candidates));
 
             $sv->vars=array_merge($this->vars, $vars ?: []);
             return $sv->render();

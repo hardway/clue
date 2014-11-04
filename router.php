@@ -247,6 +247,7 @@ namespace Clue{
 		}
 
 		/**
+		 * 将URL转换为controller和action，不做实际route
 		 * 对于/a/b/c的url，应该依次寻找:
 		 *	controller=a/b/c, action=index
 		 * 	controller=a/b, action=c
@@ -265,14 +266,6 @@ namespace Clue{
                 $url=substr($url, strlen($base));
             }
 
-			// Translate url
-			foreach($this->translates as $tr){
-				if(preg_match($tr['from'], $url)){
-					$url=preg_replace($tr['from'], $tr['to'], $url);
-					break;	// Only match first one
-				}
-			}
-
 			$parts=parse_url($url);
             parse_str(@$parts['query'], $query);
             // Use controller/action in query string will override PATH_INFO or URL_REWRITE
@@ -284,15 +277,23 @@ namespace Clue{
                 );
             }
 
-            // url translate后生成的?query也要合并到GET中
-            $_GET=array_merge($_GET, $query);
 
 			// strip query from url
 			if(($p=strpos($url, '?'))!==FALSE){
 				$url=substr($url, 0, $p);
 			}
 
-            $params=array();
+
+			// Translate url，只针对URL部分，不包括query
+			foreach($this->translates as $tr){
+				if(preg_match($tr['from'], $url)){
+					$url=preg_replace($tr['from'], $tr['to'], $url);
+					break;	// Only match first one
+				}
+			}
+            // url translate后生成的?query也要合并到GET中
+            $_GET=array_merge($_GET, $query);
+
 
 			# Try default controller
 			$candidates=explode("/", $url);
@@ -310,7 +311,7 @@ namespace Clue{
 				$mapping['controller']=$controller ?: 'index';
 				$mapping['action']=$action ?: 'index';
 
-				if($_SERVER['REQUEST_METHOD']=='POST') $mapping['action']="_".$mapping['action'];
+				if(@$_SERVER['REQUEST_METHOD']=='POST') $mapping['action']="_".$mapping['action'];
 
 				$mapping['params']=array_map(function($v){if(is_string($v)) return rawurldecode($v); else return $v;}, array_merge($params, $_GET, $_POST));
 
@@ -319,13 +320,17 @@ namespace Clue{
 				if(file_exists($control_file)){
 					// return with found controller/view
 
-					if($mapping['action']=='index' && !preg_match('/\/$/', $url)){
-						$app->redirect($url.'/');
-					}
+					// DEPRECATED 20141103，不需要在这里进行跳转，应该由controller自行处理
+					// if($mapping['action']=='index' && !preg_match('/\/$/', $url)){
+					// 	$app->redirect($url.'/');
+					// }
 					return $mapping;
 				}
 			}
-			throw new \Exception("No route found.");
+
+			// 没有找到最合适的，返回最后匹配的一个
+			return $mapping;
+			// throw new \Exception("No route found.");
 		}
 	}
 }
