@@ -57,7 +57,8 @@ namespace Clue\Database{
 			}
 			$sql="insert into `$table`(".implode(',', $cols).") values(".implode(',', $vals).")";
 			$this->exec($sql);
-			return $this->insert_id();
+
+        	return mysqli_errno($this->dbh) ? null : $this->insert_id();
 		}
 
 	    function update($table, $fields, $where){
