@@ -30,6 +30,7 @@ namespace Clue\Database{
 
 		function close(){
 			$this->free_result();
+			$this->rollback();
 
 			if($this->dbh){
 				@mysqli_close($this->dbh);
@@ -43,6 +44,25 @@ namespace Clue\Database{
 				$this->_result=null;
 			}
 		}
+
+	    /**
+	     * 数据库事务
+	     */
+	    function begin(){
+	        mysqli_autocommit($this->dbh, false);
+	        mysqli_begin_transaction($this->dbh);
+	        $this->exec("begin");
+	    }
+
+	    function commit(){
+	        mysqli_commit($this->dbh);
+	        mysqli_autocommit($this->dbh, true);
+	    }
+
+	    function rollback(){
+	        mysqli_rollback($this->dbh);
+	        mysqli_autocommit($this->dbh, true);
+	    }
 
 		function insert_id(){
 			return mysqli_insert_id($this->dbh);
