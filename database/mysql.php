@@ -144,6 +144,7 @@ namespace Clue\Database{
     function exec($sql)
     {
         $this->free_result();
+        $this->last_error=null;
 
         if(func_num_args()>1){
             $sql=call_user_func_array(array($this, "format"), func_get_args());
@@ -153,13 +154,24 @@ namespace Clue\Database{
         $this->_result=mysqli_query($this->dbh, $sql);
         $query_end=microtime(true);
 
-        $this->audit($sql, $query_end - $query_begin);
+        // Backtrace调用位置
+        $location=null;
+        $bt=debug_backtrace();
+        for ($i=0; $i<count($bt); $i++) {
+            if (isset($bt[$i]['file']) && $bt[$i]['file']!=__FILE__) {
+                $location=$bt[$i]['file'] .':'.$bt[$i]['line'];
+                break;
+            }
+        }
+
+        $this->audit($sql, $query_end - $query_begin, $location);
 
         if (!$this->_result) {
             $this->setError(
                 array(
                     'code'=>mysqli_errno($this->dbh),
-                    'error'=>mysqli_error($this->dbh)
+                    'error'=>mysqli_error($this->dbh),
+                    'location'=>$location
                 )
             );
 

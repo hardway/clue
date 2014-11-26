@@ -130,5 +130,5 @@ namespace Clue{
     add_class_path(APP_ROOT."/source/class");
     add_include_path(APP_ROOT."/source/include");
 
-    spl_autoload_register("Clue\autoload_load");
+    spl_autoload_register("\Clue\autoload_load");
 }

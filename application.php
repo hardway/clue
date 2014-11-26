@@ -50,6 +50,24 @@ namespace Clue{
             };
         }
 
+        /**
+         * 使用APC做缓存，apt-get install php5-apcu
+         */
+        function cache(\Closure $callable, $key, $ttl){
+            if(!extension_loaded('apc')){
+                error_log("Extension APC missing!");
+                // Fallback
+                return $this->share($callable);
+            }
+
+            return function ($c) use ($callable, $key, $ttl) {
+                if (!apc_exists($key)) {
+                    apc_store($key, $callable($c), $ttl);
+                }
+                return apc_fetch($key);
+            };
+        }
+
         function start_session($timeout=null, $name=null, $storage=null){
             if($timeout!==null){
                 ini_set('session.gc_maxlifetime', $timeout);

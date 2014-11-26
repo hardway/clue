@@ -56,7 +56,7 @@ namespace Clue{
 		public $slow_query_time_limit=0;
 
 		public $dbh=null;
-		public $lasterror=null;
+		public $last_error=null;
 		public $errors=null;
 
 		public function enable_slow_query_log($logfile='', $time_limit=10){
@@ -65,7 +65,7 @@ namespace Clue{
 		}
 
 		protected function setError($err){
-			$this->lasterror=$err;
+			$this->last_error=$err;
 			$this->errors[]=$err;
 
 			throw new \Exception("SQL ERROR: {$err['code']} {$err['error']} [$this->last_query]");
@@ -73,7 +73,7 @@ namespace Clue{
 		}
 
 		protected function clearError(){
-			$this->lasterror=null;
+			$this->last_error=null;
 			$this->errors=null;
 		}
 
