@@ -25,7 +25,7 @@ include_once __DIR__."/common.php";
  *
  */
 class Client{
-	use \Clue\Logger;
+	use \Clue\Traits\Logger;
 	/**
 	 * @param $endpoint	远程调用端的URL，格式 https://127.0.0.1/api/EchoService
 	 * @param $options 	选项，比如是否加密会话，通讯格式为php或者json
@@ -81,10 +81,12 @@ class Client{
 			$payload=clue_rpc_encrypt($payload, $this->secret);
 		}
 
-		$c=curl_init($this->endpoint);
+		$c=curl_init();
 
 		curl_setopt($c, CURLOPT_POST, 1);
 		curl_setopt($c, CURLOPT_RETURNTRANSFER, 1);
+		// 使用curl follow不会重新post
+		// curl_setopt($c, CURLOPT_FOLLOWLOCATION, true);
 		curl_setopt($c, CURLOPT_POSTFIELDS, $payload);
 
 		// RPC不能超过5秒
@@ -98,15 +100,32 @@ class Client{
 		// curl_setopt($c, CURLOPT_HTTPHEADER, array("Expect:"));
 		curl_setopt($c, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_0);
 
+		$redirect=3;
+redirect:
+		curl_setopt($c, CURLOPT_URL, $this->endpoint);
 		$response=curl_exec($c);
 		$header = curl_getinfo($c);
 
 		if(curl_errno($c)){
 			throw new \Exception(sprintf("NETWORK %d: %s", curl_errno($c), curl_error($c)));
 		}
-		curl_close($c);
 
-		if($header['http_code']>=400) throw new \Exception("HTTP {$header['http_code']} $response");
+		if($header['http_code']>=400){
+			if($header['http_code']==500){
+				list($code, $error)=explode(" ", $response, 2);
+				throw new \Exception($error, $code);
+			}
+			else
+				throw new \Exception("HTTP {$header['http_code']} $response");
+		}
+		elseif(preg_match('/3\d\d/', $header['http_code'])){
+			// 自动Follow新的URL
+			$this->endpoint=$header['redirect_url'];
+			$redirect--;
+			if($redirect>0) goto redirect;
+		}
+
+		curl_close($c);
 
 		if($this->secret){
 			if($this->debug){

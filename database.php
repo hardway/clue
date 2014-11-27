@@ -6,7 +6,7 @@ namespace Clue{
 	if(!defined('ARRAY_N')) define('ARRAY_N', 'ARRAY_N');
 
 	abstract class Database{
-		use Logger;
+		use \Clue\Traits\Logger;
 
 		protected static $_cons=array();
 

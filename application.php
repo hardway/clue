@@ -4,7 +4,7 @@ namespace Clue{
     require_once __DIR__."/url.php";
 
     class Application implements \ArrayAccess{
-        use Logger;
+        use \Clue\Traits\Logger;
 
         private $_values;   # DI
 
