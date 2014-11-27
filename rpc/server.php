@@ -53,7 +53,7 @@ class Server{
 			$r=call_user_func_array(array($svc, $method), $params);
 		}
 		catch(\Exception $e){
-			self::error_app(sprintf("%03d %s", $e->getCode(), $e->getMessage()));
+			self::error_app(sprintf("%d %s", $e->getCode(), $e->getMessage()));
 		}
 
 		$r=json_encode($r);
