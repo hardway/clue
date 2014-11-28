@@ -112,8 +112,13 @@ redirect:
 
 		if($header['http_code']>=400){
 			if($header['http_code']==500){
-				list($code, $error)=explode(" ", $response, 2);
-				throw new \Exception($error, $code);
+				if(preg_match('/^\d+ /', $response)){
+					list($code, $error)=explode(" ", $response, 2);
+					throw new \Exception($error, $code);
+				}
+				else{
+					throw new \Exception($response);
+				}
 			}
 			else
 				throw new \Exception("HTTP {$header['http_code']} $response");
