@@ -49,30 +49,33 @@ namespace Clue\UI{
 			return $this->pageSize;
 		}
 
-		/**
-		 * 使用參數爲p
-		 */
-		function page_url($page){
-			$path=parse_url($_SERVER['REQUEST_URI'])['path'];
-			parse_str($_SERVER['QUERY_STRING'], $params);
-			$params['p']=$page;
-			return $path.'?'.http_build_query($params);
+		protected function page_url($page, $url_option){
+			if(isset($url_option['url_pattern'])){
+				return str_replace('{page}', $page, $url_option['url_pattern']);
+			}
+			elseif(isset($url_option['url_param'])){
+				$path=parse_url($_SERVER['REQUEST_URI'])['path'];
+				parse_str($_SERVER['QUERY_STRING'], $params);
+				$params[$url_option['url_param']]=$page;
+				return $path.'?'.http_build_query($params);
+			}
 		}
 
 		/**
 		 * 輸出使用Bootstrap結構的HTML
+		 * @param $url_option={url_param:'p', url_pattern:'something/p/{page}'}
 		 */
-		function render(){
+		function render($url_option=['url_param'=>'p']){
 			if($this->pageCount==1) return;
 
 			if($this->page>1){
-				$prevLink="<li><a href='".$this->page_url($this->page - 1)."'><i class='icon-chevron-left'></i></a></li>";
+				$prevLink="<li><a href='".$this->page_url($this->page - 1, $url_option)."'><i class='icon-chevron-left'></i></a></li>";
 			}
 			else
 				$prevLink="";
 
 			if($this->page<$this->pageCount){
-				$nextLink="<li><a href='".$this->page_url($this->page + 1)."'><i class='icon-chevron-right'></i></a></li>";
+				$nextLink="<li><a href='".$this->page_url($this->page + 1, $url_option)."'><i class='icon-chevron-right'></i></a></li>";
 			}
 			else
 				$nextLink="";
@@ -86,7 +89,7 @@ namespace Clue\UI{
 					$links.="<li class='active'><a>$p</a></li>";
 				}
 				else{
-					$links.="<li><a href='".$this->page_url($p)."'>$p</a></li>";
+					$links.="<li><a href='".$this->page_url($p, $url_option)."'>$p</a></li>";
 				}
 			}
 
