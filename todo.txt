@@ -1,0 +1,8 @@
+* email集成
+    F3的smtp类
+    http://poss.sourceforge.net/email/news/
+* queue参考laravel的queue实现(http://laravel.com/docs/4.2/queues)
+    以及Photon （http://www.photon-project.com/doc/tasks.html） 实现命令行queue工具
+
+* ActiveRecord的错误处理
+    http://guides.rubyonrails.org/active_record_validations.html#working-with-validation-errors
