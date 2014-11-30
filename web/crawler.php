@@ -1,5 +1,27 @@
 <?php
 namespace Clue\Web;
+
+/**
+ * Usage:
+ * class SomeCrawler() {
+ *      function crawl_list($url, $html){
+ *          $dom=new Clue\Web\Parser($html);
+ *          ...
+ *          $this->submit('item', ...);
+ *          $this->queue('list', next url);
+ *      }
+ *      function process_list($data){
+ *          // Process data or save somewhere (like database)
+ *      }
+ *
+ *      function crawl_item($url){}
+ *      function process_item($data){}
+ * }
+ *
+ * $c=new SomeCrawler();
+ * $c->queue('list', 'http://xxx.xxx/xxx');
+ * $c->crawl();
+ */
 class Crawler{
     function __construct(array $options=array()){
         $this->client=new Client();
