@@ -249,21 +249,16 @@ class Element implements \ArrayAccess{
 		return $this->parser->getElements($css, $this->el);
 	}
 
-	function getNext($selector){
-		// TODO
+	function getNext($filter='.+'){
 		$next=$this->el->nextSibling;
-		while($next){
-			if($next->nodeName==$selector){
-				return new Element($next, $this->parser);
-			}
-			else
-				$next=$next->nextSibling;
+		while($next && !preg_match('/^'.$filter.'/', @$next->tagName)){
+			$next=$next->nextSibling;
 		}
 
-		return null;
+		return $next ? new Element($next, $this->parser) : null;
 	}
 
-	function getParent($filter='.*'){
+	function getParent($filter='.+'){
 		$parent=$this->el->parentNode;
 		while($parent!=null && !preg_match('/^'.$filter.'/', @$parent->tagName)){
 			$parent=$parent->parentNode;

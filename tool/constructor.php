@@ -71,7 +71,7 @@ namespace Clue\Tool{
                 Phar::interceptFileFuncs();
                 require_once "phar://".__FILE__."/stub.php";
 
-                if(php_sapi_name()=="cli" && preg_match("/clue/i", $argv[0])){
+                if(php_sapi_name()=="cli" && preg_match("/clue/i", @$argv[0])){
                     require_once "phar://".__FILE__."/tool/clue.php";
                 }
                 __HALT_COMPILER();

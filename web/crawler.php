@@ -1,6 +1,4 @@
 <?php
-namespace Clue\Web;
-
 /**
  * Usage:
  * class SomeCrawler() {
@@ -22,6 +20,9 @@ namespace Clue\Web;
  * $c->queue('list', 'http://xxx.xxx/xxx');
  * $c->crawl();
  */
+
+namespace Clue\Web;
+
 class Crawler{
     function __construct(array $options=array()){
         $this->client=new Client();
@@ -36,15 +37,33 @@ class Crawler{
         $this->visited=[];
     }
 
-    function queue($type, $url, $priority=0){
-        $task=['type'=>$type, 'url'=>$url];
+    /**
+     * Queue Layout:
+     * [
+     *      0=> ['depth'=>0, ...],
+     *          ['depth'=>0, ...]
+     *      1=> ['depth'=>1, ...],
+     *          ['depth'=>1, ...],
+     *      2=> ['depth'=>2, ...],          <-- push
+     *          ['depth'=>2, ...],
+     *          ['depth'=>2, ...]           --> crawl
+     * ]
+     *
+     *
+     *
+     * $context=[
+     *      type
+     *      depth       深度优先使用depth参数，否则默认为0（广度优先）
+     *      id          用于判断是否访问过，缺省使用URL进行比对
+     * ]
+     */
+    function queue($context, $url){
+        $task=is_array($context) ? $context : ['TYPE'=>$context];
+        $task['URL']=$url;
+        $task['DEPTH'] = $depth = isset($task['DEPTH']) ? $task['DEPTH'] : 0;
 
-        if($priority>0){
-            array_unshift($this->pending, $task);
-        }
-        else{
-            array_push($this->pending, $task);
-        }
+        if(!isset($this->pending[$depth])) $this->pending[$depth]=[];
+        array_push($this->pending[$depth], $task);
     }
 
     function download_page($url){
@@ -93,8 +112,8 @@ class Crawler{
         error_log('[WARN] '.vsprintf(func_get_args()[0], array_slice(func_get_args(), 1)));
     }
     function error(){
-        $fmt=array_shift($args);
-        error_log('[ERROR] '.vsprintf(func_get_args()[0], array_slice(func_get_args(), 1)));
+        // error_log('[ERROR] '.vsprintf(func_get_args()[0], array_slice(func_get_args(), 1)));
+        \Clue\CLI::error('[ERROR] '.vsprintf(func_get_args()[0], array_slice(func_get_args(), 1))."\n");
         exit();
     }
 
@@ -113,7 +132,7 @@ class Crawler{
     function submit($type, $data){
         $handler="process_".$type;
         if(method_exists($this, $handler)){
-            $this->$handler($data);
+            return $this->$handler($data);
         }
         else{
             $this->log("Submit [$type]:\n".print_r($data, true).".\n");
@@ -121,24 +140,31 @@ class Crawler{
     }
 
     function crawl(){
-        while($t=array_shift($this->pending)){
-            if(!$this->validate_url($t['url'])){
-                $this->warn("Invalid url: %s", $t['url']);
+        while(!empty($this->pending)){
+            $depth=max(array_keys($this->pending));
+            $t=array_shift($this->pending[$depth]);
+            if(empty($this->pending[$depth])) unset($this->pending[$depth]);
+
+            if(!$this->validate_url($t['URL'])){
+                $this->warn("Invalid url: %s", $t['URL']);
                 continue;
             }
 
-            if(in_array($t['url'], $this->visited)) continue;
+            // 检查是否访问过
+            $hash=isset($t['ID']) ? $t['TYPE'].'/'.$t['ID'] : $t['URL'];
+            if(in_array($hash, $this->visited)) continue;
 
-            $this->log("[%s] %s\n", $t['type'], $t['url']);
+            $this->log("[%s] %s\n", $t['TYPE'], $t['URL']);
 
-            $action="crawl_".$t['type'];
-            $content=$this->download_page($t['url']);
-            $data=$this->$action($t['url'], $content);
-            $this->visited[]=$t['url'];
+            $action="crawl_".$t['TYPE'];
+            $content=$this->download_page($t['URL']);
+            $data=$this->$action($t['URL'], $content, $t);
+
+            $this->visited[]=$hash;
 
             if(is_array($data)){
-                if(!isset($data['url'])) $data['url']=$t['url'];
-                $this->submit($t['type'], $data);
+                if(!isset($data['url'])) $data['url']=$t['URL'];
+                $this->submit($t['TYPE'], $data);
             }
         }
     }
