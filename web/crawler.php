@@ -25,8 +25,15 @@ namespace Clue\Web;
 
 class Crawler{
     function __construct(array $options=array()){
+        $default_options=[
+            'cache_dir'=>getcwd().'/cache',
+            'cache_ttl'=>86400*30
+        ];
+
+        $this->options=$options=$options+$default_options;
+
         $this->client=new Client();
-        $this->client->enable_cache("cache", 86400*3650);
+        $this->client->enable_cache($options['cache_dir'], $options['cache_ttl']);
 
         $this->retry_download=5;
 
@@ -102,14 +109,10 @@ class Crawler{
     }
 
     function log(){
-        if($this->debug){
-            $args = func_get_args();
-            $fmt=array_shift($args);
-            fputs(STDERR, vsprintf($fmt, $args));
-        }
+        error_log(vsprintf(func_get_args()[0], array_slice(func_get_args(), 1)));
     }
     function warn(){
-        error_log('[WARN] '.vsprintf(func_get_args()[0], array_slice(func_get_args(), 1)));
+        \Clue\CLI::warning('[WARN] '.vsprintf(func_get_args()[0], array_slice(func_get_args(), 1)));
     }
     function error(){
         // error_log('[ERROR] '.vsprintf(func_get_args()[0], array_slice(func_get_args(), 1)));
@@ -154,7 +157,7 @@ class Crawler{
             $hash=isset($t['ID']) ? $t['TYPE'].'/'.$t['ID'] : $t['URL'];
             if(in_array($hash, $this->visited)) continue;
 
-            $this->log("[%s] %s\n", $t['TYPE'], $t['URL']);
+            $this->log("[%s] %s", $t['TYPE'], $t['URL']);
 
             $action="crawl_".$t['TYPE'];
             $content=$this->download_page($t['URL']);
