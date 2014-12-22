@@ -6,76 +6,61 @@
 namespace Clue\Mail;
 
 class Sender{
+    const EOL="\r\n";
+
     /**
      * @param $server 使用外部服务器或者内置MTA
      */
     function __construct($server=null, $port=null, $username=null, $password=null, $from=null){
-        $this->headers=array(
-            'MIME-Version'=>'1.0',
-            'Content-Type'=>'text/plain; charset=UTF-8'
-        );
+        $this->headers=array('MIME-Version'=>'1.0');
 
         $this->server=$server;
         $this->port=$port;
-        $this->scheme=$port!=25 ? 'ssl' : '';
 
         $this->username=$username;
         $this->password=$password;
 
+        $this->scheme='';
+        // 根据端口自动判别SSL/TLS，也可以在后续自行更改
+        if($this->port==587) $this->scheme='tls';
+        if($this->port==465) $this->scheme='ssl';
+
+
         // 确定本机HOST NAME
         $this->hostname=@$_SERVER['SERVER_NAME'] ?: "localhost";
 
-        $this->headers=[];
-
-        $this->recipients=[];
         $this->sender=new Address($from ?: $this->username);
+        $this->recipients=[];
+
+        $this->headers=[];
         $this->attachments=[];
 
-        $this->log=null;
         $this->socket=null;
     }
 
-    function add_recipient($email, $name=null){
-        $this->recipients['to'][]=new Address($email, $name);
+    /**
+     * 添加收件人
+     */
+    function add_recipient($email, $name=null, $rcpt='to'){
+        if(!in_array($rcpt, ['to', 'cc', 'bcc'])) user_error("Invalid rcpt type, valid values: to, cc, bcc");
+
+        $this->recipients[$rcpt][]=new Address($email, $name);
     }
+
+    function add_cc($email, $name=null){ $this->add_recipient($email, $name, 'cc'); }
+    function add_bcc($email, $name=null){ $this->add_recipient($email, $name, 'bcc'); }
 
     /**
-    *   Send SMTP command and record server response
-    *   @return string
-    *   @param $cmd string
-    *   @param $log bool
-    **/
-    protected function dialog($cmd=NULL,$log=TRUE) {
-        $socket=&$this->socket;
-
-        $this->debug(" >> $cmd");
-
-        if (!is_null($cmd)) fputs($socket,$cmd."\r\n");
-
-        $reply='';
-        while (
-            !feof($socket) &&
-            ($info=stream_get_meta_data($socket) && !@$info['timed_out']) &&
-            $str=fgets($socket,4096)
-        ) {
-            $reply.=$str;
-            if (preg_match('/(?:^|\n)\d{3} .+?\r\n/s',$reply)) break;
-        }
-
-        $this->debug(" << $reply");
-
-        if ($log) {
-            $this->log.=$cmd."\n";
-            $this->log.=str_replace("\r",'',$reply);
-        }
-
-        return $reply;
+     * 普通附件
+     */
+    function attach($src, $name=null){
+        $this->attachments[]=[$name ?: basename($src), $src, 'attachment'];
     }
-
-    function debug($message){
-        if(defined('DEBUG') && DEBUG){
-            error_log($message);
-        }
+    /**
+     * 在HTML中引用应该使用<img src='cid:xxx' />
+     */
+    function embed($src, $name=null){
+        $this->attachments[]=[$name ?: basename($src), $src, 'inline'];
     }
 
     function send(){
@@ -84,8 +69,61 @@ class Sender{
         }
 
         $headers=$this->headers;
+
+        // 检查From, To, Subject必须存在
         $headers['Subject']=$this->subject;
-        $message=$this->body;
+        $headers['From']=$this->sender;
+        $headers['To']=implode(";", $this->recipients['to']);
+        if(isset($this->recipients['cc'])){
+            $headers['Cc']=implode(";", $this->recipients['cc']);
+        }
+
+        // 自动检测是否HTML
+        $mimetype=strlen($this->body) > strlen(strip_tags($this->body)) ? "text/html" : "text/plain";
+        $headers['Content-Type']="$mimetype; charset=UTF-8";
+
+        // 准备邮件内容
+        $data="";
+        if ($this->attachments) {
+            // Replace Content-Type
+            $hash=uniqid(NULL,TRUE);
+            $type=$headers['Content-Type'];
+            $headers['Content-Type']="multipart/mixed; boundary=\"$hash\"";
+
+            $data ='This is a multi-part message in MIME format'.self::EOL;
+            $data.=self::EOL;
+
+            // TODO: 同时支持text/plain和text/html的multipart/alternative，有必要么，现在还有不识别HTML的客户端吗
+            $data.='--'.$hash.self::EOL;
+            $data.='Content-Type: '.$type.self::EOL;
+            $data.=self::EOL;
+            $data.=$this->body.self::EOL;
+
+            foreach($this->attachments as list($name, $path, $type)) {
+                $data.='--'.$hash.self::EOL;
+                $data.='Content-Type: application/octet-stream'.self::EOL;
+                $data.='Content-Transfer-Encoding: base64'.self::EOL;
+                $data.="Content-Disposition: $type; filename=\"$name\"".self::EOL;
+                if($type=='inline'){
+                    $data.="Content-ID: <$name>".self::EOL;
+                }
+                $data.=self::EOL;
+                $data.=chunk_split(base64_encode(file_get_contents($path))).self::EOL;
+            }
+            $data.=self::EOL;
+
+            $data.='--'.$hash.'--'.self::EOL;
+        }
+        else {
+            $data =$this->body.self::EOL;
+        }
+
+        $header="";
+        foreach ($headers as $key=>$val){
+            $header.=$key.': '.$val.self::EOL;
+        }
+        $header.=self::EOL;
+
 
         $socket=&$this->socket;
         $socket=fsockopen(($this->scheme ? 'ssl://' : '').$this->server, $this->port);
@@ -118,87 +156,48 @@ class Sender{
             $this->dialog(base64_encode($this->password));
         }
 
-        // // Required headers
-        // $reqd=array('From','To','Subject');
-        // foreach ($reqd as $id)
-        //     if (empty($headers[$id]))
-        //         user_error(sprintf(self::E_Header,$id));
-        $eol="\r\n";
-        // $str='';
-        // // Stringify headers
-        // foreach ($headers as $key=>$val)
-        //     if (!in_array($key,$reqd))
-        //         $str.=$key.': '.$val.$eol;
-
         // Start message dialog
         $this->dialog('MAIL FROM: '.$this->sender);
-        $this->dialog('RCPT TO: '.$this->recipients['to'][0]);
-        // foreach ($fw->split($headers['To'].
-        //     (isset($headers['Cc'])?(';'.$headers['Cc']):'').
-        //     (isset($headers['Bcc'])?(';'.$headers['Bcc']):'')) as $dst)
-        //     $this->dialog('RCPT TO: '.strstr($dst,'<'));
+
+        foreach(array_merge($this->recipients['to'], @$this->recipients['cc'] ?: [], @$this->recipients['bcc'] ?: []) as $r){
+            $this->dialog('RCPT TO: '.$r);
+        }
 
         $this->dialog('DATA');
-
-        if ($this->attachments) {
-            // Replace Content-Type
-            $hash=uniqid(NULL,TRUE);
-            $type=$headers['Content-Type'];
-            $headers['Content-Type']='multipart/mixed; '.
-                'boundary="'.$hash.'"';
-            // Send mail headers
-            $out='';
-            foreach ($headers as $key=>$val)
-                if ($key!='Bcc')
-                    $out.=$key.': '.$val.$eol;
-            $out.=$eol;
-            $out.='This is a multi-part message in MIME format'.$eol;
-            $out.=$eol;
-            $out.='--'.$hash.$eol;
-            $out.='Content-Type: '.$type.$eol;
-            $out.=$eol;
-            $out.=$message.$eol;
-            foreach ($this->attachments as $attachment) {
-                if (is_array($attachment)) {
-                    list($alias, $file) = each($attachment);
-                    $filename = $alias;
-                    $attachment = $file;
-                }
-                else {
-                    $filename = basename($attachment);
-                }
-                $out.='--'.$hash.$eol;
-                $out.='Content-Type: application/octet-stream'.$eol;
-                $out.='Content-Transfer-Encoding: base64'.$eol;
-                $out.='Content-Disposition: attachment; '.
-                    'filename="'.$filename.'"'.$eol;
-                $out.=$eol;
-                $out.=chunk_split(
-                    base64_encode(file_get_contents($attachment))).$eol;
-            }
-            $out.=$eol;
-            $out.='--'.$hash.'--'.$eol;
-            $out.='.';
-            $this->dialog($out,FALSE);
-        }
-        else {
-            // Send mail headers
-            $out='';
-            foreach ($headers as $key=>$val){
-                if ($key=='Bcc') continue;
-                $out.=$key.': '.$val.$eol;
-            }
-            $out.=$eol;
-            $out.=$message.$eol;
-            $out.='.';
-            // Send message
-            $this->dialog($out);
-        }
+        $this->dialog($header.$data.self::EOL.".");
 
         $this->dialog('QUIT');
 
         // TODO: 若keepalive不用关闭
         if ($socket) fclose($socket);
         return TRUE;
+    }
+
+    protected function dialog($cmd=NULL,$log=TRUE) {
+        $socket=&$this->socket;
+
+        $this->debug(" >> $cmd");
+
+        if (!is_null($cmd)) fputs($socket,$cmd."\r\n");
+
+        $reply='';
+        while (
+            !feof($socket) &&
+            ($info=stream_get_meta_data($socket) && !@$info['timed_out']) &&
+            $str=fgets($socket,4096)
+        ) {
+            $reply.=$str;
+            if (preg_match('/(?:^|\n)\d{3} .+?\r\n/s',$reply)) break;
+        }
+
+        $this->debug(" << $reply");
+
+        return $reply;
+    }
+
+    protected function debug($message){
+        if(defined('DEBUG') && DEBUG){
+            error_log($message);
+        }
     }
 }

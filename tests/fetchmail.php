@@ -2,6 +2,7 @@
 require_once 'clue/stub.php';
 
 require_once dirname(__DIR__).'/stub.php';
+define("DEBUG", 1);
 
 class Test_Mail extends PHPUnit_Framework_TestCase{
     protected function setUp(){
@@ -24,12 +25,14 @@ class Test_Mail extends PHPUnit_Framework_TestCase{
      * @expectedExceptionMessageRegExp "Can not authenticate to IMAP server:"
      */
     function test_login_error(){
+        $this->markTestSkipped();
+
         $f=new Clue\Mail\Fetcher($this->incoming_server, $this->incoming_port, 'username', 'password');
         $mails=$f->search("ALL");
     }
 
     function test_fetch_mail(){
-        // $this->markTestSkipped();
+        $this->markTestSkipped();
 
         $f=new Clue\Mail\Fetcher($this->incoming_server, $this->incoming_port, $this->username, $this->password);
 
@@ -41,25 +44,29 @@ class Test_Mail extends PHPUnit_Framework_TestCase{
         $this->assertTrue(!!$mail['html']);
     }
 
-    function test_remove_mail(){
-        // $this->markTestSkipped();
+    function test_html_mail(){
+        $this->markTestSkipped();
 
-        $f=new Clue\Mail\Fetcher($this->incoming_server, $this->incoming_port, $this->username, $this->password);
+        $s=new Clue\Mail\Sender($this->outgoing_server, $this->outgoing_port, $this->username, $this->password, $this->username);
 
-        // 删除包含有[CLUE-AUTOTEST]的邮件
-        $mails=$f->search("SUBJECT [CLUE-AUTOTEST]");
+        $s->subject="[CLUE-AUTOTEST] send html email";
+        $s->body="<h1>Title</h1><img src='cid:baidu.png' />";
 
-        $f->delete_mail($mails);
-        $f->flush();
+        $s->add_recipient($this->username);
+        $s->add_cc($this->username);
+        $s->add_bcc("hou.danwu@gmail.com");
 
-        $mails=$f->search("SUBJECT [CLUE-AUTOTEST]");
-        $this->assertEmpty($mails);
+        $s->is_html();
+
+        $s->attach("http://www.baidu.com/img/bdlogo.png", "baidu2.png");
+        $s->embed("http://www.baidu.com/img/bdlogo.png", "baidu.png");
+
+        $s->send();
     }
 
     function test_send_mail(){
-        // $this->markTestSkipped();
+        $this->markTestSkipped();
 
-        $f=new Clue\Mail\Fetcher($this->incoming_server, $this->incoming_port, $this->username, $this->password);
         $s=new Clue\Mail\Sender($this->outgoing_server, $this->outgoing_port, $this->username, $this->password);
 
         $s->sender=new Clue\Mail\Address($this->username);
@@ -67,9 +74,14 @@ class Test_Mail extends PHPUnit_Framework_TestCase{
         $s->body="This is body";
 
         $s->add_recipient($this->username);
+        $s->add_cc($this->username);
+        $s->add_bcc($this->username);
+
         $s->send();
 
-        sleep(5);
+        sleep(1);
+
+        $f=new Clue\Mail\Fetcher($this->incoming_server, $this->incoming_port, $this->username, $this->password);
         $mails=$f->search("SUBJECT \"$s->subject\"");
         $this->assertEquals(1, count($mails));
 
@@ -83,32 +95,51 @@ class Test_Mail extends PHPUnit_Framework_TestCase{
         var_dump($mail);exit();
     }
 
-    // function test_html_mail(){
-    //     $s=new Clue\Mail\Sender($this->outgoing_server, $this->outgoing_port, $this->username, $this->password, $this->username);
-    //     $f=new Clue\Mail\Fetcher($this->incoming_server, $this->incoming_port, $this->username, $this->password);
+    function test_remove_mail(){
+        $this->markTestSkipped();
 
-    //     $s->subject="[CLUE-AUTOTEST] send html email";
-    //     $s->body="<h1>Title</h1>";
+        $f=new Clue\Mail\Fetcher($this->incoming_server, $this->incoming_port, $this->username, $this->password);
 
-    //     $s->add_recipient($this->username);
-    //     $s->send();
+        // 删除包含有[CLUE-AUTOTEST]的邮件
+        $mails=$f->search("SUBJECT [CLUE-AUTOTEST]");
 
-    //     $mails=$f->search("SUBJECT \"$s->subject\"");
-    //     $this->assertEquals(1, count($mails));
-    // }
+        $f->delete_mail($mails);
+        $f->flush();
 
-    function test_mail_with_attachment(){
-        // $s=new Clue\Mail\Sender($this->outgoing_server, $this->outgoing_port, $this->username, $this->password);
+        $mails=$f->search("SUBJECT [CLUE-AUTOTEST]");
+        $this->assertEmpty($mails);
+    }
 
-        // $s->sender=new Clue\Mail\Address($this->username);
-        // $s->subject="[CLUE-AUTOTEST] send html email";
-        // $s->body="<h1>Title</h1>";
+    function test_read_and_send(){
+        $this->markTestSkipped();
 
-        // $s->add_recipient($this->username);
-        // $s->send();
+        $f=new Clue\Mail\Fetcher($this->incoming_server, $this->incoming_port, $this->username, $this->password);
 
-        // $f=new Clue\Mail\Fetcher($this->incoming_server, $this->incoming_port, $this->username, $this->password);
-        // $mails=$f->search("SUBJECT \"$s->subject\"");
-        // $this->assertEquals(1, count($mails));
+        // 所有邮件
+        $mails=$f->search("SINCE \"2014-01-01\"");
+
+        foreach($f->fetch_header($mails) as $h){
+            // 找到一个有附件的或者最大的邮件
+            if($h['size'] > 10*1024){
+                // 重新发送给自己
+                $m=$f->fetch_mail($h['uid']);
+
+                $s=new Clue\Mail\Sender($this->outgoing_server, $this->outgoing_port, $this->username, $this->password);
+
+                $s->sender=new Clue\Mail\Address($this->username);
+                $s->subject=$m['subject'];
+                $s->body=$m['html'];
+
+                $s->add_recipient($this->username);
+
+                foreach($m['attachments'] as $a){
+                    $s->attach($a['path'], $a['name']);
+                }
+
+                $s->send();
+
+                break;
+            }
+        }
     }
 }

@@ -4,10 +4,12 @@
  */
 namespace Clue\Mail;
 
+if(!extension_loaded("imap")) exit("Extension imap required.");
+
 class Fetcher{
     function __construct($server, $port, $username, $password){
         $this->server_encoding='utf-8';
-        $this->imap_folder="inbox";
+        $this->imap_folder="INBOX";
         $this->imap_server="{"."$server:$port/imap/ssl"."}";
 
         $this->stream=@imap_open("$this->imap_server$this->imap_folder", $username, $password, null, 1);
@@ -16,6 +18,9 @@ class Fetcher{
         if(!$this->stream){
             throw new \Exception("Can't connect: ".$errors[count($errors)-1]);
         }
+
+        $this->attachment_dir="/tmp/".uniqid(null, true);
+        if(!is_dir($this->attachment_dir)) mkdir($this->attachment_dir, 0775, true);
     }
 
     function __destruct(){
@@ -23,6 +28,9 @@ class Fetcher{
             imap_close($this->stream);
             $this->stream=null;
         }
+
+        // 删除临时附件
+        \Clue\Tool::remove_directory($this->attachment_dir);
     }
 
     function list_folders(){
@@ -32,6 +40,10 @@ class Fetcher{
         }
 
         return $folders;
+    }
+
+    function status($folder='INBOX'){
+        return imap_status($this->stream, "$this->imap_server$folder", SA_ALL);
     }
 
     /**
@@ -99,11 +111,14 @@ class Fetcher{
         if(!is_array($ids)) $ids=[$ids];
 
         $mails = imap_fetch_overview($this->stream, implode(',', $ids), FT_UID);
-        array_walk($mails, function($m){
+        $mails=array_map(function($m){
             $m->subject=$this->decode_mime_string($m->subject, $this->server_encoding);
             $m->from=$this->decode_mime_string($m->from, $this->server_encoding);
             $m->to=$this->decode_mime_string($m->to, $this->server_encoding);
-        });
+            $m->id=$m->uid;
+
+            return (array)$m;
+        }, $mails);
 
         return $mails;
     }
@@ -135,6 +150,7 @@ class Fetcher{
         }
 
         $mailStructure = imap_fetchstructure($this->stream, $id, FT_UID);
+
         if(empty($mailStructure->parts)) {
             $this->initMailPart($mail, $mailStructure, 0);
         }
@@ -195,22 +211,14 @@ class Fetcher{
                 $fileName = $this->decode_mime_string($fileName, $this->server_encoding);
                 $fileName = $this->decode_rfc2231($fileName, $this->server_encoding);
             }
-            var_dump($fileName);//exit();
-            // $attachment = new IncomingMailAttachment();
-            // $attachment->id = $attachmentId;
-            // $attachment->name = $fileName;
-            // if($this->attachmentsDir) {
-            //     $replace = array(
-            //         '/\s/' => '_',
-            //         '/[^0-9a-zA-Z_\.]/' => '',
-            //         '/_+/' => '_',
-            //         '/(^_)|(_$)/' => '',
-            //     );
-            //     $fileSysName = preg_replace('~[\\\\/]~', '', $mail->id . '_' . $attachmentId . '_' . preg_replace(array_keys($replace), $replace, $fileName));
-            //     $attachment->filePath = $this->attachmentsDir . DIRECTORY_SEPARATOR . $fileSysName;
-            //     file_put_contents($attachment->filePath, $data);
-            // }
-            // $mail->addAttachment($attachment);
+
+            $attach=[];
+            $attach['id']=$attachmentId;
+            $attach['name']=$fileName;
+            $attach['path']=$this->attachment_dir."/".$mail['id'] . '_' . $attachmentId . '_' . basename($fileName);
+            file_put_contents($attach['path'], $data);
+
+            $mail['attachments'][]=$attach;
         }
         elseif($partStructure->type == 0 && $data) {
             if(strtolower($partStructure->subtype) == 'plain') {
