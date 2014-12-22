@@ -27,18 +27,23 @@ class Crawler{
     function __construct(array $options=array()){
         $default_options=[
             'cache_dir'=>getcwd().'/cache',
-            'cache_ttl'=>86400*30
+            'cache_ttl'=>86400*30,
+            'agent'=>"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36",
+            'cookie'=>getcwd().'/cookie',
         ];
 
         $this->options=$options=$options+$default_options;
 
         $this->client=new Client();
+        $this->client->set_agent($this->options['agent']);
         $this->client->enable_cache($options['cache_dir'], $options['cache_ttl']);
+        $this->client->enable_cookie($this->options['cookie']);
 
         $this->retry_download=5;
 
         $this->debug=isset($options['debug']) ? $options['debug'] : false;
         $this->delay=isset($options['delay']) ? $options['delay'] : 0;
+
 
         $this->pending=[];
         $this->visited=[];
@@ -112,7 +117,7 @@ class Crawler{
         error_log(vsprintf(func_get_args()[0], array_slice(func_get_args(), 1)));
     }
     function warn(){
-        \Clue\CLI::warning('[WARN] '.vsprintf(func_get_args()[0], array_slice(func_get_args(), 1)));
+        \Clue\CLI::warning('[WARN] '.vsprintf(func_get_args()[0], array_slice(func_get_args(), 1))."\n");
     }
     function error(){
         // error_log('[ERROR] '.vsprintf(func_get_args()[0], array_slice(func_get_args(), 1)));
