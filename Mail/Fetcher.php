@@ -85,6 +85,36 @@ class Fetcher{
         return $ids ?: array();
     }
 
+    /**
+     * Gets mails ids sorted by some criteria
+     *
+     * Criteria can be one (and only one) of the following constants:
+     *  SORTDATE - mail Date
+     *  SORTARRIVAL - arrival date (default)
+     *  SORTFROM - mailbox in first From address
+     *  SORTSUBJECT - mail subject
+     *  SORTTO - mailbox in first To address
+     *  SORTCC - mailbox in first cc address
+     *  SORTSIZE - size of mail in octets
+     *
+     * @param array $mails 可以使mail header数组，或者uid数组
+     * @param int $criteria
+     * @param bool $reverse
+     * @return array Mails ids
+     */
+    function sort(&$mails, $criteria = SORTARRIVAL, $reverse = true) {
+        $sorts=imap_sort($this->stream, $criteria, $reverse, SE_UID);
+
+        if(is_numeric($mails[0])){
+            return array_values(array_intersect($sorts, $mails));
+        }
+        else{
+            $sorts=array_combine(array_values($sorts), array_keys($sorts));
+            usort($mails, function($a, $b) use($sorts){return $sorts[$b['uid']] - $sorts[$a['uid']];});
+            return $mails;
+        }
+    }
+
     function delete_mail($ids){
         if(!is_array($ids)) $ids=[$ids];
 
@@ -244,12 +274,23 @@ class Fetcher{
     }
 
     function mark($ids, $flag){
+        if(!is_array($ids)) $ids=[$ids];
 
+        return imap_setflag_full($this->stream, implode(',', $ids), $flag, ST_UID);
     }
+
+    function mark_read($ids){ return $this->mark($ids, '\\Seen'); }
+    function mark_important($ids){ return $this->mark($ids, '\\Flagged'); }
 
     function unmark($ids, $flag){
+        if(!is_array($ids)) $ids=[$ids];
 
+        return imap_clearflag_full($this->stream, implode(',', $ids), $flag, ST_UID);
     }
+
+    function unmark_read($ids){ return $this->unmark($ids, '\\Seen'); }
+    function unmark_important($ids){ return $this->unmark($ids, '\\Flagged'); }
+
 
     protected function decode_mime_string($string, $charset = 'utf-8') {
         if($string==null) return null;
@@ -283,45 +324,5 @@ class Fetcher{
             }
         }
         return $string;
-    }
-}
-
-class IncomingMail {
-    public $id;
-    public $date;
-    public $subject;
-    public $fromName;
-    public $fromAddress;
-    public $to = array();
-    public $toString;
-    public $cc = array();
-    public $replyTo = array();
-    public $textPlain;
-    public $textHtml;
-    /** @var IncomingMailAttachment[] */
-    protected $attachments = array();
-    public function addAttachment(IncomingMailAttachment $attachment) {
-        $this->attachments[$attachment->id] = $attachment;
-    }
-    /**
-     * @return IncomingMailAttachment[]
-     */
-    public function getAttachments() {
-        return $this->attachments;
-    }
-    /**
-     * Get array of internal HTML links placeholders
-     * @return array attachmentId => link placeholder
-     */
-    public function getInternalLinksPlaceholders() {
-        return preg_match_all('/=["\'](ci?d:(\w+))["\']/i', $this->textHtml, $matches) ? array_combine($matches[2], $matches[1]) : array();
-    }
-    public function replaceInternalLinks($baseUri) {
-        $baseUri = rtrim($baseUri, '\\/') . '/';
-        $fetchedHtml = $this->textHtml;
-        foreach($this->getInternalLinksPlaceholders() as $attachmentId => $placeholder) {
-            $fetchedHtml = str_replace($placeholder, $baseUri . basename($this->attachments[$attachmentId]->filePath), $fetchedHtml);
-        }
-        return $fetchedHtml;
     }
 }

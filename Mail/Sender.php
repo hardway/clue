@@ -25,12 +25,15 @@ class Sender{
         if($this->port==587) $this->scheme='tls';
         if($this->port==465) $this->scheme='ssl';
 
+        $this->dns_server='8.8.8.8';
 
         // 确定本机HOST NAME
         $this->hostname=@$_SERVER['SERVER_NAME'] ?: "localhost";
 
         $this->sender=new Address($from ?: $this->username);
-        $this->recipients=[];
+        $this->recipients=[
+            'to'=>[], 'cc'=>[], 'bcc'=>[]
+        ];
 
         $this->headers=[];
         $this->attachments=[];
@@ -63,6 +66,7 @@ class Sender{
         $this->attachments[]=[$name ?: basename($src), $src, 'inline'];
     }
 
+
     function send(){
         if ($this->scheme=='ssl' && !extension_loaded('openssl')){
             throw new \Exception("OpenSSL required for secure connection");
@@ -74,7 +78,7 @@ class Sender{
         $headers['Subject']=$this->subject;
         $headers['From']=$this->sender;
         $headers['To']=implode(";", $this->recipients['to']);
-        if(isset($this->recipients['cc'])){
+        if(count($this->recipients['cc'])>0){
             $headers['Cc']=implode(";", $this->recipients['cc']);
         }
 
@@ -124,21 +128,48 @@ class Sender{
         }
         $header.=self::EOL;
 
+        $recipients=array_merge($this->recipients['to'], $this->recipients['cc'], $this->recipients['bcc']);
 
+        if(!$this->server && !$this->port){
+            // 尝试直接登录对方邮件服务器
+            $scheme='';
+            $port=25;
+            $sent=0;
+            foreach($recipients as $r){
+                $server=$this->resolve_mx($r->domain);
+                if(!$server){
+                    user_error("Can't resolve MX for domain: $r->domain");
+                }
+                else{
+                    $success=$this->send_smtp($server, $port, $scheme, $header, $data, [$r]);
+                    if($success) $sent++;
+                }
+            }
+
+            return $sent;
+        }
+        else{
+            // 通过MTA代发
+            return $this->send_smtp($this->server, $this->port, $this->scheme, $header, $data, $recipients);
+        }
+    }
+
+    function send_smtp($server, $port, $scheme, $header, $data, $recipients){
         $socket=&$this->socket;
-        $socket=fsockopen(($this->scheme ? 'ssl://' : '').$this->server, $this->port);
+        $socket=fsockopen(($scheme ? 'ssl://' : '').$server, $port);
         if(!$socket){
-            throw new \Exception("Connection $this->server:$this->port failed");
+            user_error("Connection $this->server:$this->port failed");
+            return false;
         }
 
         stream_set_blocking($socket, TRUE);
 
-        // 接收Server申明
+        // 跳过Server欢迎信息
         $this->dialog(null);
 
         // 登录认证
         $reply=$this->dialog('EHLO '.$this->hostname);
-        if (strtolower($this->scheme)=='tls') {
+        if (strtolower($scheme)=='tls') {
             $this->dialog('STARTTLS');
             stream_socket_enable_crypto($socket,TRUE,STREAM_CRYPTO_METHOD_TLS_CLIENT);
             $reply=$this->dialog('EHLO '.$this->hostname);
@@ -159,18 +190,27 @@ class Sender{
         // Start message dialog
         $this->dialog('MAIL FROM: '.$this->sender);
 
-        foreach(array_merge($this->recipients['to'], @$this->recipients['cc'] ?: [], @$this->recipients['bcc'] ?: []) as $r){
+        foreach($recipients as $r){
             $this->dialog('RCPT TO: '.$r);
         }
 
         $this->dialog('DATA');
-        $this->dialog($header.$data.self::EOL.".");
+        $ret=$this->dialog($header.$data.self::EOL.".");
 
         $this->dialog('QUIT');
 
-        // TODO: 若keepalive不用关闭
         if ($socket) fclose($socket);
-        return TRUE;
+
+        return $ret;
+    }
+
+    function resolve_mx($domain){
+        $ret=getmxrr($domain, $hosts, $weights);
+        if($ret && count($hosts)){
+            return $hosts[0];
+        }
+        else
+            return null;
     }
 
     protected function dialog($cmd=NULL,$log=TRUE) {

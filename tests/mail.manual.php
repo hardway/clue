@@ -4,7 +4,7 @@ require_once 'clue/stub.php';
 require_once dirname(__DIR__).'/stub.php';
 define("DEBUG", 1);
 
-class Test_Mail extends PHPUnit_Framework_TestCase{
+class Test_Mail_Manual extends PHPUnit_Framework_TestCase{
     protected function setUp(){
         $this->outgoing_server=@$_SERVER['smtp_out_server'] ?: "smtp.gmail.com";
         $this->outgoing_port=@$_SERVER['smtp_out_port'] ?: 465;
@@ -20,24 +20,27 @@ class Test_Mail extends PHPUnit_Framework_TestCase{
         $this->app=new Clue\Application(['config'=>null]);
     }
 
-    /**
-     * @expectedException Exception
-     * @expectedExceptionMessageRegExp "Can not authenticate to IMAP server:"
-     */
-    function test_login_error(){
-        $this->markTestSkipped();
-
-        $f=new Clue\Mail\Fetcher($this->incoming_server, $this->incoming_port, 'username', 'password');
-        $mails=$f->search("ALL");
-    }
-
     function test_fetch_mail(){
         $this->markTestSkipped();
 
         $f=new Clue\Mail\Fetcher($this->incoming_server, $this->incoming_port, $this->username, $this->password);
 
         $mails=$f->search("ALL");
+        $mails=array_splice($mails, 0, 20);
+
         $this->assertTrue(count($mails)>0);
+
+        $mails=$f->fetch_header($mails);
+
+        foreach($f->sort($mails, SORTFROM) as $m){
+            printf("%10d %40s %s\n", $m['uid'], $m['from'], $m['subject']);
+        }
+        printf("%d mails sorted by FROM\n", count($mails));
+
+        foreach($f->sort($mails, SORTSUBJECT) as $m){
+            printf("%10d %40s %s\n", $m['uid'], $m['from'], $m['subject']);
+        }
+        printf("%d mails sorted by SUBJECT\n", count($mails));
 
         $mail=$f->fetch_mail($mails[0]);
         $this->assertTrue(!!$mail['subject']);
@@ -56,11 +59,22 @@ class Test_Mail extends PHPUnit_Framework_TestCase{
         $s->add_cc($this->username);
         $s->add_bcc("hou.danwu@gmail.com");
 
-        $s->is_html();
-
         $s->attach("http://www.baidu.com/img/bdlogo.png", "baidu2.png");
         $s->embed("http://www.baidu.com/img/bdlogo.png", "baidu.png");
 
+        $s->send();
+    }
+
+    function test_send_mail_without_mta(){
+        $this->markTestSkipped();
+
+        $s=new Clue\Mail\Sender();
+
+        $s->sender=new Clue\Mail\Address("webmaster@google.com");
+        $s->subject="[CLUE-AUTOTEST] send email without MTA";
+        $s->body="Guess what?";
+
+        $s->add_recipient('hardway@m-sent.com');
         $s->send();
     }
 
