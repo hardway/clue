@@ -100,11 +100,9 @@ namespace Clue\Web{
 		public $content;
 
 		public $agent="ClueHTTPClient";
-		public $inprivate=false;
-		public $history=array();
+		public $referer=null;
 
 		private $cache;
-
 		private $curl;
 
 		/**
@@ -118,7 +116,6 @@ namespace Clue\Web{
 		function __construct($config=array()){
 			$default_config=array(
 				'http_proxy'=>getenv("http_proxy"),
-				'socks_proxy'=>null,
 				'connect_timeout'=>15,
 				'timeout'=>60
 			);
@@ -131,7 +128,7 @@ namespace Clue\Web{
 			curl_setopt($this->curl, CURLOPT_CONNECTTIMEOUT, $config['connect_timeout']);
 			curl_setopt($this->curl, CURLOPT_TIMEOUT, $config['timeout']);
 
-			if(preg_match('/^([a-z0-9\-_\.]+):(\d+)$/i', $config['socks_proxy'], $m)){
+			if(preg_match('/^sock[45s]?:\/\/([a-z0-9\-_\.]+):(\d+)$/i', $config['http_proxy'], $m)){
 				list($_, $proxy, $port)=$m;
 				curl_setopt($this->curl, CURLOPT_PROXY, $proxy);
 				curl_setopt($this->curl, CURLOPT_PROXYPORT, $port);
@@ -194,7 +191,7 @@ namespace Clue\Web{
 			// Another host
 			if(isset($parts['host'])) return $url;
 
-			$current=parse_url($current ?: end($this->history));
+			$current=parse_url($current ?: $this->referer);
 
 			$path=isset($current['path']) ? explode("/",  $current['path']) : array("");
 			if(isset($parts['path'])){
@@ -229,14 +226,6 @@ namespace Clue\Web{
 			$result[]=isset($parts['fragment']) ? '#'.$parts['fragment'] : '';
 
 			return implode("", $result);
-		}
-
-		private function visit($url, $save_history=true){
-			$url=$this->follow_url($url, end($this->history));
-
-			if($save_history) $this->history[]=$url;
-
-			return $url;
 		}
 
 		function set_agent($agent){
@@ -276,8 +265,8 @@ namespace Clue\Web{
 			curl_setopt($this->curl, CURLOPT_POST, true);
 			curl_setopt($this->curl, CURLOPT_HEADER, true);
 			curl_setopt($this->curl, CURLOPT_RETURNTRANSFER, true);
-			if(!$this->inprivate)
-				curl_setopt($this->curl, CURLOPT_REFERER, end($this->history));
+			if($this->referer)
+				curl_setopt($this->curl, CURLOPT_REFERER, $this->referer);
 
 			if(is_array($data)){
 				$formData=array();
@@ -301,8 +290,8 @@ namespace Clue\Web{
 			curl_setopt($this->curl, CURLOPT_POST, false);
 			curl_setopt($this->curl, CURLOPT_URL, $url);
 			curl_setopt($this->curl, CURLOPT_HEADER, false);
-			if(!$this->inprivate)
-				curl_setopt($this->curl, CURLOPT_REFERER, end($this->history));
+			if($this->referer)
+				curl_setopt($this->curl, CURLOPT_REFERER, $this->referer);
 
 			curl_exec($this->curl);
 			// TODO: check curl_errno
@@ -329,8 +318,8 @@ namespace Clue\Web{
 				curl_setopt($this->curl, CURLOPT_HEADER, true);
 				curl_setopt($this->curl, CURLOPT_ENCODING , "");
 				curl_setopt($this->curl, CURLOPT_RETURNTRANSFER, true);
-				if(!$this->inprivate){
-					curl_setopt($this->curl, CURLOPT_REFERER, end($this->history));
+				if($this->referer){
+					curl_setopt($this->curl, CURLOPT_REFERER, $this->referer);
 				}
 
 				$this->_parse_response(curl_exec($this->curl));
@@ -339,7 +328,6 @@ namespace Clue\Web{
 			    $this->error=curl_error($this->curl);
 
 			    if($this->errno==0 && $this->cache){
-					$url=$this->visit($url);
 					$this->cache->put($url, $this->content);
 				}
 			}
