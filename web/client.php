@@ -1,100 +1,7 @@
 <?php
 namespace Clue\Web{
-	/* Storage layout
-		CACHE
-			\_ A867 								Hash Prefix
-				\_ A86798348c8j8x230k99				Hash
-					\_ meta 						unserizlied data
-					|_ 20130413113412				Content version
-
-	 	META=array(
-	 		'url'=>'http://www.google.com',
-			'revisions'=>array(
-				'yyyymmddhhmmss', 'yyyymmddhhmmss', ...
-			)
-	 	)
-	*/
-	class CacheStore{
-		private $cache_dir;
-		private $cache_ttl;
-
-		function __construct($cache_dir, $cache_ttl=86400){
-			// Make sure the cache directory exists
-			if(!is_dir($cache_dir)){
-				@mkdir($cache_dir, 0775, true);
-				if(!is_dir($cache_dir)){
-					throw new \Exception("Cache directory didn't exist and can't be created: $cache_dir");
-				}
-			}
-			$this->cache_dir=$cache_dir;
-			$this->cache_ttl=$cache_ttl;
-		}
-
-		private function _cache_folder($url){
-			$hash=md5($url);
-
-			return sprintf("%s/%s/%s", $this->cache_dir, substr($hash, 0, 4), $hash);
-		}
-
-		function destroy($url){
-			$folder=$this->_cache_folder($url);
-			foreach(scandir($folder) as $f){
-				if(is_file("$folder/$f")) @unlink("$folder/$f");
-			}
-			return rmdir($folder);
-		}
-
-		function get($url){
-			$folder=$this->_cache_folder($url);
-
-			if(!is_dir($folder) || !file_exists("$folder/meta")) return false;
-
-			$meta=unserialize(file_get_contents("$folder/meta"));
-			$rev=end($meta['revisions']);
-
-			if(!file_exists("$folder/$rev")) return false;
-
-			$outdated=filemtime("$folder/$rev")+$this->cache_ttl < time();
-			if($outdated) return false;
-
-			$gzcontent=file_get_contents("$folder/$rev");
-			return  gzinflate(substr($gzcontent,10,-8));
-		}
-
-		function put($url, $content){
-			$folder=$this->_cache_folder($url);
-
-			if(!is_dir($folder)) mkdir($folder, 0775, true);
-
-			if(file_exists("$folder/meta")){
-				$meta=unserialize(file_get_contents("$folder/meta"));
-				$rev=end($meta['revisions']);
-				$old_hash=md5_file("$folder/$rev");
-				$new_hash=md5($content);
-
-				$save=$old_hash!=$new_hash;
-				if(!$save) touch("$folder/$rev");
-			}
-			else{
-				$meta=array(
-					'url'=>$url,
-					'revisions'=>array()
-				);
-
-				$save=true;
-			}
-
-			if($save){
-				$rev=date("Ymdhis");
-				file_put_contents("$folder/$rev", gzencode($content));
-				$meta['revisions'][]=$rev;
-
-				file_put_contents("$folder/meta", serialize($meta));
-			}
-		}
-	}
-
 	class Client{
+		public $request_header=[];
 		public $header;
 		public $status=null;			// 返回的HTTP状态
 		public $content;
@@ -305,7 +212,9 @@ namespace Clue\Web{
 
 			// 尝试从cache获取
 			if(!$forceRefresh && $this->cache){
-				$this->content=$this->cache->get($url);
+				list($this->content, $meta)=$this->cache->get($url);
+				$this->status=$meta['status'];
+				$this->header=$meta['header'];
 			}
 
 			$this->cache_hit=true;
@@ -328,7 +237,7 @@ namespace Clue\Web{
 			    $this->error=curl_error($this->curl);
 
 			    if($this->errno==0 && $this->cache){
-					$this->cache->put($url, $this->content);
+					$this->cache->put($url, $this->content, ['status'=>$this->status, 'header'=>$this->header]);
 				}
 			}
 		}

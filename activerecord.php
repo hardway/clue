@@ -259,9 +259,14 @@
         static function find($condition, $range='all'){
             $model=self::model();
 
-            if(is_string($condition) && preg_match('/^select /i', $condition)){
+            if(is_string($condition) && preg_match('/^\s*select /i', $condition)){
                 // $condition 本身就是sql
-                $sql=$condition;
+                $sql=call_user_func_array(array(self::db(), "format"), func_get_args());
+
+                $range=func_get_arg(func_num_args()-1);
+                if($range!='all' && $range!='one' && !preg_match('/^\d+\-\d+$/', $range)){
+                    $range='all';
+                }
             }
             else{
                 // 条件数组

@@ -26,7 +26,7 @@ namespace Clue\Web;
 class Crawler{
     function __construct(array $options=array()){
         $default_options=[
-            'cache_dir'=>getcwd().'/cache',
+            'cache_dir'=>'/tmp/crawler',
             'cache_ttl'=>86400*30,
             'agent'=>"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36",
             'cookie'=>getcwd().'/cookie',
@@ -38,12 +38,12 @@ class Crawler{
         $this->client->set_agent($this->options['agent']);
         $this->client->enable_cache($options['cache_dir'], $options['cache_ttl']);
         $this->client->enable_cookie($this->options['cookie']);
+        $this->client->cache_hit=true;  // 避免首次访问发生delay
 
         $this->retry_download=5;
 
         $this->debug=isset($options['debug']) ? $options['debug'] : false;
         $this->delay=isset($options['delay']) ? $options['delay'] : 0;
-
 
         $this->pending=[];
         $this->visited=[];
@@ -92,7 +92,7 @@ class Crawler{
 
         // Traffic Control
         if(!$this->client->cache_hit && $this->delay){
-            $this->log("Traffic Delay: %ds\n", $this->delay);
+            $this->log("Traffic Delay: %ds", $this->delay);
             sleep($this->delay);
         }
 
@@ -166,6 +166,7 @@ class Crawler{
 
             $action="crawl_".$t['TYPE'];
             $content=$this->download_page($t['URL']);
+
             $data=$this->$action($t['URL'], $content, $t);
 
             $this->visited[]=$hash;

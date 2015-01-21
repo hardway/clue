@@ -38,6 +38,7 @@ class Client{
 		$this->token=@$options['token'];
 		$this->secret=@$options['secret'];		// 预共享密钥，用于加密通信数据
 		$this->timeout=@$options['timeout'] ?: 30;
+		$this->proxy=@$options['proxy'];
 
 		$this->cache_dir=null;
 	}
@@ -96,6 +97,25 @@ class Client{
 		// No SSL Verification
 		curl_setopt($c, CURLOPT_SSL_VERIFYHOST, false);
 		curl_setopt($c, CURLOPT_SSL_VERIFYPEER, false);
+
+		// Proxy
+		if($this->proxy){
+			if(preg_match('/^sock[45s]?:\/\/([a-z0-9\-_\.]+):(\d+)$/i', $this->proxy, $m)){
+				list($_, $host, $port)=$m;
+				curl_setopt($c, CURLOPT_PROXY, $host);
+				curl_setopt($c, CURLOPT_PROXYPORT, $port);
+
+				if(!defined('CURLPROXY_SOCKS5_HOSTNAME')) define('CURLPROXY_SOCKS5_HOSTNAME', 7);
+				curl_setopt($c, CURLOPT_PROXYTYPE, CURLPROXY_SOCKS5_HOSTNAME);
+				// curl_setopt($c, CURLOPT_PROXYTYPE, CURLPROXY_SOCKS5);
+			}
+			elseif(preg_match('/^(http:\/\/)?([a-z0-9\-_\.]+):(\d+)/i', $this->proxy, $m)){
+				list($_, $scheme, $host, $port)=$m;
+
+				curl_setopt($c, CURLOPT_PROXY, $host);
+				curl_setopt($c, CURLOPT_PROXYPORT, $port);
+			}
+		}
 
 		// curl_setopt($c, CURLOPT_HTTPHEADER, array("Expect:"));
 		curl_setopt($c, CURLOPT_HTTP_VERSION, CURL_HTTP_VERSION_1_0);
