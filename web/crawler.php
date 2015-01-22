@@ -40,6 +40,7 @@ class Crawler{
         $this->client->enable_cookie($this->options['cookie']);
         $this->client->cache_hit=true;  // 避免首次访问发生delay
 
+        $this->last_delay=time();
         $this->retry_download=5;
 
         $this->debug=isset($options['debug']) ? $options['debug'] : false;
@@ -78,22 +79,33 @@ class Crawler{
         array_push($this->pending[$depth], $task);
     }
 
+    function traffic_control($delay=null){
+        // 缓存命中将忽略流量控制
+        if($this->client->cache_hit) return;
+
+        $delay=$delay ?: $this->delay + $this->last_delay - time();
+        if($delay>0){
+            $this->log("Traffic Delay: %ds", $delay);
+            sleep($delay);
+            $this->last_delay=time();
+        }
+    }
+
     function download_page($url){
         $retry=0;
 
         $html=$this->client->get($url);
-        while(strlen($html)<100 && $retry<$this->retry_download){
-            echo "Retry...";
+
+        $this->traffic_control();
+        while(preg_match('/^[45]\d\d/', $this->client->status) && $retry<$this->retry_download){
+            $this->log("HTTP $status | Retry...");
+
+            $this->client->destroy_cache($url);
+
             $retry++;
             $this->client->open($url, true);
             $html=$this->client->get($url);
-            echo "\n";
-        }
-
-        // Traffic Control
-        if(!$this->client->cache_hit && $this->delay){
-            $this->log("Traffic Delay: %ds", $this->delay);
-            sleep($this->delay);
+            $this->traffic_control(2);
         }
 
         return $html;

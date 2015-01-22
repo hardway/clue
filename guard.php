@@ -1,6 +1,8 @@
 <?php
 namespace Clue;
 
+// TODO: 使用Logger来保存到db/email/file/web...
+
 class Guard{
 	# Converts php error level to Guard log level
 	static $PHP_ERROR_MAP=array(
@@ -39,7 +41,7 @@ class Guard{
 
 	public $log_file;
 
-	private $errors=array();
+	public $errors=array();
 
 	public function __construct($option=array()){
 		$config=array(
