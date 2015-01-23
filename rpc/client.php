@@ -26,6 +26,8 @@ include_once __DIR__."/common.php";
  */
 class Client{
 	use \Clue\Traits\Logger;
+	use \Clue\Traits\Bookkeeper;
+
 	/**
 	 * @param $endpoint	远程调用端的URL，格式 https://127.0.0.1/api/EchoService
 	 * @param $options 	选项，比如是否加密会话，通讯格式为php或者json
@@ -64,6 +66,16 @@ class Client{
 			$payload['client']=$this->client;
 			$payload['token']=$this->token;
 		}
+
+		// For Bookkeeping
+		$record=[
+			'call_time'=>date("Y-m-d H:i:s"),
+			'type'=>'out',
+			'endpoint'=>$this->endpoint,
+			'client'=>$this->client,
+			'method'=>$name,
+			'request'=>json_encode($arguments)
+		];
 
 		if($this->debug) $this->log("[RPC] Payload: ".json_encode($payload));
 
@@ -127,10 +139,14 @@ redirect:
 		$header = curl_getinfo($c);
 
 		if(curl_errno($c)){
-			throw new \Exception(sprintf("NETWORK %d: %s", curl_errno($c), curl_error($c)));
+			$err=sprintf("NETWORK %d: %s", curl_errno($c), curl_error($c));
+			$this->bookkeep($record+['status'=>503, 'response'=>$err]);
+			throw new \Exception($err);
 		}
 
 		if($header['http_code']>=400){
+			$this->bookkeep($record+['status'=>$header['http_code'], 'response'=>$response]);
+
 			if($header['http_code']==500){
 				if(preg_match('/^\d+ /', $response)){
 					list($code, $error)=explode(" ", $response, 2);
@@ -158,6 +174,8 @@ redirect:
 			}
 			$response=clue_rpc_decrypt($response, $this->secret);
 		}
+
+		$this->bookkeep($record+['status'=>200, 'response'=>$response]);
 
 		if($this->debug){
 			$this->log(sprintf("[RPC] RESPONSE:\n====================\n%s\n\n", $response));

@@ -4,6 +4,9 @@ namespace Clue\Database{
 		protected $_result;
 
 		function __construct(array $param){
+			$defaults=['host'=>'127.0.0.1', 'password'=>''];
+			$param=$param+$defaults;
+
 			// Make sure mysqli extension is enabled
 			if(!extension_loaded('mysqli'))
 				throw new \Exception(__CLASS__.": extension mysqli is missing!");
