@@ -32,25 +32,25 @@ namespace Clue{
             flush(); @ob_flush();
         }
 
-        static function log($str){
-            error_log($str);
+        static function log(){
+            vprintf(func_get_args()[0], array_slice(func_get_args(), 1));
         }
 
         static function warning($str){
             self::ansi("yellow");
-            echo $str;
+            vprintf(func_get_args()[0], array_slice(func_get_args(), 1));
             self::ansi();
         }
 
         static function success($str){
             self::ansi("green");
-            echo $str;
+            vprintf(func_get_args()[0], array_slice(func_get_args(), 1));
             self::ansi();
         }
 
         static function error($str){
             self::ansi("red");
-            echo $str;
+            vprintf(func_get_args()[0], array_slice(func_get_args(), 1));
             self::ansi();
         }
 

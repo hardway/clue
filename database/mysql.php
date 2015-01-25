@@ -71,14 +71,20 @@ namespace Clue\Database{
 			return mysqli_insert_id($this->dbh);
 		}
 
-		function insert($table, $fields){
+		function insert_ignore($table, $fields){
+			return $this->insert($table, $fields, ['ignore'=>true]);
+		}
+
+		function insert($table, $fields, $option=[]){
+			$insert=isset($option['ignore']) ? "insert ignore" : "insert";
+
 			$cols=array();
 			$vals=array();
 			foreach($fields as $c=>$v){
 				$cols[]='`'.trim($c, '`').'`';
 				$vals[]=$this->quote($v);
 			}
-			$sql="insert into `$table`(".implode(',', $cols).") values(".implode(',', $vals).")";
+			$sql="$insert into `$table`(".implode(',', $cols).") values(".implode(',', $vals).")";
 			$this->exec($sql);
 
         	return mysqli_errno($this->dbh) ? null : $this->insert_id();

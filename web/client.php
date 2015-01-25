@@ -97,6 +97,7 @@ namespace Clue\Web{
 
 			// Another host
 			if(isset($parts['host'])) return $url;
+			if(isset($parts['scheme'])) return $url;
 
 			$current=parse_url($current ?: $this->referer);
 

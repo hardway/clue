@@ -97,7 +97,8 @@ class Crawler{
         $html=$this->client->get($url);
 
         $this->traffic_control();
-        while(preg_match('/^[45]\d\d/', $this->client->status) && $retry<$this->retry_download){
+        $status=$this->client->status;
+        while(preg_match('/^[45]\d\d/', $status) && $retry<$this->retry_download){
             $this->log("HTTP $status | Retry...");
 
             $this->client->destroy_cache($url);
@@ -126,9 +127,9 @@ class Crawler{
     }
 
     function log(){
-        error_log(vsprintf(func_get_args()[0], array_slice(func_get_args(), 1)));
+        call_user_func_array("\Clue\CLI::log", func_get_args());
     }
-    function warn(){
+    function warning(){
         \Clue\CLI::warning('[WARN] '.vsprintf(func_get_args()[0], array_slice(func_get_args(), 1))."\n");
     }
     function error(){
@@ -174,11 +175,11 @@ class Crawler{
             $hash=isset($t['ID']) ? $t['TYPE'].'/'.$t['ID'] : $t['URL'];
             if(in_array($hash, $this->visited)) continue;
 
-            $this->log("[%s] %s", $t['TYPE'], $t['URL']);
+            $this->log("[%s] %s ", $t['TYPE'], $t['URL']);
+            $content=$this->download_page($t['URL']);
+            call_user_func(["\Clue\CLI", $this->client->status==200 ? 'success' : 'warning'], $this->client->status."\n");
 
             $action="crawl_".$t['TYPE'];
-            $content=$this->download_page($t['URL']);
-
             $data=$this->$action($t['URL'], $content, $t);
 
             $this->visited[]=$hash;
