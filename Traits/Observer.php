@@ -4,15 +4,15 @@ namespace Clue\Traits;
 trait Observer{
     function notify($event, $data=null){
         // Observer always listen on itself by default
-        if(method_exists($this, "on$event")){
-            call_user_func([$this, "on$event"], $this, $data);
+        if(method_exists($this, "on_$event")){
+            call_user_func([$this, "on_$event"], $this, $data);
         }
 
         if(is_array(@$this->_events)) foreach($this->_events as $name=>$listeners){
             if(preg_match('/'.$name.'/', $event)){
                 if(is_array($listeners)) foreach($listeners as $l){
-                    if(method_exists($l, "on$event")){
-                        call_user_func([$l, "on$event"], $this, $data);
+                    if(method_exists($l, "on_$event")){
+                        call_user_func([$l, "on_$event"], $this, $data);
                     }
                 }
             }

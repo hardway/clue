@@ -5,8 +5,40 @@ namespace Clue{
         protected $template;
         protected $vars;
 
+        static function find($view, $parent=null, $extension="htm|php"){
+            global $_SITE_PATH;
+
+            $view_candidates=is_array($view) ? $view : [$view];
+            $parent_view=is_object($parent) ? dirname($parent->view) : $parent;
+
+            foreach($view_candidates as $view){
+                // 相对路径的定位
+                // Example:
+                //  find_view('view', '/folder')    ==> /folder/view
+                //  find_view('/view', '/folder')   ==> /view
+                if($view[0]!='/' && !preg_match('/:/', $view) && $parent_view){
+                    $view=$parent_view.'/'.$view;
+                }
+
+                $template=null;
+                foreach($_SITE_PATH as $dir){
+                    foreach(explode("|", $extension) as $ext){
+                        if(file_exists($dir."/source/view/".strtolower($view).".".$ext)){
+                            $v=new View($view);
+                            $v->path=$dir.strtolower($view).".".$ext;
+
+                            return $v;
+                        }
+                    }
+                }
+            }
+
+            return null;
+        }
+
         /**
          * 定位view所在路径
+         * TODO: deprecate with View::find();
          */
         static function find_view($view, $parent=null, $extension="htm|php"){
             global $_SITE_PATH;

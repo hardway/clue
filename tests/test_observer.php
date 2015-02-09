@@ -17,12 +17,12 @@ class Boss{
         $this->notify("BossLeft");
     }
 
-    function onBossComing($boss, $data){
+    function on_bosscoming($boss, $data){
         list($seconds, $where)=$data;
         echo "Bossing coming to $where for $seconds seconds\n";
     }
 
-    function onBossLeft(){
+    function on_bossLeft(){
         echo "Bossing left\n";
     }
 }
@@ -34,7 +34,7 @@ class Employee{
 }
 
 class GoodEmployee extends Employee{
-    function onBossComing($boss, $data){
+    function on_bosscoming($boss, $data){
         if($boss->busy){
             echo " > $this->name helping busy boss\n";
         }
@@ -43,17 +43,17 @@ class GoodEmployee extends Employee{
         }
     }
 
-    function onBossLeft($boss){
+    function on_bossLeft($boss){
         echo " > $this->name keep working\n";
     }
 }
 
 class BadEmployee extends Employee{
-    function onBossComing($boss, $data){
+    function on_bosscoming($boss, $data){
         echo " > $this->name pretend working\n";
     }
 
-    function onBossLeft($boss){
+    function on_bossLeft($boss){
         echo " > $this->name going home\n";
     }
 }

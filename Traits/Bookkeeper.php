@@ -6,7 +6,7 @@ trait Bookkeeper{
     static private $_trait_bookkeeper_table=null;
 
     static function enable_bookkeeping($db, $table){
-        $db=($db instanceof \Clue\Database) ? $db : \Clue\Database::create($db);
+        $db=is_array($db) ? \Clue\Database::create($db) : $db;
 
         if($db->has_table($table)){
             self::$_trait_bookkeeper_db=$db;

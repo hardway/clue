@@ -85,7 +85,7 @@ class Crawler{
 
         $delay=$delay ?: $this->delay + $this->last_delay - time();
         if($delay>0){
-            $this->log("Traffic Delay: %ds", $delay);
+            $this->log("Traffic Delay: %ds ", $delay);
             sleep($delay);
             $this->last_delay=time();
         }
@@ -129,12 +129,18 @@ class Crawler{
     function log(){
         call_user_func_array("\Clue\CLI::log", func_get_args());
     }
+
     function warning(){
-        \Clue\CLI::warning('[WARN] '.vsprintf(func_get_args()[0], array_slice(func_get_args(), 1))."\n");
+        \Clue\CLI::ansi("yellow");
+        fputs(STDERR, '[WARN] '.vsprintf(func_get_args()[0], array_slice(func_get_args(), 1))."\n");
+        \Clue\CLI::ansi();
     }
+
     function error(){
-        // error_log('[ERROR] '.vsprintf(func_get_args()[0], array_slice(func_get_args(), 1)));
-        \Clue\CLI::error('[ERROR] '.vsprintf(func_get_args()[0], array_slice(func_get_args(), 1))."\n");
+        \Clue\CLI::ansi("yellow");
+        fputs(STDERR, '[ERROR] '.vsprintf(func_get_args()[0], array_slice(func_get_args(), 1))."\n");
+        \Clue\CLI::ansi();
+
         exit();
     }
 
@@ -143,7 +149,7 @@ class Crawler{
         if(strlen(trim($url))==0) return false;
 
         $info=parse_url($url);
-        if(!in_array($info['scheme'], array('http', 'https'))) return false;
+        if(!in_array(@$info['scheme'], array('http', 'https'))) return false;
 
         // TODO: 检测robots.txt
 
@@ -167,7 +173,7 @@ class Crawler{
             if(empty($this->pending[$depth])) unset($this->pending[$depth]);
 
             if(!$this->validate_url($t['URL'])){
-                $this->warn("Invalid url: %s", $t['URL']);
+                $this->warning("Invalid url: %s", $t['URL']);
                 continue;
             }
 

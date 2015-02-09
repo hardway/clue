@@ -4,6 +4,8 @@
  */
 namespace Clue{
     class CLI{
+        static $_SAVEPOINT=[];
+
         static function init($consoleEncoding="UTF-8", $internalEncoding="UTF-8"){
             if(php_sapi_name()!='cli') exit("Can only be invoked through console.");
 
@@ -52,6 +54,14 @@ namespace Clue{
             self::ansi("red");
             vprintf(func_get_args()[0], array_slice(func_get_args(), 1));
             self::ansi();
+        }
+
+        static function restore_cursor($name){
+            echo "\x1b8";
+        }
+
+        static function save_cursor($name){
+            echo "\x1b7";
         }
 
         static function erase_line(){

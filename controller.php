@@ -59,8 +59,6 @@ namespace Clue{
 		 * 相对路进  options 				=> {VIEWS}/{CONTROLLER}/options
 		 */
         function render($view=null, $data=array()){
-            $content=false;
-
             $content=$this->get_view($view?:$this->view, $data);
 
             // 允许前置执行 {$view}.meta 作为修改META定义或者执行一些特殊修改

@@ -15,12 +15,15 @@ namespace Clue\Text{
             $this->rows=array();
 
             $this->filename=$filename;
-            // 读取首行，标题
-            $f=fopen($this->filename, "r");
-            if(!$f) throw new Exception("Can't open CSV file: $this->filename");
 
-            $this->columns=$this->parse_row($f);
-            fclose($f);
+            if($this->options['header']){
+                // 读取首行，标题
+                $f=fopen($this->filename, "r");
+                if(!$f) throw new Exception("Can't open CSV file: $this->filename");
+
+                $this->columns=$this->parse_row($f);
+                fclose($f);
+            }
         }
 
         function parse_row($f){

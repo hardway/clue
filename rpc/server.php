@@ -52,7 +52,7 @@ class Server{
 			'type'=>'in',
 			'endpoint'=>$_SERVER['REQUEST_URI'],
 			'ip'=>ip2long($_SERVER['REMOTE_ADDR']),
-			'client'=>$payload['client'],
+			'client'=>@$payload['client'],
 			'method'=>$method,
 			'request'=>json_encode($params)
 		];
