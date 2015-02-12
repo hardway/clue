@@ -8,7 +8,8 @@
 
     // 全局函数
     function url_path($path){
-        $path=str_replace(' ', '%20', $path);
+        // $path=str_replace(' ', '%20', $path);
+        $path=implode("/", array_map('urlencode', explode("/", $path)));
         return str_replace(APP_ROOT, APP_URL, $path);
     }
 
@@ -33,10 +34,15 @@
     }
 
     // 根据title和id生成slug
-    function url_slug($title){
+    function url_slug($title, $limit=10){
         // 拆分为单词
         preg_match_all('/[a-z0-9\-_]+/i', $title, $m);
         $words=array_map('strtolower', array_filter($m[0], 'strlen'));
+
+        // 防止name超限
+        if(count($words) > $limit){
+            $words=array_splice($words, 0, $limit);
+        }
 
         // 合并
         $slug=implode("-", $words);
