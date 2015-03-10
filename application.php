@@ -5,6 +5,7 @@ namespace Clue{
 
     class Application implements \ArrayAccess{
         use \Clue\Traits\Logger;
+        use \Clue\Traits\Events;
 
         private $_values;   # DI
 
@@ -196,11 +197,16 @@ namespace Clue{
             $this->action=$map['action'];
             $this->params=$map['params'];
 
+            // TODO: deprecate this callback, since we can always use event listener to archive
             if(isset($this['authenticator']) && is_callable($this['authenticator'])){
                 call_user_func_array($this['authenticator'], $this);
             }
 
-            return $this['router']->route($this->controller, $this->action, $this->params);
+            $this->fire_event("before_route");
+            $ret=$this['router']->route($this->controller, $this->action, $this->params);
+            $this->fire_event("after_route", $ret);
+
+            return $ret;
         }
     }
 }
