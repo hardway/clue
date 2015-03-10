@@ -9,7 +9,7 @@
     // 全局函数
     function url_path($path){
         // $path=str_replace(' ', '%20', $path);
-        $path=implode("/", array_map('urlencode', explode("/", $path)));
+        $path=implode("/", array_map('rawurlencode', explode("/", $path)));
         return str_replace(APP_ROOT, APP_URL, $path);
     }
 
