@@ -1,4 +1,6 @@
 <?php
+    define('TEST_APP_ROOT', '/tmp/testapp');
+
     require_once dirname(__DIR__).'/stub.php';
 
     class Test_Router extends PHPUnit_Framework_TestCase{
@@ -7,9 +9,21 @@
 
         protected function setUp(){
             $this->app=new Clue\Application(['config'=>null]);
+
+            // 创建空的测试应用
+            mkdir(TEST_APP_ROOT.'/source/control', 0775, true);
+            file_put_contents(TEST_APP_ROOT.'/source/control/index.php', "DUMMY");
+
+            Clue\add_site_path(TEST_APP_ROOT);
+        }
+
+        protected function tearDown(){
+            Clue\Tool::remove_directory(TEST_APP_ROOT);
         }
 
         function test_alias(){
+            $this->assertTrue(is_dir(TEST_APP_ROOT));
+
             $rt=new Clue\Router($this->app);
             $rt->alias('/.+-p-665$/', '/banner');
 
@@ -21,6 +35,8 @@
         }
 
         function test_basic(){
+            $this->assertTrue(is_dir(TEST_APP_ROOT));
+
             $rt=new Clue\Router($this->app);
             $m=$rt->resolve("/asset/stylesheet.css");
             $this->assertEquals("index", $m['controller']);

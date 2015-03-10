@@ -294,43 +294,46 @@ namespace Clue{
             // url translate后生成的?query也要合并到GET中
             $_GET=array_merge($_GET, $query);
 
-
-			# Try default controller
 			$candidates=explode("/", $url);
-			$last=array_pop($candidates);
-			$candidates[]=$last?:"index";
-
-			$candidates[]="";	// Append pseudo action index
 			$params=array();
 
-			while(count($candidates)>=2){
-				if(!empty($action)) array_unshift($params, $action);
-				$action=array_pop($candidates);
-				$controller=trim(implode('/', $candidates), '/');
+			// 尝试最长匹配
+			$action='index';
+			$controller=trim(implode('/', $candidates), '/').'/index';
 
+			while(count($candidates)>=1){
+				// 寻找Controller
 				$mapping['controller']=$controller ?: 'index';
-				$mapping['action']=$action ?: 'index';
-
-				if(@$_SERVER['REQUEST_METHOD']=='POST') $mapping['action']="_".$mapping['action'];
-
-				$mapping['params']=array_map(function($v){if(is_string($v)) return rawurldecode($v); else return $v;}, array_merge($params, $_GET, $_POST));
+				// var_dump("Searching ".$mapping['controller']."::$action");
 
 				$control_file=Controller::find_controller($mapping['controller']);
+				if(!$control_file || !file_exists($control_file)){
+					$this->app->fire_event('missing-controller', $controller);
 
-				if(file_exists($control_file)){
-					// return with found controller/view
+					// 不匹配的文字可以加入参数
+					if(!empty($action)) array_unshift($params, $action);
 
-					// DEPRECATED 20141103，不需要在这里进行跳转，应该由controller自行处理
-					// if($mapping['action']=='index' && !preg_match('/\/$/', $url)){
-					// 	$app->redirect($url.'/');
-					// }
-					return $mapping;
+					// 继续向上递归
+					$action=array_pop($candidates);
+					$controller=trim(implode('/', $candidates), '/');
+
+					continue;
 				}
+
+				$mapping['action']=$action ?: 'index';
+
+				// POST方法加上前缀_
+				// TODO: GET和PUT加上什么？
+				if(@$_SERVER['REQUEST_METHOD']=='POST') $mapping['action']="_".$mapping['action'];
+
+				// 将GET/POST一并加入参数中
+				$mapping['params']=array_map(function($v){if(is_string($v)) return rawurldecode($v); else return $v;}, array_merge($params, $_GET, $_POST));
+
+				return $mapping;
 			}
 
 			// 没有找到最合适的，返回最后匹配的一个
 			return $mapping;
-			// throw new \Exception("No route found.");
 		}
 	}
 }
