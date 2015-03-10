@@ -118,8 +118,9 @@ namespace Clue{
     $_SITE_PATH_MAPPING=[];
     $_CLASS_PATH=[];
 
-    add_site_path(__DIR__);
-    add_site_path(APP_ROOT);
+    add_site_path(".");         // 当前执行目录
+    add_site_path(__DIR__);     // 文件所属目录
+    add_site_path(APP_ROOT);    // 主目录
 
     #第三方库应该放在lib目录
     add_class_path(APP_ROOT."/lib");
