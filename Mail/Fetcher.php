@@ -7,12 +7,22 @@ namespace Clue\Mail;
 if(!extension_loaded("imap")) exit("Extension imap required.");
 
 class Fetcher{
-    function __construct($server, $port, $username, $password){
+    function __construct($server, $port, $username, $password, $spec=null){
         $this->server_encoding='utf-8';
         $this->imap_folder="INBOX";
-        $this->imap_server="{"."$server:$port/imap/ssl"."}";
 
-        $this->stream=@imap_open("$this->imap_server$this->imap_folder", $username, $password, null, 1);
+        $default_spec=[
+            110=>'/pop3/novalidate-cert',
+            143=>'',
+            993=>'/imap/ssl/novalidate-cert',
+            995=>'/pop3/ssl/novalidate-cert'
+        ];
+        $spec=$spec ?: $default_spec[$port];
+
+        $this->imap_server="{"."$server:$port".$spec."}";
+        $this->imap_options=null;
+
+        $this->stream=@imap_open("$this->imap_server$this->imap_folder", $username, $password, $this->imap_options, 1);
         $errors=imap_errors();
 
         if(!$this->stream){
@@ -42,8 +52,18 @@ class Fetcher{
         return $folders;
     }
 
-    function status($folder='INBOX'){
-        return imap_status($this->stream, "$this->imap_server$folder", SA_ALL);
+    function use_folder($folder){
+        $success=@imap_reopen($this->stream, "$this->imap_server$folder", $this->imap_options);
+
+        if($success){
+            $this->imap_folder=$folder;
+        }
+
+        return $success;
+    }
+
+    function status($folder=null){
+        return imap_status($this->stream, "$this->imap_server".($folder?:$this->imap_folder), SA_ALL);
     }
 
     /**
@@ -138,7 +158,12 @@ class Fetcher{
     }
 
     function fetch_header($ids){
-        if(!is_array($ids)) $ids=[$ids];
+        $single=false;   // 返回数组
+
+        if(!is_array($ids)){
+            $single=true;
+            $ids=[$ids];
+        }
 
         $mails = imap_fetch_overview($this->stream, implode(',', $ids), FT_UID);
         $mails=array_map(function($m){
@@ -150,7 +175,7 @@ class Fetcher{
             return (array)$m;
         }, $mails);
 
-        return $mails;
+        return $single ? $mails[0] : $mails;
     }
 
     function fetch_mail($id){
