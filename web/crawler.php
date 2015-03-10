@@ -24,6 +24,8 @@
 namespace Clue\Web;
 
 class Crawler{
+    use \Clue\Traits\Events;
+
     function __construct(array $options=array()){
         $default_options=[
             'cache_dir'=>'/tmp/crawler',
@@ -184,6 +186,13 @@ class Crawler{
             $this->log("[%s] %s ", $t['TYPE'], $t['URL']);
             $content=$this->download_page($t['URL']);
             call_user_func(["\Clue\CLI", $this->client->status==200 ? 'success' : 'warning'], $this->client->status."\n");
+
+            if($this->client->status==200){
+                $this->fire_event('item_crawled', $t);
+            }
+            else{
+                $this->fire_event('item_failed', $t);
+            }
 
             $action="crawl_".$t['TYPE'];
             $data=$this->$action($t['URL'], $content, $t);

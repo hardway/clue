@@ -67,7 +67,7 @@ class Parser{
 
 		// Need to insert meta tag at first in case some of the webpage didn't have that.
 		$html='<meta http-equiv="Content-Type" content="text/html; charset=utf-8">'.$html;
-		if(strtolower($encoding)!='utf-8') $html=mb_convert_encoding($html, 'utf-8', $encoding);
+		if(strtolower($encoding)!='utf-8') $html=@mb_convert_encoding($html, 'utf-8', $encoding);
 
 		$this->dom=new \DOMDocument();
 		$this->dom->strictErrorChecking=false;
@@ -241,6 +241,10 @@ class Element implements \ArrayAccess{
 		}
 	}
 
+	function destroy(){
+		$this->el->parentNode->removeChild($this->el);
+	}
+
 	function getElement($css){
 		return $this->parser->getElement($css, $this->el);
 	}
@@ -258,6 +262,20 @@ class Element implements \ArrayAccess{
 		return $next ? new Element($next, $this->parser) : null;
 	}
 
+	function getChildren($filter='.+'){
+		$children=[];
+
+		foreach($this->el->childNodes as $e){
+			if($e->nodeType!=XML_ELEMENT_NODE) continue;
+
+			if(preg_match('/^'.$filter.'/', $e->tagName)){
+				$children[]=new Element($e, $this->parser);
+			}
+		}
+
+		return $children;
+	}
+
 	function getParent($filter='.+'){
 		$parent=$this->el->parentNode;
 		while($parent!=null && !preg_match('/^'.$filter.'/', @$parent->tagName)){
@@ -271,7 +289,7 @@ class Element implements \ArrayAccess{
 		$text="";
 		if($n->childNodes) foreach($n->childNodes as $c){
 			if($c->nodeType==XML_TEXT_NODE)
-				$text.=trim($c->nodeValue);
+				$text.=$c->nodeValue;
 			elseif($c->nodeType==XML_ELEMENT_NODE){
 				$text.="\e".$this->get_text($c)."\e";
 			}
@@ -290,7 +308,7 @@ class Element implements \ArrayAccess{
 
 		if($n->childNodes) foreach($n->childNodes as $c){
 			if($c->nodeType==XML_TEXT_NODE)
-				$html.=trim($c->nodeValue);
+				$html.=$c->nodeValue;
 			elseif($c->nodeType==XML_ELEMENT_NODE){
 				$html.=$this->get_html($c);
 			}
