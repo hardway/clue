@@ -40,6 +40,11 @@ namespace Clue\UI{
 			return range($begin, $end - 1);
 		}
 
+		function slice_array(&$array){
+			$ret=array_slice($array, ($this->page - 1)*$this->pageSize, $this->pageSize);
+			return $ret;
+		}
+
 		// slice: used for array_slice
 		function sliceOffset(){
 			return ($this->page-1) * $this->pageSize;
