@@ -244,7 +244,10 @@ namespace Clue\Web{
 		}
 
 		private function _parse_response($response){
-			$this->header=[];
+			$this->header=[
+				'url'=>curl_getinfo($this->curl, CURLINFO_EFFECTIVE_URL)		// 因为有自动跳转，获取真实有效的地址
+			];
+
 			while(preg_match('/^HTTP\/(\d+\.\d+)\s+(\d+).+?\r\n\r\n/ms', $response, $header)){
 				$this->status=$header[2];
 				foreach(explode("\n", $header[0]) as $row){

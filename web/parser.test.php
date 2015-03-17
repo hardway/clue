@@ -19,7 +19,10 @@
 
 				// 测试属性
 				"p[attr]"=>'//p[@attr]',
-				"p[attr=abc]"=>'//p[@attr=\'abc\']',
+				"p[attr='abc']"=>'//p[@attr=\'abc\']',
+
+				// 属性包含空格
+				'a[@title="Next page"]'=>"//a[@title=\"Next page\"]",
 
 				// 属性包含单词
 				'p[class~="hide"]'=>"//p[contains(concat(' ',normalize-space(@class),' '),concat(' ',\"hide\",' '))]",

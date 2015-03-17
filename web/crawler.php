@@ -32,6 +32,7 @@ class Crawler{
             'cache_ttl'=>86400*30,
             'agent'=>"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36",
             'cookie'=>getcwd().'/cookie',
+            'debug_file'=>null,             // 最近下载内容保存为临时文件，方便调试
         ];
 
         $this->options=$options=$options+$default_options;
@@ -39,7 +40,10 @@ class Crawler{
         $this->client=new Client();
         $this->client->set_agent($this->options['agent']);
         $this->client->enable_cache($options['cache_dir'], $options['cache_ttl']);
-        $this->client->enable_cookie($this->options['cookie']);
+
+        if($this->options['cookie'])
+            $this->client->enable_cookie($this->options['cookie']);
+
         $this->client->cache_hit=true;  // 避免首次访问发生delay
 
         $this->last_delay=time();
@@ -110,6 +114,9 @@ class Crawler{
             $html=$this->client->get($url);
             $this->traffic_control(2);
         }
+
+        // 保存临时文件，方便调试
+        if($this->options['debug_file']) @file_put_contents($this->options['debug_file'], $html);
 
         return $html;
     }
@@ -205,4 +212,26 @@ class Crawler{
             }
         }
     }
+
+    // Util functions
+    /////////////////////////////////////////////
+
+    /**
+     * 剔除前后端的多余文字
+     */
+    function trim_text($text, $str=null){
+        $lines=explode("\n", $text);
+        $lines=array_map('trim', $lines);
+        $text=implode("\n", $lines);
+        $text=preg_replace('/\n{2,}/', "\n\n", $text);
+
+        if(is_string($str)) $str=[$str];
+        if($str) foreach($str as $pattern){
+            $text=preg_replace('/^\s*'.$pattern.'\s*/i', '', $text);
+            $text=preg_replace('/\s*'.$pattern.'\s*$/i', '', $text);
+        }
+
+        return trim($text);
+    }
+
 }

@@ -6,6 +6,18 @@ class Parser{
 	public $xp;
 
 	static function css2xpath($css){
+		// 以/开始的话，应该已经是xpath了
+		if(preg_match('/^\//', $css)) return $css;
+
+		$attr_patterns=[
+			// =attrib
+			'/\[@?([a-zA-Z0-9\_\-]+)=([^\]]+)\]/'=>"[@$1=$2]",
+			// *=attrib
+			'/\[([a-zA-Z0-9\_\-]+)\*=([^\]]+)\]/'=>"[contains(@$1,$2)]",
+			// ~=attrib
+			'/\[([a-zA-Z0-9\_\-]+)~=([^\]]+)\]/'=>"[contains(concat(' ',normalize-space(@$1),' '),concat(' ',$2,' '))]",
+		];
+
 		// Regex solution, ported from https://code.google.com/p/css2xpath
 		// REF: verification test against http://css2xpath.appspot.com/
 		$re=array(
@@ -26,13 +38,6 @@ class Parser{
 			// :last-child
 			'/([a-zA-Z0-9\_\-\*]+):last-child/'=>'$1[not(following-sibling::*)]',
 
-			// =attrib
-			'/\[@([a-zA-Z0-9\_\-]+)=([^\]]+)\]/'=>"[@$1='$2']",
-			// *=attrib
-			'/\[([a-zA-Z0-9\_\-]+)\*=([^\]]+)\]/'=>"[contains(@$1,$2)]",
-			// ~=attrib
-			'/\[([a-zA-Z0-9\_\-]+)~=([^\]]+)\]/'=>"[contains(concat(' ',normalize-space(@$1),' '),concat(' ',$2,' '))]",
-
 			// ids and classes
 			"/#([a-zA-Z0-9\_\-]+)/"=>"[@id='$1']",
 			"/\.([a-zA-Z0-9\_\-]+)/"=>"[contains(concat(' ',normalize-space(@class),' '),' $1 ')]",
@@ -42,8 +47,24 @@ class Parser{
 		);
 
 		$xpath=$css;
+
+		// 预处理Attr属性
+		$saved_attr=[];
+		foreach($attr_patterns as $pattern=>$replace){
+			$xpath=preg_replace_callback($pattern, function($m) use(&$saved_attr, $pattern, $replace){
+				$saved_attr[]=preg_replace($pattern, $replace, $m[0]);
+				$id=count($saved_attr)-1;
+				return "{{A$id}}";
+			}, $xpath);
+		}
+
 		foreach($re as $pattern=>$replace){
 			$xpath=preg_replace($pattern, $replace, $xpath);
+		}
+
+		// Attr恢复
+		foreach($saved_attr as $i=>$rep){
+			$xpath=str_replace("{{A$i}}", $rep, $xpath);
 		}
 
 		return $xpath;
@@ -91,7 +112,8 @@ class Parser{
 			exit("Document Type Unknown.");
 		}
 
-		//$this->root=new Element($this->documentElement);
+		// Recursion reference will do harm?
+		$this->root=new Element($this->dom->documentElement, $this);
 
 		$this->xp=new \DOMXPath($this->dom);
 	}
@@ -245,6 +267,19 @@ class Element implements \ArrayAccess{
 		$this->el->parentNode->removeChild($this->el);
 	}
 
+	/**
+	 * 搜索匹配内容的元素
+	 */
+	function searchElement($css, $string){
+		$elements=$this->getElements($css);
+		foreach($elements as $e){
+			if(strpos($e->text, $string)!==false)
+				return $e;
+		}
+
+		return null;
+	}
+
 	function getElement($css){
 		return $this->parser->getElement($css, $this->el);
 	}
@@ -318,8 +353,10 @@ class Element implements \ArrayAccess{
 		return $html;
 	}
 
-	function get_table($t){
+	function get_table(){
 		$rows=array();
+
+		$t=$this->el;
 		if($t->childNodes) foreach($t->childNodes as $c){
 			if(in_array($c->nodeName, array('tbody','thead','tfoot'))){
 				foreach($c->childNodes as $tr){
@@ -330,6 +367,7 @@ class Element implements \ArrayAccess{
 				$rows[]=$c;
 			}
 		}
+
 		$table=array();
 		foreach($rows as $r){
 			$cells=array();
