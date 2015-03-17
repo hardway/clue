@@ -51,6 +51,54 @@
         return $slug;
     }
 
+    /**
+     * URL跳转链接
+     */
+    function url_follow($url, $current){
+        if(empty($url)) return $current;
+
+        $parts=parse_url(trim($url));
+
+        // Another host
+        if(isset($parts['host'])) return $url;
+        if(isset($parts['scheme'])) return $url;
+
+        $current=parse_url($current ?: $this->referer);
+
+        $path=isset($current['path']) ? explode("/",  $current['path']) : array("");
+        if(isset($parts['path'])){
+            // Jump to root if path begins with '/'
+            if(strpos($parts['path'],'/')===0) $path=array();
+
+            // Remove tip file
+            if(count($path)>1) array_pop($path);
+
+            // Normalize path
+            foreach(explode("/", $parts['path']) as $p){
+                if($p=="."){
+                    continue;
+                }
+                elseif($p=='..'){
+                    if(count($path)>1) array_pop($path);
+                    continue;
+                }
+                else{
+                    array_push($path, $p);
+                }
+            }
+        }
+
+        // Build url
+        $result=array();
+        $result[]=$current['scheme'].'://';
+        $result[]=$current['host'];
+        $result[]=isset($current['port']) ? $current['port'] : "";
+        $result[]=implode("/", $path);
+        $result[]=isset($parts['query']) ? '?'.$parts['query'] : "";
+        $result[]=isset($parts['fragment']) ? '#'.$parts['fragment'] : '';
+
+        return implode("", $result);
+    }
 
     /**
      * 定位Asset
