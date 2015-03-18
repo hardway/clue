@@ -35,41 +35,41 @@ namespace Clue{
         }
 
         static function log(){
-            vprintf(func_get_args()[0], array_slice(func_get_args(), 1));
+            fputs(STDERR, vsprintf(func_get_args()[0], array_slice(func_get_args(), 1)));
         }
 
         static function warning($str){
             self::ansi("yellow");
-            vprintf(func_get_args()[0], array_slice(func_get_args(), 1));
+            fputs(STDERR, vsprintf(func_get_args()[0], array_slice(func_get_args(), 1)));
             self::ansi();
         }
 
         static function success($str){
             self::ansi("green");
-            vprintf(func_get_args()[0], array_slice(func_get_args(), 1));
+            fputs(STDERR, vsprintf(func_get_args()[0], array_slice(func_get_args(), 1)));
             self::ansi();
         }
 
         static function error($str){
             self::ansi("red");
-            vprintf(func_get_args()[0], array_slice(func_get_args(), 1));
+            fputs(STDERR, vsprintf(func_get_args()[0], array_slice(func_get_args(), 1)));
             self::ansi();
         }
 
         static function restore_cursor($name){
-            echo "\x1b8";
+            fputs(STDERR, "\x1b8");
         }
 
         static function save_cursor($name){
-            echo "\x1b7";
+            fputs(STDERR, "\x1b7");
         }
 
         static function erase_line(){
-            echo "\x1b[1K\x1b[999D";
+            fputs(STDERR, "\x1b[1K\x1b[999D");
         }
 
         static function erase_screen(){
-            echo "\x1b[2J\x1b[H";
+            fputs(STDERR, "\x1b[2J\x1b[H");
         }
 
         static function alert($str){
@@ -77,23 +77,16 @@ namespace Clue{
         }
 
         static function ansi($code=""){
-            switch(strtoupper($code)){
-                case 'RED':
-                    echo "\033[31m";
-                    break;
+            $RESET="\033[0;0m";
+            $ANSI=[
+                'RED'=>"\033[31m",
+                'YELLOW'=>"\033[33m",
+                'GREEN'=>"\033[32m",
+            ];
 
-                case 'YELLOW':
-                    echo "\033[33m";
-                    break;
+            $code=strtoupper($code);
 
-                case 'GREEN':
-                    echo "\033[32m";
-                    break;
-
-                default:
-                    echo "\033[0;0m";
-                    break;
-            }
+            fputs(STDERR, isset($ANSI[$code]) ? $ANSI[$code] : $RESET);
         }
     }
 }

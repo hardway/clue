@@ -326,7 +326,7 @@
                 return $this->$method();
             }
             else
-                return $this->$key;
+                return isset($this->$key) ? $this->$key : null;
         }
 
         function __set($key, $val){
