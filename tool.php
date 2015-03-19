@@ -54,6 +54,35 @@ namespace Clue{
             return false;
         }
     }
+    
+    /**
+     * Download remote image
+     *
+     * @access public
+     * @param {string} remote url to the image
+     * @param {string} $path to save the image including the image name
+     * return void
+     */
+    function download_remote_image($url, $path){
+    	$ch = curl_init($url);
+    	curl_setopt($ch, CURLOPT_HEADER, 0);
+    	curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
+    	curl_setopt($ch, CURLOPT_BINARYTRANSFER,1);
+    	 
+    	$raw_image_data = curl_exec($ch);
+    	curl_close ($ch);
+    	 
+    	if( ! file_exists($path)){
+    		@mkdir(dirname($path), 0775, true);
+    	}else {
+    		unlink($path);
+    	}
+    	 
+    	$fp = fopen($path,'x');
+    	fwrite($fp, $raw_image_data);
+    
+    	fclose($fp);
+    }
 
 	class Tool{
         // REF: https://gist.github.com/tylerhall/521810
