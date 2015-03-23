@@ -8,6 +8,9 @@
         protected $backupGlobalsBlacklist = array('mysql');
 
         protected function setUp(){
+            // 清空环境变量，避免多个TestCase间相互干扰
+            @$_GET=[];
+
             $this->app=new Clue\Application(['config'=>null]);
 
             // 创建空的测试应用
@@ -39,8 +42,12 @@
 
             $rt=new Clue\Router($this->app);
             $m=$rt->resolve("/asset/stylesheet.css");
+
             $this->assertEquals("index", $m['controller']);
             $this->assertEquals("asset", $m['action']);
+
+            $this->assertEquals(1, count($m['params']));
+            $this->assertEquals("stylesheet.css", $m['params'][0]);
         }
     }
 ?>

@@ -9,6 +9,10 @@ namespace Clue\Text{
         static $DEFAULT_OPTIONS=array('header'=>true, 'length'=>4096, 'delimiter'=>",", 'enclosure'=>'"', 'escape'=>'\\');
 
         function __construct($filename, $options=array()){
+            // 自动识别TSV和CSV
+            $ext=pathinfo($filename)['extension'];
+            if($ext=='tsv') self::$DEFAULT_OPTIONS['delimiter']="\t";
+
             $this->options=array_merge(self::$DEFAULT_OPTIONS, $options);
 
             $this->columns=array();

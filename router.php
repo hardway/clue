@@ -260,6 +260,12 @@ namespace Clue{
 		function resolve($url){
 			global $app;
 
+			$mapping=[
+				'controller'=>null,
+				'action'=>null,
+				'params'=>null
+			];
+
             // Strip base directory, eg, the application is located at http://localhost/portal/app
             $base=preg_replace('|[\\\/]+|', '/', dirname($_SERVER['SCRIPT_NAME']));
             if($base!='/' && strpos($url, $base)===0){
@@ -277,7 +283,6 @@ namespace Clue{
                 );
             }
 
-
 			// strip query from url
 			if(($p=strpos($url, '?'))!==FALSE){
 				$url=substr($url, 0, $p);
@@ -293,13 +298,13 @@ namespace Clue{
 			}
             // url translate后生成的?query也要合并到GET中
             $_GET=array_merge($_GET, $query);
-
 			$candidates=explode("/", $url);
 			$params=array();
 
+
 			// 尝试最长匹配
-			$action='index';
 			$controller=trim(implode('/', $candidates), '/').'/index';
+			$action='';
 
 			while(count($candidates)>=1){
 				// 寻找Controller
