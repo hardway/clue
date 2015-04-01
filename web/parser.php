@@ -116,12 +116,15 @@ class Parser{
 		$this->root=new Element($this->dom->documentElement, $this);
 
 		$this->xp=new \DOMXPath($this->dom);
+
+		@gc_collect_cycles();
 	}
 
 	function __destruct(){
-		$this->html=null;
-		$this->dom=null;
+		$this->root=null;
 		$this->xp=null;
+		$this->dom=null;
+		$this->html=null;
 	}
 
 	private function _filter_content($html){
@@ -241,6 +244,11 @@ class Element implements \ArrayAccess{
 	function __construct($el, $parser){
 		$this->el=$el;
 		$this->parser=$parser;
+	}
+
+	function __destruct(){
+		$this->el=null;
+		$this->parser=null;
 	}
 
 	function offsetExists($key){
