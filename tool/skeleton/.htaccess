@@ -4,3 +4,6 @@ RewriteCond %{REQUEST_FILENAME} !-d
 RewriteCond %{REQUEST_FILENAME} !-l
 
 RewriteRule .* index.php
+
+# Hide source control from public
+RewriteRule "^(.*/)?\.(git|svn|hg)/" - [F,L]
