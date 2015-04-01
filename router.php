@@ -75,6 +75,9 @@ namespace Clue{
 			$class=($n?$n[1].'\\':'').$m[1];
 
 			// 形如 abc.htm 的Action将被拆分为 action=abc, layout=htm
+			$core_action=null;
+			$layout=null;
+
 			if(preg_match("/(.+?)\.(.+)/", $action, $m)){
 				$core_action=$m[1];
 				$layout=$m[2];
