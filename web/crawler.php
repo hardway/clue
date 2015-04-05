@@ -85,6 +85,12 @@ class Crawler{
         array_push($this->pending[$depth], $task);
     }
 
+    function insert($context, $url){
+        $context=is_array($context) ? $context : ['TYPE'=>$context, 'DEPTH'=>$this->pending ? min(array_keys($this->pending)) : 0];
+
+        $this->queue($context, $url);
+    }
+
     function traffic_control($delay=null){
         // 缓存命中将忽略流量控制
         if($this->client->cache_hit) return;
@@ -202,9 +208,12 @@ class Crawler{
             }
 
             $action="crawl_".$t['TYPE'];
-            $data=$this->$action($t['URL'], $content, $t);
 
-            $this->visited[]=$hash;
+            $data=$this->$action($t['URL'], $content, $t);
+            if($data!==false){
+                // 返回false表示失败，允许重新访问
+                $this->visited[]=$hash;
+            }
 
             if(is_array($data)){
                 if(!isset($data['url'])) $data['url']=$t['URL'];
