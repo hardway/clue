@@ -40,7 +40,7 @@ namespace Clue{
             $_CLASS_PATH[]=$path;
         }
     }
-    
+
     /**
      * Insert class path into the head of queue. In this way, it has high priority for autoloading
      *
@@ -50,14 +50,14 @@ namespace Clue{
      */
     function insert_class_path($path) {
     	global $_CLASS_PATH;
-    	 
+
     	if	($_CLASS_PATH == NULL) {
     		$_CLASS_PATH = array();
     	}
-    	 
+
     	// Normalize path
     	$path=realpath($path);
-    	 
+
     	if($path !== FALSE && !in_array($path, $_CLASS_PATH)) {
     		array_unshift($_CLASS_PATH, $path);
     	}

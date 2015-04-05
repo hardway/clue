@@ -286,7 +286,8 @@ END
         }
 
         function _get_db(){
-            $config=\Clue\site_file("config.php");
+            $config=\Clue\site_file("config.".strtolower(APP_ENV)) ?: \Clue\site_file("config.php");
+
             if(!$config){
                 exit(sprintf("Can't find config.php in following path: %s\n", implode(";", \Clue\get_site_path())));
             }
