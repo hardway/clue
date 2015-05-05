@@ -11,7 +11,9 @@ namespace Clue\Text{
         function __construct($filename, $options=array()){
             // 自动识别TSV和CSV
             $ext=pathinfo($filename)['extension'];
-            if($ext=='tsv') self::$DEFAULT_OPTIONS['delimiter']="\t";
+            if($ext=='tsv'){
+                self::$DEFAULT_OPTIONS['delimiter']="\t";
+            }
 
             $this->options=array_merge(self::$DEFAULT_OPTIONS, $options);
 
@@ -32,6 +34,10 @@ namespace Clue\Text{
 
         function parse_row($f){
             return fgetcsv($f, $this->options['length'], $this->options['delimiter'], $this->options['enclosure'], $this->options['escape']);
+        }
+
+        function write_row($f, $fields){
+            return fputcsv($f, $fields, $this->options['delimiter'], $this->options['enclosure'], $this->options['escape']);
         }
 
         function col($name){
@@ -67,6 +73,19 @@ namespace Clue\Text{
                     else{
                         yield $r;
                     }
+                }
+            }
+            finally{
+                fclose($f);
+            }
+        }
+
+        function write($table){
+            $f=fopen($this->filename, "w");
+
+            try{
+                foreach($table as $row){
+                    $this->write_row($f, $row);
                 }
             }
             finally{

@@ -120,12 +120,7 @@ namespace Clue{
 			// 1st round, take named variables
 			foreach($rfxMethod->getParameters() as $idx=>$rfxParam){
 				if(isset($params[$rfxParam->name])){
-					if(is_string($params[$rfxParam->name])){
-						$callArgs[$idx]=urldecode($params[$rfxParam->name]);
-					}
-					else{
-						$callArgs[$idx]=$params[$rfxParam->name];
-					}
+					$callArgs[$idx]=$params[$rfxParam->name];
 
 					unset($params[$rfxParam->name]);
 				}
@@ -143,7 +138,7 @@ namespace Clue{
 			foreach($rfxMethod->getParameters() as $idx=>$rfxParam){
 				if($callArgs[$idx]===null){
 					if(count($params)>0){
-						$callArgs[$idx]=urldecode(array_shift($params));
+						$callArgs[$idx]=array_shift($params);
 					}
 					elseif($rfxParam->isDefaultValueAvailable()){
 						$callArgs[$idx]=$rfxParam->getDefaultValue();

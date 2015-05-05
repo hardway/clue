@@ -13,16 +13,16 @@ class Fetcher{
 
         $default_spec=[
             110=>'/pop3/novalidate-cert',
-            143=>'',
+            143=>'/imap/novalidate-cert',
             993=>'/imap/ssl/novalidate-cert',
             995=>'/pop3/ssl/novalidate-cert'
         ];
         $spec=$spec ?: $default_spec[$port];
 
         $this->imap_server="{"."$server:$port".$spec."}";
-        $this->imap_options=null;
+        $this->imap_options=CL_EXPUNGE;
 
-        $this->stream=@imap_open("$this->imap_server$this->imap_folder", $username, $password, $this->imap_options, 1);
+        $this->stream=@imap_open("$this->imap_server$this->imap_folder", $username, $password, OP_HALFOPEN | $this->imap_options, 1);
         $errors=imap_errors();
 
         if(!$this->stream){
@@ -34,13 +34,18 @@ class Fetcher{
     }
 
     function __destruct(){
-        if($this->stream && is_resource($this->stream)){
-            imap_close($this->stream);
-            $this->stream=null;
-        }
+        $this->close();
 
         // 删除临时附件
         \Clue\Tool::remove_directory($this->attachment_dir);
+    }
+
+    function close(){
+        if($this->stream && is_resource($this->stream)){
+            imap_expunge($this->stream);
+            imap_close($this->stream, CL_EXPUNGE);
+            $this->stream=null;
+        }
     }
 
     function list_folders(){
@@ -139,6 +144,7 @@ class Fetcher{
         if(!is_array($ids)) $ids=[$ids];
 
         foreach($ids as $id){
+            // imap_setflag_full($this->stream, $id, '\\Deleted', ST_UID);
             imap_delete($this->stream, $id, FT_UID);
         }
     }
@@ -149,15 +155,9 @@ class Fetcher{
         foreach($ids as $id){
             imap_mail_move($stream, $id, $folder, CP_UID);
         }
-
-        $this->flush();
     }
 
-    function flush(){
-        return imap_expunge($this->stream);
-    }
-
-    function fetch_header($ids){
+    function fetch_header($ids, $id_type='uid'){
         $single=false;   // 返回数组
 
         if(!is_array($ids)){
@@ -165,7 +165,7 @@ class Fetcher{
             $ids=[$ids];
         }
 
-        $mails = imap_fetch_overview($this->stream, implode(',', $ids), FT_UID);
+        $mails = imap_fetch_overview($this->stream, implode(',', $ids), $id_type=='uid' ? FT_UID : null);
         $mails=array_map(function($m){
             $m->subject=$this->decode_mime_string($m->subject, $this->server_encoding);
             $m->from=$this->decode_mime_string($m->from, $this->server_encoding);
@@ -178,8 +178,10 @@ class Fetcher{
         return $single ? $mails[0] : $mails;
     }
 
-    function fetch_mail($id){
-        $head = imap_rfc822_parse_headers(imap_fetchheader($this->stream, $id, FT_UID));
+    function fetch_mail($id, $id_type='uid'){
+        $head = imap_rfc822_parse_headers(imap_fetchheader($this->stream, $id, $id_type=='uid' ? FT_UID : null));
+
+        if(!$head) throw new Exception("Message $id failed to fetch");
 
         $mail=[];
         $mail['id']=$id;
@@ -204,7 +206,7 @@ class Fetcher{
             }
         }
 
-        $mailStructure = imap_fetchstructure($this->stream, $id, FT_UID);
+        $mailStructure = imap_fetchstructure($this->stream, $id, $id_type=='uid' ? FT_UID : null);
 
         if(empty($mailStructure->parts)) {
             $this->initMailPart($mail, $mailStructure, 0);

@@ -26,7 +26,7 @@ namespace Clue\Database{
 
 		protected function free_result(){
 			if(is_object($this->_result)){
-				$this->_result->close();
+				$this->_result->finalize();
 			}
 			$this->_result=null;
 		}
@@ -34,6 +34,42 @@ namespace Clue\Database{
 		function insert_id(){
 			return $this->dbh->lastInsertRowID();
 		}
+
+        function insert($table, $fields, $verb='insert'){
+            $cols=array();
+            $vals=array();
+            foreach($fields as $c=>$v){
+                $cols[]='`'.trim($c, '`').'`';
+                $vals[]=":$c";
+            }
+            $sql="$verb into `$table`(".implode(',', $cols).") values(".implode(',', $vals).")";
+
+            $stmt=$this->dbh->prepare($sql);
+            foreach($fields as $c=>$v){
+	            $stmt->bindValue(":$c", $v);
+	        }
+
+	        $this->_result=$stmt->execute();
+
+            return $this->dbh->lastErrorCode() ? null : $this->dbh->lastInsertRowID();
+        }
+
+        function update($table, $fields, $where){
+            $updates=array();
+
+            foreach ($fields as $c=>$v) {
+                $updates[]="`$c`=:$c";
+            }
+
+            $stmt=$this->dbh->prepare("update `$table` set ".implode(', ', $updates)." where $where");
+            foreach($fields as $c=>$v){
+	            $stmt->bindValue(":$c", $v);
+	        }
+
+	        $this->_result=$stmt->execute();
+
+            return true;
+        }
 
 		function has_table($table){
 			$cnt=$this->get_var("select count(*) from sqlite_master where type='table' and tbl_name='$table'");
@@ -46,10 +82,10 @@ namespace Clue\Database{
 			$result_type=false;
 
 			$this->free_result();
-			$this->_result=$this->dbh->query($sql, $result_type, $error);
+			$this->_result=$this->dbh->query($sql);
 
 			if(!$this->_result){
-				$this->setError(array('error'=>$error));
+				$this->setError(array('error'=>$this->dbh->lastErrorMsg(), 'code'=>$this->dbh->lastErrorCode()));
 				return false;
 			}
 
@@ -58,30 +94,11 @@ namespace Clue\Database{
 		}
 
 		function get_var($sql){
-			if(!$this->exec($sql)) return false;
-
-			$row=sqlite_fetch_single($this->_result);
-			$this->free_result();
-
-			return $row;
+			return $this->dbh->querySingle($sql);
 		}
 
 		function get_row($sql, $mode=OBJECT){
-			if(!$this->exec($sql)) return false;
-
-			$result=false;
-
-			if($mode==OBJECT)
-				$result=sqlite_fetch_object($this->_result);
-			else if($mode==ARRAY_A)
-				$result=sqlite_fetch_array($this->_result, SQLITE_ASSOC);
-			else if($mode==ARRAY_N)
-				$result=sqlite_fetch_array($this->_result, SQLITE_NUM);
-			else
-				$result=sqlite_fetch_array($this->_result);
-
-			$this->free_result();
-			return $result;
+			return $this->dbh->querySingle($sql, true);
 		}
 
 		function get_col($sql){
@@ -102,17 +119,18 @@ namespace Clue\Database{
 			$result=array();
 
 			if($mode==OBJECT){
-				while($r=sqlite_fetch_object($this->_result)){
+				while($r=$this->_result->fetchArray(SQLITE3_ASSOC)){
+					$r = json_decode(json_encode($r), FALSE);
 					$result[]=$r;
 				}
 			}
 			else if($mode==ARRAY_A){
-				while($r=sqlite_fetch_array($this->_result, SQLITE_ASSOC)){
+				while($r=$this->_result->fetchArray(SQLITE3_ASSOC)){
 					$result[]=$r;
 				}
 			}
 			else if($mode==ARRAY_N){
-				while($r=sqlite_fetch_array($this->_result, SQLITE_NUM)){
+				while($r=$this->_result->fetchArray(SQLITE3_NUM)){
 					$result[]=$r;
 				}
 			}

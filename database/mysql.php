@@ -5,7 +5,7 @@ namespace Clue\Database{
         protected $_savepoints=[];  //用于追踪Transaction和Savepoint
 
         function __construct(array $param){
-            $defaults=['host'=>'127.0.0.1', 'password'=>''];
+            $defaults=['host'=>'127.0.0.1','username'=>"root", 'password'=>'', 'encoding'=>'utf8'];
             $param=$param+$defaults;
 
             // Make sure mysqli extension is enabled
@@ -25,7 +25,7 @@ namespace Clue\Database{
                 $this->setError(array('code'=>mysqli_connect_errno(), 'error'=>mysqli_connect_error()));
             }
 
-            // set default client encoding
+            // set default client encoding as UTF8
             if(isset($param['encoding'])){
                 $encoding=$param['encoding'];
                 $this->exec("set names $encoding");
