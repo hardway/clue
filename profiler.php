@@ -1,26 +1,35 @@
 <?php
+/**
+ * For save profile output before process interrupted, use:
+ *
+ * declare(ticks = 1); pcntl_signal(SIGINT, function(){exit;});
+ *
+ */
 namespace Clue;
+
 class Profiler{
-    function __construct(){
+    function __construct($source='unknown'){
     	$this->xhprof=extension_loaded("xhprof");
 
-    	$this->start();
+    	$this->start($source);
+
+        register_shutdown_function(array($this, 'stop'));
     }
 
     function __destruct(){
 
     }
 
-    function start(){
+    function start($source='unknown'){
     	$this->start_native();
 
-	    if($this->xhprof) $this->start_xhprof();
+	    if($this->xhprof) $this->start_xhprof($source);
     }
 
-    function stop($source='unknown'){
+    function stop(){
         $this->stop_native();
 
-    	if($this->xhprof) $this->stop_xhprof($source);
+    	if($this->xhprof) $this->stop_xhprof();
 
         return $this->summary();
     }
@@ -35,21 +44,23 @@ class Profiler{
     	$this->stop_memory=memory_get_usage();
     }
 
-    function start_xhprof(){
-		xhprof_enable(XHPROF_FLAGS_CPU + XHPROF_FLAGS_MEMORY);
+    function start_xhprof($source='unknown'){
+		\xhprof_enable(XHPROF_FLAGS_CPU + XHPROF_FLAGS_MEMORY);
+
+        $this->xhprof_run=date("mdHis").uniqid();
+        $this->xhprof_source=$source;
+        $this->xhprof_dir=ini_get("xhprof.output_dir");
+        $this->xhprof_file=sprintf("%s/%s.%s.xhprof", $this->xhprof_dir, $this->xhprof_run, $this->xhprof_source);
+
+        $om=umask(0);
+        if(!is_dir($this->xhprof_dir)) @mkdir($this->xhprof_dir, 0777, true);
+        umask($om);
     }
 
-    function stop_xhprof($source){
-		$data = xhprof_disable();
+    function stop_xhprof(){
+        $data = \xhprof_disable();
 
-		$this->xhprof_run=date("mdHis").uniqid();
-        $this->xhprof_source=$source;
-
-        $dir=ini_get("xhprof.output_dir");
-        if(!is_dir($dir)) @mkdir($dir, 0775, true);
-
-		$file=sprintf("%s/%s.%s.xhprof", $dir, $this->xhprof_run, $this->xhprof_source);
-		file_put_contents($file, serialize($data));
+		file_put_contents($this->xhprof_file, serialize($data));
     }
 
     function summary(){

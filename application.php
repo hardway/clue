@@ -30,7 +30,7 @@ namespace Clue{
                 );
             }
 
-            $this['profiler']=new Profiler();
+            // $this['profiler']=new Profiler();
         }
 
         // Dependency Injection, Ref: Pimple
