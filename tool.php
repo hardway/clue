@@ -54,7 +54,7 @@ namespace Clue{
             return false;
         }
     }
-    
+
     /**
      * Download remote image
      *
@@ -68,19 +68,19 @@ namespace Clue{
     	curl_setopt($ch, CURLOPT_HEADER, 0);
     	curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
     	curl_setopt($ch, CURLOPT_BINARYTRANSFER,1);
-    	 
+
     	$raw_image_data = curl_exec($ch);
     	curl_close ($ch);
-    	 
+
     	if( ! file_exists($path)){
     		@mkdir(dirname($path), 0775, true);
     	}else {
     		unlink($path);
     	}
-    	 
+
     	$fp = fopen($path,'x');
     	fwrite($fp, $raw_image_data);
-    
+
     	fclose($fp);
     }
 
@@ -203,10 +203,26 @@ namespace Clue{
 
 	    # user PHP_OS or php_uname() to get operation system name
 
-		static function nocache(){
-			header( 'Cache-Control: no-store, no-cache, must-revalidate' );
-			header( 'Cache-Control: post-check=0, pre-check=0', false );
-			header( 'Pragma: no-cache' );
+		static function http_auto_cache($timestamp, $etag=null){
+			$etag = ($etag ? "$etag-" : ''). $timestamp;
+
+			header("Cache-Control: public");
+		    header("Last-Modified: ".gmdate('D, d M Y H:i:s ', $timestamp) . 'GMT');
+		    header("ETag: $etag");
+
+			$if_modified_since = isset($_SERVER['HTTP_IF_MODIFIED_SINCE']) ? strtotime($_SERVER['HTTP_IF_MODIFIED_SINCE']) : false;
+			$if_none_match = isset($_SERVER['HTTP_IF_NONE_MATCH']) ? $_SERVER['HTTP_IF_NONE_MATCH'] : false;
+			if ($if_none_match == $etag  || (!$if_none_match && $timestamp == $if_modified_since))
+			{
+            	header('Not Modified', true, 304);
+			    exit();
+			}
+		}
+
+		static function http_no_cache(){
+			header('Cache-Control: no-store, no-cache, must-revalidate');
+			header('Cache-Control: post-check=0, pre-check=0', false);
+			header('Pragma: no-cache');
 		}
 
 		static function format2HTML($comment, $preservSpace=false){
