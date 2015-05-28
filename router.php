@@ -294,11 +294,11 @@ namespace Clue{
 					break;	// Only match first one
 				}
 			}
+			$url="/".trim($url,'/')."/";
             // url translate后生成的?query也要合并到GET中
             $_GET=array_merge($_GET, $query);
 			$candidates=explode("/", $url);
 			$params=array();
-
 
 			// 尝试最长匹配
 			$controller=trim(implode('/', $candidates), '/').'/index';
@@ -307,14 +307,12 @@ namespace Clue{
 			while(count($candidates)>=1){
 				// 寻找Controller
 				$mapping['controller']=$controller ?: 'index';
-				// var_dump("Searching ".$mapping['controller']."::$action");
+				// error_log("Searching ".$mapping['controller']."::$action(".json_encode($params).")");
 
 				$control_file=Controller::find_controller($mapping['controller']);
 				if(!$control_file || !file_exists($control_file)){
-					$this->app->fire_event('missing-controller', $controller);
-
 					// 不匹配的文字可以加入参数
-					if(!empty($action)) array_unshift($params, $action);
+					if($action) array_unshift($params, $action);
 
 					// 继续向上递归
 					$action=array_pop($candidates);
