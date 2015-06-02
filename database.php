@@ -96,7 +96,7 @@ namespace Clue{
 			// $this->log("[SQL ".number_format($time, 4)."] $sql");
 
 			if($this->slow_query_time_limit>0 && $time>$this->slow_query_time_limit){
-				$this->log("[SLOW QUERY ".number_format($time, 4)."] $sql");
+				$this->log("[SLOW QUERY ".number_format($time, 4)."] $sql", ['backtrace'=>'full']);
 			}
 
 			$this->last_query=$sql;
