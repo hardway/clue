@@ -1,3 +1,7 @@
+* CLI
+	msent/command
+	https://github.com/c9s/CLIFramework/tree/master/example
+
 * email集成
     F3的smtp类
     http://poss.sourceforge.net/email/news/
