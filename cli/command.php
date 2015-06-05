@@ -58,8 +58,10 @@ namespace Clue\CLI{
             $comment=array_map(function($c){return trim($c, '* ');}, $comment);
 
             $help=[
+                'summary'=>'',
+                'detail'=>[],
                 'param'=>[],
-                'options'=>[]
+                'options'=>[],
             ];
 
             foreach($comment as $line){
@@ -139,14 +141,21 @@ namespace Clue\CLI{
                 printf("  %s\n", $line);
             }
 
+            if(@$help['param']){
+                echo " parameters:\n\n";
+                foreach($help['param'] as $param=>$h){
+                    printf("   %-12s   %s\n", strtoupper($param), $h);
+                }
+                echo "\n";
+            }
+
             if(@$help['options']){
                 echo " options:\n\n";
                 foreach($help['options'] as $opt=>$h){
                     printf("   --%-10s   %s %s\n", $opt, $h['summary'], $h['default']!==null ? "(default: ".json_encode($h['default']).")" : "");
                 }
+                echo "\n";
             }
-
-            echo "\n";
         }
 
         /**
