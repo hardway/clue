@@ -162,7 +162,7 @@ namespace Clue\CLI{
          * 允许命令缩写例如msent message test(在不产生歧义的情况下)可以缩写为msent me t
          */
         function _best_match_command(array $cmds){
-            $regexp='/^'.$this->app.implode('', array_map(function($c){return "_({$c}[^_]*)";}, $cmds)).'(_[^_]+)?/';
+            $regexp='!^'.$this->app.implode('', array_map(function($c){return "_({$c}[^_]*)";}, $cmds)).'(_[^_]+)?!';
             $candidates=$this->_list_function();
 
             $matches=[];
