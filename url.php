@@ -107,12 +107,12 @@
      * @return $url 文件URL
      */
     function asset($asset){
-        global $_SITE_PATH_MAPPING;
+        $mapping=\Clue\get_site_path_mapping();
         $path="asset/".trim($asset, '/ ');
 
         foreach(\Clue\get_site_path() as $c){
             if(file_exists($c.'/'.$path)){
-                $url=APP_BASE.'/'.$_SITE_PATH_MAPPING[$c].'/'.$path;
+                $url=APP_BASE.'/'.$mapping[$c].'/'.$path;
                 return preg_replace('|/+|','/', $url)."?".filemtime("$c/$path");
             }
         }

@@ -6,8 +6,6 @@ namespace Clue{
         protected $vars;
 
         static function find($view, $parent=null, $extension="htm|php"){
-            global $_SITE_PATH;
-
             $view_candidates=is_array($view) ? $view : [$view];
             $parent_view=is_object($parent) ? dirname($parent->view) : $parent;
 
@@ -21,7 +19,7 @@ namespace Clue{
                 }
 
                 $template=null;
-                foreach($_SITE_PATH as $dir){
+                foreach(\Clue\get_site_path() as $dir){
                     foreach(explode("|", $extension) as $ext){
                         if(file_exists($dir."/source/view/".strtolower($view).".".$ext)){
                             $v=new View($view);
@@ -41,8 +39,6 @@ namespace Clue{
          * TODO: deprecate with View::find();
          */
         static function find_view($view, $parent=null, $extension="htm|php"){
-            global $_SITE_PATH;
-
             // 相对路径的定位
             // Example:
             //  find_view('view', '/folder')    ==> /folder/view
@@ -54,7 +50,7 @@ namespace Clue{
             $view="/source/view/".$view;
 
             $template=null;
-            foreach($_SITE_PATH as $dir){
+            foreach(\Clue\get_site_path() as $dir){
                 foreach(explode("|", $extension) as $ext){
                     if(file_exists($dir.strtolower($view).".".$ext)){
                         return $dir.strtolower($view);

@@ -1,12 +1,19 @@
 <?php
 // Class Path和Include Path设定
 namespace Clue{
+    class PathConfig{
+        static $CLASS_PATH=[];
+        static $SITE_PATH=[];
+        static $SITE_PATH_MAPPING=[];
+
+    }
 
     /**
      * Site path is LIFO stack
      */
     function add_site_path($path, $mapping=''){
-        global $_SITE_PATH, $_SITE_PATH_MAPPING;
+        $_SITE_PATH=&PathConfig::$SITE_PATH;
+        $_SITE_PATH_MAPPING=&PathConfig::$SITE_PATH_MAPPING;
 
         if(!isset($_SITE_PATH)) $_SITE_PATH=[];
 
@@ -17,8 +24,11 @@ namespace Clue{
     }
 
     function get_site_path(){
-        global $_SITE_PATH;
-        return $_SITE_PATH;
+        return PathConfig::$SITE_PATH;
+    }
+
+    function get_site_path_mapping(){
+        return PathConfig::$SITE_PATH_MAPPING;
     }
 
     /**
@@ -29,7 +39,7 @@ namespace Clue{
     }
 
     function add_class_path($path){
-        global $_CLASS_PATH;
+        $_CLASS_PATH=&PathConfig::$CLASS_PATH;
 
         if($_CLASS_PATH==null) $_CLASS_PATH=array();
 
@@ -49,7 +59,7 @@ namespace Clue{
      * @return {void}
      */
     function insert_class_path($path) {
-    	global $_CLASS_PATH;
+        $_CLASS_PATH=&PathConfig::$CLASS_PATH;
 
     	if	($_CLASS_PATH == NULL) {
     		$_CLASS_PATH = array();
@@ -64,12 +74,11 @@ namespace Clue{
     }
 
     function get_class_path(){
-        global $_CLASS_PATH;
-        return $_CLASS_PATH;
+        return PathConfig::$CLASS_PATH;
     }
 
     function autoload_load($class){
-        global $_CLASS_PATH;
+        $_CLASS_PATH=&PathConfig::$CLASS_PATH;
 
         $class=str_replace(NS, '/', $class);
 
@@ -134,11 +143,6 @@ namespace Clue{
 
         return array_values($files);
     }
-
-
-    $_SITE_PATH=[];
-    $_SITE_PATH_MAPPING=[];
-    $_CLASS_PATH=[];
 
     add_site_path(".");         // 当前执行目录
     add_site_path(__DIR__);     // 文件所属目录
