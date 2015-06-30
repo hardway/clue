@@ -54,7 +54,7 @@ trait Logger{
 
         $trace=$level=='full' ? array_slice($trace, 1) : array_slice($trace, $level, 1);
         return implode("\n\t", array_map(function($t){
-            return $t['file'].':'.$t['line'];
+            return @$t['file'].':'.@$t['line'];
         }, $trace));
     }
 }
