@@ -2,6 +2,9 @@
 	msent/command
 	https://github.com/c9s/CLIFramework/tree/master/example
 
+* RPC
+	传递binary数据会出错
+
 * email集成
     F3的smtp类
     http://poss.sourceforge.net/email/news/

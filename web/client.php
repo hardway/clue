@@ -74,7 +74,9 @@ namespace Clue\Web{
 		}
 
 		function destroy_cache($url){
-			$this->cache->destroy($url);
+			if($this->cache){
+				$this->cache->destroy($url);
+			}
 		}
 
 		function enable_cookie($cookie_file){
