@@ -25,7 +25,7 @@ namespace Clue\Text{
             if($this->options['header']){
                 // 读取首行，标题
                 $f=fopen($this->filename, "r");
-                if(!$f) throw new Exception("Can't open CSV file: $this->filename");
+                if(!$f) throw new \Exception("Can't open CSV file: $this->filename");
 
                 $this->columns=$this->parse_row($f);
                 fclose($f);
