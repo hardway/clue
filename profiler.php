@@ -65,9 +65,6 @@ class Profiler{
         if(!empty($data)){
             file_put_contents($this->xhprof_file, serialize($data));
         }
-        else{
-            var_dump($data);
-        }
     }
 
     function summary(){
