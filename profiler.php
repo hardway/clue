@@ -8,8 +8,9 @@
 namespace Clue;
 
 class Profiler{
-    function __construct($source='xhprof'){
+    function __construct($source='xhprof', $options=[]){
     	$this->xhprof=extension_loaded("xhprof");
+        $this->xhprof_options=$options;
 
     	$this->start($source);
 
@@ -45,7 +46,7 @@ class Profiler{
     }
 
     function start_xhprof($source='xhprof'){
-		\xhprof_enable(XHPROF_FLAGS_CPU + XHPROF_FLAGS_MEMORY);
+		\xhprof_enable(XHPROF_FLAGS_CPU + XHPROF_FLAGS_MEMORY, $this->xhprof_options);
 
         $this->xhprof_run=date("Ymd_His_").uniqid();
         $this->xhprof_source=$source;
