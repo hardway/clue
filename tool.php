@@ -358,5 +358,11 @@ namespace{
 
 		return $ret;
 	}
+
+	if(!function_exists('panic')){
+		function panic($message){
+		    throw new Exception($message);
+		}
+	}
 }
 ?>
