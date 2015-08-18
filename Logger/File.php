@@ -1,7 +1,7 @@
 <?php
 namespace Clue\Logger;
 
-class File implements Logger{
+class File extends Syslog{
     function __construct($path){
         $dir=dirname($path);
 
@@ -25,13 +25,8 @@ class File implements Logger{
     }
 
     function write($data){
-        $message=sprintf("%-22s | %-9s | %s\n", $data['timestamp'], strtoupper($data['level']), $data['message']);
-
-        fputs($this->file, $message);
-
-        if(isset($data['caller'])){
-            $message=sprintf("%-22s | %-9s | %s\n", $data['timestamp'], 'CALLER', $data['caller']);
-            fputs($this->file, $message);
+        foreach($this->format_text($data) as $line){
+            fputs($this->file, $line."\n");
         }
     }
 }

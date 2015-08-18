@@ -49,7 +49,6 @@ class GELF implements Logger{
         $payload=$this->encode($data);
 
         if($this->udp){
-            error_log($payload);
             $written=@fwrite($this->udp, $payload);
 
             if($written===false) panic("UDP stream write failed");

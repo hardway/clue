@@ -24,8 +24,7 @@ trait Logger{
     /**
      * System is unusable.
      */
-    public function emergency($message, array $context = array())
-    {
+    public function emergency($message, array $context = array()){
         $this->log('emergency', $message, $context);
     }
 
@@ -34,8 +33,7 @@ trait Logger{
      *
      * Example: Application component unavailable, unexpected exception.
      */
-    public function critical($message, array $context = array())
-    {
+    public function critical($message, array $context = array()){
         $this->log('critical', $message, $context);
     }
 
@@ -43,8 +41,7 @@ trait Logger{
      * Runtime errors that do not require immediate action but should typically
      * be logged and monitored.
      */
-    public function error($message, array $context = array())
-    {
+    public function error($message, array $context = array()){
         $this->log('error', $message, $context);
     }
 
@@ -54,8 +51,7 @@ trait Logger{
      * Example: Entire website down, database unavailable, etc. This should
      * trigger the SMS alerts and wake you up.
      */
-    public function alert($message, array $context = array())
-    {
+    public function alert($message, array $context = array()){
         $this->log('alert', $message, $context);
     }
 
@@ -65,16 +61,14 @@ trait Logger{
      * Example: Use of deprecated APIs, poor use of an API, undesirable things
      * that are not necessarily wrong.
      */
-    public function warning($message, array $context = array())
-    {
+    public function warning($message, array $context = array()){
         $this->log('warning', $message, $context);
     }
 
     /**
      * Normal but significant events.
      */
-    public function notice($message, array $context = array())
-    {
+    public function notice($message, array $context = array()){
         $this->log('notice', $message, $context);
     }
 
@@ -83,16 +77,14 @@ trait Logger{
      *
      * Example: User logs in, SQL logs.
      */
-    public function info($message, array $context = array())
-    {
+    public function info($message, array $context = array()){
         $this->log('info', $message, $context);
     }
 
     /**
      * Detailed debug information.
      */
-    public function debug($message, array $context = array())
-    {
+    public function debug($message, array $context = array()){
         $this->log('debug', $message, $context);
     }
 
@@ -111,25 +103,47 @@ trait Logger{
         $timestamp=sprintf("%s.%03d", date("Y-m-d H:i:s", $timestamp), 1000*($timestamp - floor($timestamp)));
         $data['timestamp']=$timestamp;
 
-        // 附加log来源
+        // 附加Backtrace
         if(isset($context['backtrace'])){
-            $caller=self::_get_backtrace($context['backtrace']);
-            $message.=$caller ? sprintf(" (%s)", $caller) : "";
-            $data['caller']=$caller;
+            $backtrace=self::_get_backtrace($context['backtrace']);
+            $data['backtrace']=$backtrace;
+        }
+
+        // 附加内存统计
+        if(isset($context['memory'])){
+            $data['memory']=[
+                'usage'=>memory_get_usage(true),
+                'peak'=>memory_get_peak_usage(true)
+            ];
+        }
+
+        // 附加HTTP信息
+        if(isset($context['http'])){
+            $data['http']=[
+                'url'=>@$_SERVER['REQUEST_URI'],
+                'method'=>@$_SERVER['REQUEST_METHOD'],
+                'ip'=>@$_SERVER['REMOTE_ADDR'],
+                'browser'=>@$_SERVER['HTTP_USER_AGENT'],
+                'referrer'=>@$_SERVER['HTTP_REFERER'],
+            ];
         }
 
         self::$log_handler->write($data);
     }
 
     /**
-     * @param $level 如果是full则返回全部trace
+     * @param $level 如果是<=0则返回全部trace
      */
-    static function _get_backtrace($level=1){
+    static function _get_backtrace($depth=null){
         $trace=debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS);
 
-        $trace=$level=='full' ? array_slice($trace, 1) : array_slice($trace, $level, 1);
+        $trace=is_numeric($depth) ? array_slice($trace, 2, $depth) : array_slice($trace, 2);
         return implode("\n\t", array_map(function($t){
-            return @$t['file'].':'.@$t['line'];
+            $pos=$t['class'].$t['type'].$t['function']."()";
+            if(isset($t['file'])){
+                $pos=$t['file'].':'.$t['line'] .' '. $pos;
+            }
+            return $pos;
         }, $trace));
     }
 }
