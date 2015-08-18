@@ -1,7 +1,7 @@
 <?php
 namespace Clue\Logger;
 
-class Email extends Syslog{
+class Email implements Logger{
     function __construct($recipients, $mailer=null){
         $this->recipients=is_array($recipients) ? $recipients : array($recipients);
         $this->mailer=$mailer ?: new \Clue\Mail\Sender;
@@ -12,7 +12,7 @@ class Email extends Syslog{
     }
 
     function write($data){
-        $this->mailer->subject=sprintf("%s | %s | %s", $data['time'], $data['level'], substr($data['message'], 0, 160));
+        $this->mailer->subject=sprintf("%s | %s | %s", $data['timestamp'], $data['level'], substr($data['message'], 0, 160));
 
         $body="";
         foreach($data as $k=>$v){

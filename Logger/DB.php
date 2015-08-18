@@ -1,11 +1,12 @@
 <?php
 namespace Clue\Logger;
-class DB extends Syslog{
-    function __construct($db_or_config, $table){
-        if($db_or_config instanceof Clue\Database)
-            $this->db=$db_or_config;
+
+class DB implements Logger{
+    function __construct($db, $table){
+        if($db instanceof Clue\Database)
+            $this->db=$db;
         else
-            $this->db=\Clue\Database::create($db_or_config);
+            $this->db=\Clue\Database::create($db);
 
         $this->table=$table;
     }

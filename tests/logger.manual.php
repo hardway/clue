@@ -1,38 +1,57 @@
 <?php
 require_once dirname(__DIR__).'/stub.php';
 
+class SampleData{
+    use \Clue\Traits\Logger;
+}
+
 class Test_Mail_Manual extends PHPUnit_Framework_TestCase{
     protected function setUp(){
     }
 
-    function send_sample_data($logger){
-        $logger->log("This is syslog");
-        $logger->debug("debug");
-        $logger->info("info");
-        $logger->warning("warning");
-        $logger->error("error");
-        $logger->alert("alert");
-        $logger->critical("critical");
-        $logger->crash("crash");
+    function use_logger($logger){
+        $sample=new SampleData();
+        $sample->enable_log($logger);
 
-        $logger->write(['time'=>'1980-1-1', 'level'=>'WTF', 'message'=>str_repeat(md5(time()), 50)]);
+        $sample->notice("This is syslog");
+        $sample->debug("debug");
+        $sample->info("info");
+        $sample->warning("warning");
+        $sample->error("error");
+        $sample->alert("alert");
+        $sample->critical("critical");
+        $sample->emergency("crash");
+    }
+
+    function test_gelf(){
+        $this->use_logger(new Clue\Logger\GELF('devops.sign4x.com'));
+        exit();
+    }
+
+    function test_backtracing(){
+        $sample=new SampleData();
+        $sample->enable_log(new Clue\Logger\Syslog);
+        $sample->notice("This is syslog", ['backtrace'=>1]);
     }
 
     function test_syslog(){
-        $this->send_sample_data(new Clue\Logger\Syslog);
+        $this->use_logger(new Clue\Logger\Syslog);
     }
 
     function test_file_log(){
-
+        $this->use_logger("/tmp/test.log");
+        echo "File Log Content: \n";
+        echo file_get_contents("/tmp/test.log");
+        echo "\n\n";
     }
 
     function test_db_log(){
-        $this->send_sample_data(new \Clue\Logger\DB(['type'=>'mysql', 'host'=>'localhost', 'db'=>'test', 'username'=>'root'], 'log'));
+        // $this->use_logger(new \Clue\Logger\DB(['type'=>'mysql', 'host'=>'localhost', 'db'=>'test', 'username'=>'root'], 'log'));
     }
 
     function test_email_log(){
-        // $this->markTestSkipped();
+        $this->markTestSkipped();
 
-        $this->send_sample_data(new \Clue\Logger\EMail('hou.danwu@gmail.com'));
+        $this->use_logger(new \Clue\Logger\EMail('hou.danwu@gmail.com'));
     }
 }

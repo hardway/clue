@@ -2,48 +2,123 @@
 namespace Clue\Traits;
 
 trait Logger{
-    static protected $log_file=null;
+    static protected $log_handler=null;
 
-    static function enable_log($log_file=null){
-        self::$log_file=$log_file ?: 'syslog';
-
-        if($log_file){
-            // 确保文件夹已经存在
-            $dir=dirname($log_file);
-            if(!is_dir($dir)){
-                mkdir($dir, 0775, true);
-            }
-            if(!is_dir($dir)){
-                error_log("Log folder doesn't exist, and can't be created either.");
-            }
+    // Logger Awareness
+    static function enable_log($logger=null){
+        if(is_string($logger)){
+            $logger=new \Clue\Logger\File($logger);
         }
+
+        self::setLogger($logger);
     }
 
     static function disable_log(){
-        self::$log_file=null;
+        self::setLogger(null);
     }
 
-    static function log($message, $options=[]){
-        if(self::$log_file===null) return;
-        $type=self::$log_file=='syslog' ? 0 : 3;
+    static function setLogger($logger){
+        self::$log_handler=$logger;
+    }
+
+    /**
+     * System is unusable.
+     */
+    public function emergency($message, array $context = array())
+    {
+        $this->log('emergency', $message, $context);
+    }
+
+    /**
+     * Critical conditions.
+     *
+     * Example: Application component unavailable, unexpected exception.
+     */
+    public function critical($message, array $context = array())
+    {
+        $this->log('critical', $message, $context);
+    }
+
+    /**
+     * Runtime errors that do not require immediate action but should typically
+     * be logged and monitored.
+     */
+    public function error($message, array $context = array())
+    {
+        $this->log('error', $message, $context);
+    }
+
+    /**
+     * Action must be taken immediately.
+     *
+     * Example: Entire website down, database unavailable, etc. This should
+     * trigger the SMS alerts and wake you up.
+     */
+    public function alert($message, array $context = array())
+    {
+        $this->log('alert', $message, $context);
+    }
+
+    /**
+     * Exceptional occurrences that are not errors.
+     *
+     * Example: Use of deprecated APIs, poor use of an API, undesirable things
+     * that are not necessarily wrong.
+     */
+    public function warning($message, array $context = array())
+    {
+        $this->log('warning', $message, $context);
+    }
+
+    /**
+     * Normal but significant events.
+     */
+    public function notice($message, array $context = array())
+    {
+        $this->log('notice', $message, $context);
+    }
+
+    /**
+     * Interesting events.
+     *
+     * Example: User logs in, SQL logs.
+     */
+    public function info($message, array $context = array())
+    {
+        $this->log('info', $message, $context);
+    }
+
+    /**
+     * Detailed debug information.
+     */
+    public function debug($message, array $context = array())
+    {
+        $this->log('debug', $message, $context);
+    }
+
+    static function log($level, $message, $context=[]){
+        if(empty(self::$log_handler)) return;
 
         // 复杂对象转换为string
         if(is_array($message) || is_object($message)){
             $message=var_export($message, true);
         }
 
+        $data=['level'=>$level, 'message'=>$message];
+
         // 附加Timestamp
         $timestamp=microtime(true);
         $timestamp=sprintf("%s.%03d", date("Y-m-d H:i:s", $timestamp), 1000*($timestamp - floor($timestamp)));
-        $message=str_replace('{TIMESTAMP}', $timestamp, $message);
+        $data['timestamp']=$timestamp;
 
         // 附加log来源
-        $caller=self::_get_backtrace($options['backtrace']);
-        $message.=$caller ? sprintf(" (%s)", $caller) : "";
+        if(isset($context['backtrace'])){
+            $caller=self::_get_backtrace($context['backtrace']);
+            $message.=$caller ? sprintf(" (%s)", $caller) : "";
+            $data['caller']=$caller;
+        }
 
-        if($type==3) $message.="\n";
-
-        error_log($message, $type, self::$log_file);
+        self::$log_handler->write($data);
     }
 
     /**
