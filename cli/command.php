@@ -167,7 +167,7 @@ namespace Clue\CLI{
 
             $matches=[];
             foreach($candidates as $func){
-                if(preg_match($regexp, $func, $m)){
+                if(@preg_match($regexp, $func, $m)){
                     $matches[]=$func;
                 }
             }

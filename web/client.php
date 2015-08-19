@@ -22,7 +22,7 @@ namespace Clue\Web{
 
 		function __construct($config=array()){
 			$default_config=array(
-				'http_proxy'=>getenv("http_proxy"),
+				'proxy'=>getenv("http_proxy"),
 				'connect_timeout'=>15,
 				'timeout'=>60
 			);
@@ -35,7 +35,7 @@ namespace Clue\Web{
 			curl_setopt($this->curl, CURLOPT_CONNECTTIMEOUT, $config['connect_timeout']);
 			curl_setopt($this->curl, CURLOPT_TIMEOUT, $config['timeout']);
 
-			if(preg_match('/^sock[45s]?:\/\/([a-z0-9\-_\.]+):(\d+)$/i', $config['http_proxy'], $m)){
+			if(preg_match('/^sock[45s]?:\/\/([a-z0-9\-_\.]+):(\d+)$/i', $config['proxy'], $m)){
 				list($_, $proxy, $port)=$m;
 				curl_setopt($this->curl, CURLOPT_PROXY, $proxy);
 				curl_setopt($this->curl, CURLOPT_PROXYPORT, $port);
@@ -45,7 +45,7 @@ namespace Clue\Web{
 				curl_setopt($this->curl, CURLOPT_PROXYTYPE, CURLPROXY_SOCKS5_HOSTNAME);
 				// curl_setopt($this->curl, CURLOPT_PROXYTYPE, CURLPROXY_SOCKS5);
 			}
-			elseif(preg_match('/^(http:\/\/)?([a-z0-9\-_\.]+):(\d+)/i', $config['http_proxy'], $m)){
+			elseif(preg_match('/^(http:\/\/)?([a-z0-9\-_\.]+):(\d+)/i', $config['proxy'], $m)){
 				list($_, $scheme, $proxy, $port)=$m;
 
 				curl_setopt($this->curl, CURLOPT_PROXY, $proxy);
