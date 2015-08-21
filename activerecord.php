@@ -377,19 +377,6 @@
             return empty($this->_snap[$model['pkey']]);
         }
 
-        function add_history($data, $action){
-            $model=self::model();
-
-            if(!isset($model['history_table']) || empty(self::$_acl)) return false;
-
-            $data['history_user']=call_user_func(array(self::$_acl,"username"));
-            $data['history_action']=$action;
-            $data['history_time']=date("Y-m-d H:i:s");
-            $data['history_comment']=null;
-
-            self::db()->insert($model['history_table'], $data);
-        }
-
         function to_array(){
             $ary=array();
             foreach(array_keys(self::model()['columns']) as $col){
@@ -409,10 +396,18 @@
 
         function save(){
             if(!$this->validate()) return false;
-            if(!$this->before_save()) return false;
 
-    		// TODO: use prepared statement to improve security and code clearance
-    		$model=self::model();
+            // TODO: use prepared statement to improve security and code clearance
+            $model=self::model();
+
+            $dirty_data=[];
+            foreach($model['columns'] as $c=>$m){
+                if(isset($m['readonly']) || $this->_snap[$c]===$this->$c) continue;
+
+                $dirty_data[$c]=$this->$c;
+            }
+
+            if(!$this->before_save($dirty_data)) return false;
 
     		$pkey=$model['pkey'];
     		$pkfield=$model['columns'][$model['pkey']]['name'];
@@ -420,30 +415,27 @@
             if($this->is_new()){    // Insert New
                 $clist=array();
                 $vlist=array();
-                $history_data=array();
+
                 foreach($model['columns'] as $c=>$m){
                     if(isset($m['readonly']) || $this->_snap[$c]===$this->$c) continue;
                     if($c==$pkfield && empty($this->$c)) continue;      // bypass empty primary key
 
                     $clist[]="`".$m['name']."`";
                     $vlist[]=self::db()->quote($this->$c);
-                    $history_data[$m['name']]=$this->$c;
+
                 }
                 $sql="insert into `{$model['table']}` (".join(", ", $clist).") values(".join(",", $vlist).")";
-                $history_action='C';
             }
             else{ // Update Value
                 $list=array();
-                $history_data=array();
+
                 foreach($model['columns'] as $c=>$m){
                     if(isset($m['readonly']) || $this->_snap[$c]==$this->$c) continue;
 
                     $list[]="`".$m['name']."`=".self::db()->quote($this->$c);
-                    $history_data[$m['name']]=$this->$c;
                 }
                 if(count($list)>0){
                     $sql="update `{$model['table']}` set ".join(",", $list)." where `$pkfield`='".$this->$pkey."'";
-                    $history_action='U';
                 }
                 else{
                     // Nothing has changed.
@@ -462,14 +454,11 @@
                         $this->$pkey=self::db()->insert_id();
         			}
 
-        			$history_data[$pkey]=$this->$pkey;
-        			$this->add_history($history_data, $history_action);
-
                     $this->_snap_shot();
                 }
             }
 
-            $this->after_save();
+            $this->after_save($dirty_data);
 
             return $success;
         }
@@ -481,19 +470,9 @@
 		$pkey=$model['pkey'];
         $pkfield=@$model['columns'][$pkey]['name'] ?: $pkey;
 
-        // TODO: make history an extension/friend class
-		$history_data=array();
-		foreach($model['columns'] as $c=>$m){
-			$history_data[$m['name']]=$this->$c;
-		}
-		$history_data[$pkey]=$this->$pkey;
-
 		$sql="delete from `{$model["table"]}` where `$pkfield`='".$this->$pkey."'";
 
 		$ret=self::db()->exec($sql);
-
-            $this->add_history($history_data, 'D');
-
             $this->_snap_shot();
 
             $this->after_destroy();

@@ -59,7 +59,7 @@ class Client{
 	}
 
 	function __call($name, $arguments){
-		$this->log("[RPC] Connecting to $this->endpoint");
+		$this->info("[RPC] Connecting to $this->endpoint");
 
 		$payload=array('method'=>$name, 'params'=>$arguments);
 		if($this->client){
@@ -77,7 +77,7 @@ class Client{
 			'request'=>json_encode($arguments)
 		];
 
-		if($this->debug) $this->log("[RPC] Payload: ".json_encode($payload));
+		if($this->debug) $this->debug("[RPC] Payload: ".json_encode($payload));
 
 		$payload=json_encode($payload);
 
@@ -170,7 +170,7 @@ redirect:
 
 		if($this->secret){
 			if($this->debug){
-				$this->log(sprintf("[RPC] ENCRYPTED RESPONSE:\n====================\n%s\n\n", $response));
+				$this->debug(sprintf("[RPC] ENCRYPTED RESPONSE:\n====================\n%s\n\n", $response));
 			}
 			$response=clue_rpc_decrypt($response, $this->secret);
 		}
@@ -178,7 +178,7 @@ redirect:
 		$this->bookkeep($record+['status'=>200, 'response'=>$response]);
 
 		if($this->debug){
-			$this->log(sprintf("[RPC] RESPONSE:\n====================\n%s\n\n", $response));
+			$this->debug(sprintf("[RPC] RESPONSE:\n====================\n%s\n\n", $response));
 		}
 
 		if($this->cache_dir){
