@@ -35,8 +35,8 @@ class Server{
 	}
 
 	static function bind($svc, $options=array()){
-		self::log("[RPC] Endpoint: ".$_SERVER['REQUEST_URI']);
-		self::log("[RPC] Connected from: ".$_SERVER['REMOTE_ADDR']);
+		$this->info("[RPC] Endpoint: ".$_SERVER['REQUEST_URI']);
+		$this->info("[RPC] Connected from: ".$_SERVER['REMOTE_ADDR']);
 
 		$payload=file_get_contents("php://input");
 		if(isset($options['secret'])){
@@ -66,8 +66,8 @@ class Server{
 
 		try{
 			if(method_exists($svc, "auth")){
-				self::log("[RPC] Client ID: ".$payload['client']);
-				self::log("[RPC] Client Token: ".$payload['token']);
+				$this->info("[RPC] Client ID: ".$payload['client']);
+				$this->info("[RPC] Client Token: ".$payload['token']);
 
 				$pass=$svc->auth($payload['client'], $payload['token']);
 				if(!$pass) self::error_acl("Invalid combination of CLIENT and TOKEN");
