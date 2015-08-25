@@ -28,26 +28,26 @@ class Test_Mail_Manual extends PHPUnit_Framework_TestCase{
     }
 
     function test_hipchat(){
-        // $this->markTestSkipped();
+        $this->markTestSkipped();
 
         $this->use_logger(new Clue\Logger\HipChat('NewRelic', 'WeF1MQcfmBviy1YlQXjEb43pacKic1fhzcbRcIZm', 'PHP'));
         exit();
     }
 
-    // function test_syslog(){
-    //     $this->use_logger(new Clue\Logger\Syslog);
-    // }
+    function test_syslog(){
+        $this->use_logger(new Clue\Logger\Syslog);
+    }
 
-    // function test_file_log(){
-    //     $this->use_logger("/tmp/test.log");
-    //     echo "File Log Content: \n";
-    //     echo file_get_contents("/tmp/test.log");
-    //     echo "\n\n";
-    // }
+    function test_file_log(){
+        $this->use_logger("/tmp/test.log");
+        echo "File Log Content: \n";
+        echo file_get_contents("/tmp/test.log");
+        echo "\n\n";
+    }
 
-    // function test_db_log(){
-    //     // $this->use_logger(new \Clue\Logger\DB(['type'=>'mysql', 'host'=>'localhost', 'db'=>'test', 'username'=>'root'], 'log'));
-    // }
+    function test_db_log(){
+        // $this->use_logger(new \Clue\Logger\DB(['type'=>'mysql', 'host'=>'localhost', 'db'=>'test', 'username'=>'root'], 'log'));
+    }
 
     // function test_gelf(){
     //     // $this->markTestSkipped();

@@ -24,8 +24,8 @@ trait Logger{
     /**
      * System is unusable.
      */
-    public function emergency($message, array $context = array()){
-        $this->log('emergency', $message, $context);
+    static function emergency($message, array $context = array()){
+        self::log('emergency', $message, $context);
     }
 
     /**
@@ -33,16 +33,16 @@ trait Logger{
      *
      * Example: Application component unavailable, unexpected exception.
      */
-    public function critical($message, array $context = array()){
-        $this->log('critical', $message, $context);
+    static function critical($message, array $context = array()){
+        self::log('critical', $message, $context);
     }
 
     /**
      * Runtime errors that do not require immediate action but should typically
      * be logged and monitored.
      */
-    public function error($message, array $context = array()){
-        $this->log('error', $message, $context);
+    static function error($message, array $context = array()){
+        self::log('error', $message, $context);
     }
 
     /**
@@ -51,8 +51,8 @@ trait Logger{
      * Example: Entire website down, database unavailable, etc. This should
      * trigger the SMS alerts and wake you up.
      */
-    public function alert($message, array $context = array()){
-        $this->log('alert', $message, $context);
+    static function alert($message, array $context = array()){
+        self::log('alert', $message, $context);
     }
 
     /**
@@ -61,15 +61,15 @@ trait Logger{
      * Example: Use of deprecated APIs, poor use of an API, undesirable things
      * that are not necessarily wrong.
      */
-    public function warning($message, array $context = array()){
-        $this->log('warning', $message, $context);
+    static function warning($message, array $context = array()){
+        self::log('warning', $message, $context);
     }
 
     /**
      * Normal but significant events.
      */
-    public function notice($message, array $context = array()){
-        $this->log('notice', $message, $context);
+    static function notice($message, array $context = array()){
+        self::log('notice', $message, $context);
     }
 
     /**
@@ -77,15 +77,15 @@ trait Logger{
      *
      * Example: User logs in, SQL logs.
      */
-    public function info($message, array $context = array()){
-        $this->log('info', $message, $context);
+    static function info($message, array $context = array()){
+        self::log('info', $message, $context);
     }
 
     /**
      * Detailed debug information.
      */
-    public function debug($message, array $context = array()){
-        $this->log('debug', $message, $context);
+    static function debug($message, array $context = array()){
+        self::log('debug', $message, $context);
     }
 
     static function log($level, $message, $context=[]){

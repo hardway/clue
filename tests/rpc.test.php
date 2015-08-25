@@ -8,7 +8,7 @@
             return "pong";
         }
 
-        function error(){
+        function trigger_error(){
             throw new Exception("This is a test error", 100);
         }
 
@@ -105,7 +105,7 @@
          */
         function test_exception(){
             $c=new Clue\RPC\Client("http://localhost:31415/");
-            echo $c->error();
+            echo $c->trigger_error();
         }
     }
 ?>
