@@ -39,6 +39,7 @@
 
 				// 伪元素
 				'span.recom li:last-child a'=>"//span[contains(concat(' ',normalize-space(@class),' '),' recom ')]//li[not(following-sibling::*)]//a",
+				'ul li:nth-child(2)'=>'//ul//li[position()=2]',
 			);
 
 			foreach($tests as $css=>$xpath){

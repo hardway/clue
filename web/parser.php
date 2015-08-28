@@ -39,6 +39,8 @@ class Parser{
 			'/([a-zA-Z0-9\_\-\*]+):first-child/'=>'*[1]/self::$1',
 			// :last-child
 			'/([a-zA-Z0-9\_\-\*]+):last-child/'=>'$1[not(following-sibling::*)]',
+			// :nth-child
+			'/([a-zA-Z0-9\_\-\*]+):nth-child\((\d+)\)/'=>'$1[position()=$2]',
 
 			// ids and classes
 			"/#([a-zA-Z0-9\_\-]+)/"=>"[@id='$1']",
