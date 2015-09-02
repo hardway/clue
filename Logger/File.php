@@ -18,7 +18,9 @@ class File extends Syslog{
         }
 
         $this->file=fopen($path, 'a');
-        if(!$this->file) panic("Can't open log file: $path");
+        if(!$this->file){
+            error_log("Can't open log file: $path");
+        }
     }
 
     function __destruct(){
@@ -54,6 +56,8 @@ class File extends Syslog{
     }
 
     function write($data){
+        if(!$this->file) return parent::write($data);
+
         fputs($this->file, $this->format($data));
     }
 }
