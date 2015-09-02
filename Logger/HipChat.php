@@ -41,7 +41,7 @@ class HipChat extends Syslog{
             'notify' => true,
             'name'=>$this->name,
             'room_id'=>$this->room,
-            'message' => implode("\n", $this->format_text($data)),
+            'message' => implode("\n", $this->format($data)),
             'message_format' => 'text',
             'color'=>self::$COLOR_CODES[$data['level']],
         ]);

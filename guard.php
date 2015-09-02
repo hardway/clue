@@ -1,8 +1,6 @@
 <?php
 namespace Clue;
 
-// TODO: 使用Logger来保存到db/email/file/web...
-
 class Guard{
 	# Converts php error level to Guard log level
 	static $PHP_ERROR_MAP=array(
@@ -33,265 +31,236 @@ class Guard{
 		"DEBUG"=>5
 	);
 
-	public $display_level;	# Display in webpage
-	public $stop_level;	# Stop program execution when overlimit
+	protected $errors=array();
+	protected $channels=[];
 
-	public $log_level;		# Log it when overlimit
-	public $email_level;	# Email it when overlimit
-
-	public $log_file;
-
-	public $errors=array();
-
-	public function __construct($option=array()){
-		$config=array(
-			'log_level'=>"WARNING",
-			'email_level'=>'ERROR',
+	public function __construct(array $option=array()){
+		$default_config=array(
+			'log_level'=>"WARNING",		# File Log threshold
+			'email_level'=>'ERROR',		# Email log threshold
 			'display_level'=>'ERROR',
-			'stop_level'=>0,	// Non Stoppping on error
 
 			'mail_to'=>null,
-			'mail_from'=>null,
 
 			'log_file'=>APP_ROOT."/log/".date("Ymd").".log"
 		);
 
-		if(is_array($option)){
-			$config=array_merge($config, $option);
+		// TODO: config兼容性转换
+
+		$config=array_merge($default_config, $option);
+
+		$this->channels=[];
+		$this->channels['display']=[
+			'logger'=>new \Clue\Logger\HTML,
+			'environment'=>true,
+			'level'=>$this->log_level($config['display_level']),
+			'errors'=>[],
+		];
+
+		if($config['mail_to']){
+			$this->channels['email']=[
+				'logger'=>new \Clue\Logger\Email($config['mail_to']),
+				'format'=>'text',
+				'environment'=>true,
+				'level'=>$this->log_level($config['email_level']),
+				'errors'=>[],
+			];
 		}
 
-		$this->log_level=is_numeric($config['log_level']) ? $config['log_level'] : self::$ERROR_LEVEL[$config['log_level']];
-		$this->email_level=is_numeric($config['email_level']) ? $config['email_level'] : self::$ERROR_LEVEL[$config['email_level']];
-		$this->display_level=is_numeric($config['display_level']) ? $config['display_level'] : self::$ERROR_LEVEL[$config['display_level']];
-		$this->stop_level=is_numeric($config['stop_level']) ? $config['stop_level'] : self::$ERROR_LEVEL[$config['stop_level']];
+		if($config['log_file']){
+			$this->channels['file']=[
+				'logger'=>new \Clue\Logger\File($config['log_file']),
+				'format'=>'text',
+				'environment'=>true,
+				'level'=>$this->log_level($config['log_level']),
+				'errors'=>[],
+			];
+		}
 
-		$this->mail_to=$config['mail_to'];
-		$this->mail_from=$config['mail_from'];
+		// 只需要error report能够监控到的错误级别
+		$this->error_threshold=max(array_map(function($c){return $c['level'];}, $this->channels));
 
-		$this->log_file=$config['log_file'];
-
-		$error_threshold=max($this->log_level, $this->email_level, $this->display_level, $this->stop_level);
 		$error_reporting=0;
-		foreach(self::$PHP_ERROR_MAP as $lvl=>$_){
-			if($lvl <= $error_threshold) $error_reporting=$error_reporting | $lvl;
+		foreach(self::$PHP_ERROR_MAP as $lvl=>$err){
+			if(self::$ERROR_LEVEL[$err] <= $this->error_threshold) $error_reporting=$error_reporting | $lvl;
 		}
+
 		error_reporting($error_reporting);
 
+		// 开始监控
         set_exception_handler(array($this, "on_exception"));
         set_error_handler(array($this, "on_error"));
+
+        // 统一输出
         register_shutdown_function(array($this, "summarize"));
 	}
 
 	public function summarize(){
+		// 最后的机会捕捉到fatal error
 		$fatal_error=error_get_last();
 		if(is_array($fatal_error)){
-			$this->errors[]=array(
-				'level'=>self::$ERROR_LEVEL[self::$PHP_ERROR_MAP[$fatal_error['type']]],
-				'type'=>self::$PHP_ERROR_MAP[$fatal_error['type']],
-				'message'=>$fatal_error['message'],
-				'trace'=>array(array('file'=>$fatal_error['file'], 'line'=>$fatal_error['line'])),
-			);
-		}
-
-		$to_log=array();
-		$to_display=array();
-		$to_email=array();
-
-		foreach($this->errors as $err){
-			if($err['level'] <= $this->display_level){
-				$to_display[]=$this->error_html($err);
-				$show_environment_html=true;
-			}
-
-			if($err['level'] <= $this->log_level){
-				$to_log[]=$this->error_text($err);
-				$show_environment_text=true;
-			}
-
-			if($err['level'] <= $this->email_level){
-				$to_email[]=$this->error_text($err);
-				$show_environment_text=true;
+			$level=self::$ERROR_LEVEL[self::$PHP_ERROR_MAP[$fatal_error['type']]];
+			if($level<=$this->error_threshold){
+				$this->errors[]=array(
+					'level'=>$level,
+					'type'=>self::$PHP_ERROR_MAP[$fatal_error['type']],
+					'message'=>$fatal_error['message'],
+					'trace'=>array(array('file'=>$fatal_error['file'], 'line'=>$fatal_error['line'])),
+				);
 			}
 		}
 
-		// 包含全部Session/Get/Post/Cookie信息
-		if($show_environment_html || $show_environment_text){
-			$env=$this->filter_context_vars($GLOBALS);
-			if($show_environment_text){
-				$env_text="Environment: \n"."-------------\n".print_r($env, true);
+		$context=[
+			'_SERVER'=>$_SERVER,
+			'_GET'=>$_GET,
+			'_POST'=>$_POST,
+			'_COOKIE'=>$_COOKIE,
+			'_FILES'=>$_FILES,
+			'_SESSION'=>$_SESSION,
+		];
+		$context=$this->filter_context($context);
+		$resource=@$context['_SERVER']['REQUEST_URI'] ?: $context['_SERVER']['SCRIPT_FILENAME'];
+
+		// 按照各个channel的threshold进行分拣和输出
+		foreach($this->channels as $type=>$channel){
+			$errors=array_filter($this->errors, function($err) use($channel){
+				return $err['level'] <= $channel['level'];
+			});
+
+			if(empty($errors)) continue;
+
+			$output=[
+				'message'=>count($errors)." error occured recently at \"$resource\"",
+				'timestamp'=>date("Y-m-d H:i:s"),
+			];
+
+			if(isset($channel['format'])){
+				$diagnose=[];
+
+				foreach($errors as $err){
+					// TODO: format_error()
+					$text=[];
+					$text[]=$err['type']. ": ". $err['message'];
+					$text[]="";
+					$text[]="Backtracing:";
+					$text[]=$channel['logger']->format_backtrace($err['backtrace']);
+					$text[]="";
+					$diagnose[]=implode("\n", $text);
+				}
+
+				$output['diagnose']=implode("\n", $diagnose);
 			}
-			if($show_environment_html){
-				$env_html ="<div style='padding:1em; background:#666; color:#FFF; cursor:pointer;' onclick='clue_guard_toggle(\"clue-guard-ul-env\");'>Environment</div>";
-				$env_html.="<ul id='clue-guard-ul-env' style='background:#FFF; border:1px solid #666; margin:0; padding:1em; display:none;'>";
-				$env_html.=$this->var_to_html($env);
-				$env_html.="</ul>";
+			else{
+				$output['diagnose']=$errors;
 			}
+
+			$output['context']=$context;
+
+			$channel['logger']->write($output);
 		}
 
-		if(count($to_display)>0){
-			echo "
-				<script>
-					function clue_guard_toggle(id){
-						var el = document.getElementById(id);
-						el.style.display = el.style.display === 'none' ? '' : 'none';
-					}
-				</script>
-			";
-			echo "<div style='font:1em monospace;'>".implode("", $to_display).$env_html."</div>";
-		}
-
-		if(!empty($this->log_file) && count($to_log)>0){
-			$f=fopen($this->log_file, "a");
-			if($f){
-				$r=fwrite($f, implode("\n\n", $to_log)."\n$env_text");
-				fclose($f);
-			}
-		}
-		if(!empty($this->mail_to) && count($to_email)>0){
-			global $app;
-			$m=new Mail;
-			$m->send(
-				count($to_email)." error occured recently.",
-				"<pre>".implode("\n\n", $to_email)."\n$env_text"."</pre>",
-				$this->mail_to, $this->mail_from
-			);
-		}
-
-		$this->errors=array();
+		// 清理
+		$this->errors=[];
 	}
 
-	function log($message, $level='INFO'){
-		$trace=debug_backtrace();
-		if(isset($trace[0])){
-			$trace=$trace[0]['file'].":".$trace[0]['line'];
-		}
-
-		if(!empty($this->log_file) && $f=fopen($this->log_file, 'a')){
-			$message=is_string($message) ? $message : print_r($message, true);
-			fwrite($f, sprintf("%s\t%s\t%s\n\t\t%s\n", date("Y-m-d H:i:s.u"), $level, $trace, $message));
-			fclose($f);
-		}
+	function log(){
+		// TODO
 	}
 
+	/**
+	 * 直接在HTML输出中显示内容
+	 */
 	function debug($message){
-		echo "<div style='padding: 5px; border-bottom: 1px solid #CCC; position: relative'>";
 		$trace=debug_backtrace();
-		if(isset($trace[0])){
-			echo "<div style='color: #999; position: absolute; right: 5px; top: 3px;'>".$trace[0]['file'].":".$trace[0]['line']."</div>";
-		}
-		echo "<div>";
+		$t=$trace[0];
+		$location=isset($t['file']) ? $t['file'].":".$t['line'] : $item['t']['class'].$item['t']['type'].$item['t']['function'].'('.')';
 
-		echo $message;
+		$logger=$this->channels['display']['logger'];
 
-		$args=func_get_args();
-		for($i=1; $i<count($args); $i++){
-			echo $this->var_to_html($args[$i]);
-		}
-		echo "</div>";
-		echo "<div class='clear'></div></div>";
+		$item=['type'=>"DEBUG", 'message'=>$logger->format_var($message), 'location'=>$location];
+		$logger->write_log($item);
+
+		return;
 	}
 
-	function indent($text){
+	function trace($message){
+		$item=['type'=>"DEBUG", 'message'=>$message, 'backtrace'=>debug_backtrace()];
+		$this->channels['display']['logger']->write_log($item);
+		return;
+	}
+
+	/**
+	 * 直接向开发人员发送邮件报告
+	 */
+	function developer($subject, $body){
+		// TODO
+	}
+
+	/**
+	 * 记录统计数据
+	 */
+	function metric($message, $data){
+		// TODO
+	}
+
+	private function log_level($level){
+		return is_numeric($level) ? $level : self::$ERROR_LEVEL[strtoupper($level)];
+	}
+
+	private function indent($text){
 		return implode("\n", array_map(function($line){ return "    ".$line; }, explode("\n", $text)));
 	}
 
-	# With folding javascript
-	function var_to_html($var, $ttl=4){
+	// 包含全部Session/Get/Post/Cookie信息
+	private function filter_context($context){
+		if(empty($context['_GET'])) unset($context['_GET']);
+		if(empty($context['_POST'])) unset($context['_POST']);
+		if(empty($context['_COOKIE'])) unset($context['_COOKIE']);
+		if(empty($context['_SERVER'])) unset($context['_SERVER']);
+		if(empty($context['_FILES'])) unset($context['_FILES']);
+		if(empty($context['_SESSION'])) unset($context['_SESSION']);
+		unset($context['GLOBALS']);
+
+		return $context;
+	}
+
+	static function var_to_text($var, $ttl=4){
 		if($ttl==0) return "...";
 
 		$text="";
 
 		if($var instanceof Closure) $var="Closure Function";
-		elseif(is_object($var)) $var=(array)$var;
 
-		if(is_array($var)){
+		if(is_array($var) || is_object($var)){
+			$width=max(array_map('strlen', array_keys($var)));
+
+			$text="";
 			foreach($var as $k=>$v){
-				$text.="$k = ";
-				$text.="<ul>".$this->var_to_html($v, $ttl-1)."</ul>";
+				$text.=sprintf("%-{$width}s = ",$k);
+				$text.=self::var_to_text($v, $ttl-1);
+				$text.="\n";
 			}
+			$text=$text ? "\n".self::indent(trim($text, "\n"))."\n" : " ";
+			$text=(is_array($var)?"[":get_class($var).": {")."$text".(is_array($var)?"]":"}")."\n";
 		}
 		else{
-			$text.="<li style='list-style: none;'>".gettype($var);
+			$text.=gettype($var);
 			if(is_string($var))
-				$text.="(".strlen($var)."): <span style='color: #911;'>\"".$var."\"</span></li>";
-			else if(is_numeric($var)){
-				$text.=": <span style='color: #191; font-weight: bold;'>".$var."</span></li>";
+				$text.="(".strlen($var)."): \"".$var."\"";
+			elseif(is_bool($var)){
+				$text.=": ".($var ? "true" : "false");
 			}
 			else{
-				$text.=": $var</li>";
+				$text.=": $var";
 			}
 		}
 
 		return $text;
 	}
 
-	function error_text($err){
-		$text=array();
-		$text[]=$err['type']. ": ". $err['message'];
-		$text[]="";
-
-		$text[]="Backtracing (last call first):";
-		$text[]="------------------------------";
-		if(is_array($err['trace'])) foreach($err['trace'] as $t){
-			$text[]="{$t['class']}{$t['type']}{$t['function']}()" . ((isset($t['file']) || isset($t['line'])) ? "\t({$t['file']}:{$t['line']})":"");
-
-			if(is_array($t['args'])) foreach($t['args'] as $idx=>$a){
-				$text[]=$this->indent(($idx+1).": ".print_r($a, true));
-			}
-		}
-		$text[]="";
-
-		return implode("\r\n", $text);
-	}
-
-	function error_html($err){
-		if(isset($err['trace'][0]['file']))
-			$error_position=$err['trace'][0]['file'].':'.$err['trace'][0]['line'];
-		else
-			$error_position=$err['trace'][0]['class'].$err['trace'][0]['type'].$err['trace'][0]['function'].'('.')';
-
-		$uid="clue-guard-err-".uniqid();
-		$html="
-			<div style='padding:1em; background:#911; color:#fff; border-bottom:1px solid #CCC; cursor:pointer;' onclick='clue_guard_toggle(\"$uid\");'>
-				<div style='float:right;'>$error_position</div>
-				<strong>{$err['type']}</strong>: {$err['message']}
-			</div>
-		";
-
-		$html.="<ul id='$uid' style='background:#EEE; margin:0; padding:1em; display:none;'><a name='$uid'></a>";
-		if(is_array($err['trace'])) foreach($err['trace'] as $t){
-			$uid="clue-guard-arg-".uniqid();
-			$html.="<li style='list-style:none; cursor:pointer;' onclick='clue_guard_toggle(\"$uid\")'>";
-
-			if(isset($t['file']) || isset($t['line'])) $html.="<strong>{$t['file']}:{$t['line']}</strong> &gt;&gt; ";
-			$html.="{$t['class']}{$t['type']}{$t['function']}";
-			if(is_array($t['args'])) $html.="(".count($t['args'])." args)";
-
-			if(is_array($t['args'])){
-				$html.="<table id='$uid' border='0' cellspacing='0' cellpadding='3' style='display:none; margin-left:5em; border-left:1px dashed #CCC;'>";
-				foreach($t['args'] as $idx=>$a){
-					$html.="<tr><td valign='top'><b>".($idx+1)."</b></td><td valign='top'>".$this->var_to_html($a)."</td></tr>";
-				}
-				$html.="</table>";
-			}
-			$html.="</li>";
-		}
-		$html.="</ul>";
-
-		return $html;
-	}
-
-	function filter_context_vars($vars){
-		# Filter Context
-		$context=array();
-		if(!empty($vars['_GET'])) $context['_GET']=$vars['_GET'];
-		if(!empty($vars['_POST'])) $context['_POST']=$vars['_POST'];
-		if(!empty($vars['_COOKIE'])) $context['_COOKIE']=$vars['_COOKIE'];
-		if(!empty($vars['_SERVER'])) $context['_SERVER']=$vars['_SERVER'];
-
-		return $context;
-	}
-
+	/**
+	 * Exception作为E_ERROR级别的错误
+	 */
 	function on_exception($e){
 		$trace=$e->getTrace();
 		array_unshift($trace, ["file"=>$e->getFile(), 'line'=>$e->getLine()]);
@@ -300,12 +269,9 @@ class Guard{
 
 	function on_error($errno, $errstr, $errfile=null, $errline=null, array $errcontext=null, array $errtrace=array()){
 		// if error has been supressed with an @
-	    if (error_reporting() == 0) return;
+	    if ((error_reporting() & $errno) == 0) return;
 
 		$errlevel=self::$ERROR_LEVEL[self::$PHP_ERROR_MAP[$errno]];
-
-		// Skip minus errors
-		if($errlevel > max($this->display_level, $this->stop_level, $this->log_level, $this->email_level)) return;
 
 		if(empty($errtrace)) $errtrace=debug_backtrace();
 		# Unset $errcontext for this function ($GLOBALS is too big to display)
@@ -314,22 +280,13 @@ class Guard{
 			return !(!isset($t['file']) && isset($t['class']) && $t['class']==__CLASS__ && in_array($t['function'], ['on_error', 'on_exception']));
 		}));
 
-		# Filter Context
-		$context=array();
-		if(!empty($errcontext['_GET'])) $context['_GET']=$errcontext['_GET'];
-		if(!empty($errcontext['_POST'])) $context['_POST']=$errcontext['_POST'];
-		if(!empty($errcontext['_COOKIE'])) $context['_COOKIE']=$errcontext['_COOKIE'];
-		if(!empty($errcontext['_SERVER'])) $context['_SERVER']=$errcontext['_SERVER'];
-
 		$this->errors[]=array(
 			'level'=>$errlevel,
 			'type'=>self::$PHP_ERROR_MAP[$errno],
 			'message'=>$errstr,
-			'trace'=>$errtrace,
-			'context'=>$context
+			'backtrace'=>$errtrace,
+			'context'=>$this->filter_context($errcontext)
 		);
-
-		if($errlevel <= $this->stop_level) exit("ERROR STOP");
 
 		return true;
 	}

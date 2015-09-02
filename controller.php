@@ -4,6 +4,7 @@ namespace Clue{
 		public $controller;
 		public $action;
 		public $view;
+		protected $app;
 
 		public $layout="default";
 
@@ -14,6 +15,9 @@ namespace Clue{
 		}
 
 		function __construct($controller=null, $action=null){
+			global $app;
+
+			$this->app=$app;
 			$this->controller=$controller;
 			$this->action=$action;
 

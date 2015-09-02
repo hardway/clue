@@ -104,29 +104,22 @@ trait Logger{
         $data['timestamp']=$timestamp;
 
         // 附加Backtrace
-        if(isset($context['backtrace'])){
-            $backtrace=self::_get_backtrace($context['backtrace']);
-            $data['backtrace']=$backtrace;
-        }
+        $data['backtrace']=self::_get_backtrace(2);
 
         // 附加内存统计
-        if(isset($context['memory'])){
-            $data['memory']=[
-                'usage'=>memory_get_usage(true),
-                'peak'=>memory_get_peak_usage(true)
-            ];
-        }
+        $data['memory']=[
+            'usage'=>memory_get_usage(true),
+            'peak'=>memory_get_peak_usage(true)
+        ];
 
         // 附加HTTP信息
-        if(isset($context['http'])){
-            $data['http']=[
-                'url'=>@$_SERVER['REQUEST_URI'],
-                'method'=>@$_SERVER['REQUEST_METHOD'],
-                'ip'=>@$_SERVER['REMOTE_ADDR'],
-                'browser'=>@$_SERVER['HTTP_USER_AGENT'],
-                'referrer'=>@$_SERVER['HTTP_REFERER'],
-            ];
-        }
+        $data['context']=[
+            'url'=>@$_SERVER['REQUEST_URI'],
+            'method'=>@$_SERVER['REQUEST_METHOD'],
+            'ip'=>@$_SERVER['REMOTE_ADDR'],
+            'browser'=>@$_SERVER['HTTP_USER_AGENT'],
+            'referrer'=>@$_SERVER['HTTP_REFERER'],
+        ];
 
         self::$log_handler->write($data);
     }
@@ -138,6 +131,8 @@ trait Logger{
         $trace=debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS);
 
         $trace=is_numeric($depth) ? array_slice($trace, 2, $depth) : array_slice($trace, 2);
+        return $trace;
+
         return implode("\n\t", array_map(function($t){
             $pos=$t['class'].$t['type'].$t['function']."()";
             if(isset($t['file'])){

@@ -39,6 +39,7 @@ class Test_Mail_Manual extends PHPUnit_Framework_TestCase{
     }
 
     function test_file_log(){
+        exec("rm /tmp/test.log");
         $this->use_logger("/tmp/test.log");
         echo "File Log Content: \n";
         echo file_get_contents("/tmp/test.log");
@@ -49,15 +50,15 @@ class Test_Mail_Manual extends PHPUnit_Framework_TestCase{
         // $this->use_logger(new \Clue\Logger\DB(['type'=>'mysql', 'host'=>'localhost', 'db'=>'test', 'username'=>'root'], 'log'));
     }
 
-    // function test_gelf(){
-    //     // $this->markTestSkipped();
+    function test_gelf(){
+        $this->markTestSkipped();
 
-    //     $this->use_logger(new Clue\Logger\GELF('devops.sign4x.com'));
-    // }
+        $this->use_logger(new Clue\Logger\GELF('devops.sign4x.com'));
+    }
 
-    // function test_email_log(){
-    //     $this->markTestSkipped();
+    function test_email_log(){
+        $this->markTestSkipped();
 
-    //     $this->use_logger(new \Clue\Logger\EMail('hou.danwu@qq.com'));
-    // }
+        $this->use_logger(new \Clue\Logger\EMail('hou.danwu@qq.com'));
+    }
 }

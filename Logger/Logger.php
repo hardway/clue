@@ -10,4 +10,8 @@ Interface Logger{
 	 * caller
 	 */
     function write($data);
+
+    function format($data);
+    function format_backtrace($trace);
+    function format_var($var);
 }

@@ -1,7 +1,7 @@
 <?php
 namespace Clue\Logger;
 
-class GELF implements Logger{
+class GELF extends syslog{
     static $PSRLEVELS = array(
         'emergency'=>0,
         'alert'=>1,
