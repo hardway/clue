@@ -154,8 +154,13 @@ namespace Clue{
             $zip->close();
         }
 
-	    # 递归删除文件夹
-	    static function remove_directory($dir){
+	    /**
+	     * 递归删除文件夹
+	     *
+	     * @param $dir
+	     * @param $remove_base 是否删除原始根目录（$dir）
+	     */
+	    static function remove_directory($dir, $remove_base=true){
 	    	if(!is_dir($dir)) return false;
 			$iter = new \RecursiveIteratorIterator(new \RecursiveDirectoryIterator($dir), \RecursiveIteratorIterator::CHILD_FIRST);
 
@@ -169,9 +174,15 @@ namespace Clue{
 				}
 			}
 
-			rmdir($dir);
+			if($remove_base){
+				rmdir($dir);
+			}
 
 			return true;
+	    }
+
+	    static function clear_directory($dir){
+	    	self::remove_directory($dir, false);
 	    }
 
 	    # 递归复制文件夹
