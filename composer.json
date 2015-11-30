@@ -1,0 +1,8 @@
+{
+    "name": "sign4x/clue",
+    "version": "0.2.106",
+    "description": "Quick way to start project? I got clue.",
+    "require": {
+		"php": ">=5.4.0"
+    }
+}
