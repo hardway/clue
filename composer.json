@@ -1,11 +1,11 @@
 {
-    "name": "sign4x/clue",
+    "name": "clue/clue",
     "version": "0.2",
     "description": "Quick way to start project? I got clue.",
     "require": {
 		"php": ">=5.4.0"
     },
     "autoload": {
-        "psr-4": {"Clue\\": "./"}
+        "psr-4": {"Clue\\": ""}
     }
 }
