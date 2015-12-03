@@ -170,6 +170,10 @@ Commands Available:
             echo "SQL Script generated successfully.";
         }
 
+        function gen_schema(){
+            // TODO: 从数据库将结构推倒出来，方便gen_model自动生成model
+        }
+
         function gen_model($name="*"){
             $schema=include "db/schema.php";
             if(!is_array($schema)) die("Schema file not found or invalid.");

@@ -3,7 +3,7 @@
     if(!CLI && !defined('APP_BASE')) define('APP_BASE', '/'.trim(dirname($_SERVER['SCRIPT_NAME']), '/'));
     if(!CLI && !defined('APP_URL')){
         $app_scheme=isset($_SERVER['REQUEST_SCHEME']) ? $_SERVER['REQUEST_SCHEME'] : "http";
-        define('APP_URL', $app_scheme.'://'.$_SERVER['SERVER_NAME'].APP_BASE);
+        define('APP_URL', trim($app_scheme.'://'.$_SERVER['SERVER_NAME'].APP_BASE, '/'));
     }
 
     // 全局函数
@@ -16,9 +16,9 @@
     // TODO: move these to url.php ?
     function url_for($controller, $action='index', $params=array()){
         global $app;
-        $url=$app['router']->reform($controller, $action, $params);
+        $url=APP_URL.$app['router']->reform($controller, $action, $params);
 
-        return APP_URL.$url;
+        return $url;
     }
 
     function url_for_ssl($controller, $action='index', $params=array()){
