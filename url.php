@@ -18,9 +18,9 @@
     // TODO: move these to url.php ?
     function url_for($controller, $action='index', $params=array()){
         global $app;
-        $url=$app['router']->reform($controller, $action, $params);
+        $url=APP_URL.$app['router']->reform($controller, $action, $params);
 
-        return APP_URL.$url;
+        return $url;
     }
 
     function url_for_ssl($controller, $action='index', $params=array()){

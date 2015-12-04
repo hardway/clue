@@ -149,6 +149,20 @@
                 throw new \Exception("Call to undefined static method: $name");
         }
 
+        static private function _translate_order_by($orderby){
+        	if(preg_match('/^order by (.+)/i', $orderby, $m)){
+        		$sorts=array_filter(array_map('trim', explode(",", $m[1])), "strlen");
+        		$sorts=array_map(function($f){
+					if(preg_match('/^([+-])(.+)$/', $f, $m)){
+						$f=$m[2].' '.($m[1]=='-' ? 'desc' : 'asc');
+					}
+					return $f;
+        		}, $sorts);
+
+        		return "order by ".implode(", ", $sorts);
+        	}
+        }
+
         static function _get_where_clause($condition, $range='all'){
             $model=self::model();
             $sql="";
@@ -173,8 +187,8 @@
                         }
                     }
                     else{
-                        if(strpos($val, 'order by')===0)
-                            $orderby=$val;
+                        if(stripos($val, 'order by')===0)
+                            $orderby=self::_translate_order_by($val);
                         else
                             $list[]=$val;
                     }
