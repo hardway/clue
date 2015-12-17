@@ -1,5 +1,6 @@
 <?php
 // TODO: 允许生成bash complete配置文件
+// TODO: 允许设置参数为flag，不再支持waiting_option，但是支持-vvvv的特性
 // http://fahdshariff.blogspot.sg/2011/04/writing-your-own-bash-completion.html
 
 namespace Clue\CLI{
@@ -240,12 +241,12 @@ namespace Clue\CLI{
 			return @$this->global_options[$variable]['value'];
 		}
 
-		function _set_option($name, $value, $scope){
+		function _set_option(&$options, $name, $value, $scope){
 			if($scope=='global'){
 				$this->set_global($name, $value);
 			}
 			else{
-				$options[trim($k, '- ')]=$v;
+				$options[trim($name, '- ')]=$value;
 			}
 		}
 
@@ -325,15 +326,14 @@ namespace Clue\CLI{
 					list($k, $scope)=$matches[0];
 					if($waiting_option) $waiting_option=$matches[0];
 
-					$this->_set_option($k, $v, $scope);
+					$this->_set_option($options, $k, $v, $scope);
 				}
-				else{
-					if($waiting_option){
-						// 这不是param，而是之前option的value
-						list($k, $scope)=$waiting_option;
-						$this->_set_option($k, $a, $scope);
-						$waiting_option=null;
-					}
+				elseif($waiting_option){
+					// 这不是param，而是之前option的value
+					list($k, $scope)=$waiting_option;
+					$this->_set_option($options, $k, $a, $scope);
+					$waiting_option=null;
+				}else{
 					array_push($params, $a);
 				}
 			}
