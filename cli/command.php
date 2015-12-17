@@ -191,9 +191,17 @@ namespace Clue\CLI{
 			$matches=[];
 			$opt=trim($opt, "-");
 
+			// 检查command有关的option
 			foreach($options as $o=>$_){
 				if(strpos($o, $opt)===0){
-					$matches[]=$o;
+					$matches[]=[$o, 'local'];
+				}
+			}
+
+			// 检查global option
+			foreach($this->global_options as $o=>$_){
+				if(strpos($o, $opt)===0){
+					$matches[]=[$o, 'global'];
 				}
 			}
 
@@ -230,6 +238,15 @@ namespace Clue\CLI{
 			}
 
 			return @$this->global_options[$variable]['value'];
+		}
+
+		function _set_option($name, $value, $scope){
+			if($scope=='global'){
+				$this->set_global($name, $value);
+			}
+			else{
+				$options[trim($k, '- ')]=$v;
+			}
 		}
 
 		function handle($argv){
@@ -277,45 +294,46 @@ namespace Clue\CLI{
 			$options=[];
 
 			// 解析options
+			$waiting_option=null;
 			foreach($argv as $a){
 				if(strpos($a, '-')===0){
 					if(strpos($a, '=')>0){
 						list($k, $v)=explode("=", $a, 2);
+						$waiting_option=false;
 					}
 					else{
 						// 形如 --debug ，一定是boolean
 						$k=$a;
 						$v=1;
+
+						// 也可能值在后面
+						$waiting_option=$k;
 					}
 
 					$matches=$this->_best_match_option($help['options'], $k);
 
 					if(count($matches)==0){
-						// 没有找到subcommand的option
-						// 继续检查global option
-						$found_global=false;
-						foreach($this->global_options as $gk=>$_){
-							if("--$gk"==$k){
-								$this->set_global($gk, $v);
-								$found_global=true;
-								break;
-							}
-						}
-						if($found_global) continue;
-
 						// 不存在的option，提示出错
 						printf("\nUnknown option: $a\n");
 						return $this->help_command($func);
 					}
-					if(count($matches)>1){
+					elseif(count($matches)>1){
 						printf("Ambigous options for: $a\n");
 						return $this->help_command($func);
 					}
 
-					$k=$matches[0];
-					$options[trim($k, '- ')]=$v;
+					list($k, $scope)=$matches[0];
+					if($waiting_option) $waiting_option=$matches[0];
+
+					$this->_set_option($k, $v, $scope);
 				}
 				else{
+					if($waiting_option){
+						// 这不是param，而是之前option的value
+						list($k, $scope)=$waiting_option;
+						$this->_set_option($k, $a, $scope);
+						$waiting_option=null;
+					}
 					array_push($params, $a);
 				}
 			}
