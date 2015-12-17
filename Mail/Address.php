@@ -17,6 +17,10 @@ class Address{
     }
 
     function __toString(){
-        return trim("$this->name <$this->email>");
+    	if(empty($this->name)){
+    		return $this->email;
+    	}
+    	else
+        	return trim("\"$this->name\"<$this->email>");
     }
 }
