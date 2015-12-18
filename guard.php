@@ -41,6 +41,11 @@ class Guard{
 			'display_level'=>'ERROR',
 
 			'mail_to'=>null,
+			'mail_from'=>null,
+			'mail_host'=>'127.0.0.1',
+			'mail_port'=>25,
+			'mail_username'=>null,
+			'mail_password'=>null,
 
 			'log_file'=>APP_ROOT."/log/".date("Ymd").".log"
 		);
@@ -58,8 +63,11 @@ class Guard{
 		];
 
 		if($config['mail_to']){
+			$mail_from=$config['mail_from'] ? new \Clue\Mail\Address($config['mail_from']) : null;
+			$mailer=new \Clue\Mail\Sender($config['mail_host'], $config['mail_port'], $config['mail_username'], $config['mail_password'], $mail_from);
+
 			$this->channels['email']=[
-				'logger'=>new \Clue\Logger\Email($config['mail_to']),
+				'logger'=>new \Clue\Logger\Email($config['mail_to'], $mailer),
 				'format'=>'text',
 				'environment'=>true,
 				'level'=>$this->log_level($config['email_level']),
