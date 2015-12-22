@@ -7,6 +7,7 @@ namespace Clue{
 		protected $app;
 
 		public $layout="default";
+		public $catch_exception=false;	// 设置为true将exception转到->error()并且->redirect_return()
 
 		static function find_controller($controller){
 			$controller=strtolower($controller);

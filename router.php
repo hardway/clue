@@ -159,7 +159,22 @@ namespace Clue{
 			$obj->action=$action;
 			if(@$layout) $obj->layout=$layout;
 
-			return call_user_func_array(array($obj, $obj->action), $callArgs);
+            // 执行Controll::Action(Params)
+            $ret=null;
+            try{
+            	$ret=call_user_func_array(array($obj, $obj->action), $callArgs);
+            }
+            catch(\Exception $e){
+            	if($obj->catch_exception){
+            		$obj->error($e->getMessage());
+            		$obj->redirect_return();
+            	}
+            	else{
+            		throw $e;
+            	}
+            }
+
+			return $ret;
 		}
 
 		function reform($controller, $action, $params=array()){

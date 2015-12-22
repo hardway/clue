@@ -205,6 +205,7 @@ namespace Clue{
             }
 
             $this->fire_event("before_route");
+            // 执行Controll::Action(Params)
             $ret=$this['router']->route($this->controller, $this->action, $this->params);
             $this->fire_event("after_route", $ret);
 
