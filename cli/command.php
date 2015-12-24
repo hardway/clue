@@ -299,7 +299,7 @@ namespace Clue\CLI{
 			foreach($argv as $a){
 				if(strpos($a, '-')===0){
 					if(strpos($a, '=')>0){
-						list($k, $v)=explode("=", $a, 2);
+						@list($k, $v)=explode("=", $a, 2);
 						$waiting_option=false;
 					}
 					else{
@@ -323,14 +323,14 @@ namespace Clue\CLI{
 						return $this->help_command($func);
 					}
 
-					list($k, $scope)=$matches[0];
+					@list($k, $scope)=$matches[0];
 					if($waiting_option) $waiting_option=$matches[0];
 
 					$this->_set_option($options, $k, $v, $scope);
 				}
 				elseif($waiting_option){
 					// 这不是param，而是之前option的value
-					list($k, $scope)=$waiting_option;
+					@list($k, $scope)=$waiting_option;
 					$this->_set_option($options, $k, $a, $scope);
 					$waiting_option=null;
 				}else{

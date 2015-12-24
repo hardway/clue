@@ -32,22 +32,22 @@ class HTML extends Syslog{
 			unset($item['context']);
 		}
 
-		$uid="clue-log-".uniqid();
+		$uid=uniqid();
 		$html="
-			<div class='clue-log clue-log-".strtolower($item['type'])." ".(strlen($diag)>0 ? 'clue-log-more' : '')."'>
-				<div class='clue-log-subject' onclick='clue_log_toggle(\"$uid\");'>
+			<div id='clue-log-$uid' class='clue-log clue-log-".strtolower($item['type'])." ".(strlen($diag)>0 ? 'clue-log-more' : '')."'>
+				<div class='clue-log-subject' onclick='clue_log_toggle(\"clue-log-diagnose-$uid\");'>
 					<div style='float:right;'>$error_position</div>
 					<strong>{$item['type']}</strong>: <i>{$item['message']}</i>
 				</div>
 		";
 
 		if($diag){
-			$html.="<div class='clue-log-diagnose' style='display:none;' id='$uid'>";
+			$html.="<div class='clue-log-diagnose' style='display:none;' id='clue-log-diagnose-$uid'>";
 			$html.=$diag;
 			$html.="</div>";
 		}
 
-		$html.="</div>";
+		$html.="</div><script>clue_log_visible('clue-log-$uid');</script>";
 
 		echo $html;
 	}
@@ -100,6 +100,11 @@ class HTML extends Syslog{
 						if(!el) return;
 						el.style.display = el.style.display === 'none' ? '' : 'none';
 					}
+					function clue_log_visible(id){
+						var el = document.getElementById(id);
+						if(!el) return;
+						document.body.appendChild(el);
+					}
 				</script>
 			";
 			$css_script_written=true;
@@ -116,7 +121,7 @@ class HTML extends Syslog{
 		}
 		elseif(isset($data['diagnose'])) foreach($data['diagnose'] as $err){
 			$err['context']=$data['context'];
-			echo $this->write_log($err);
+			$this->write_log($err);
 		}
 	}
 }
