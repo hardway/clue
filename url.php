@@ -3,7 +3,9 @@
     if(!CLI && !defined('APP_BASE')) define('APP_BASE', '/'.trim(dirname($_SERVER['SCRIPT_NAME']), '/'));
     if(!CLI && !defined('APP_URL')){
         $app_scheme=isset($_SERVER['REQUEST_SCHEME']) ? $_SERVER['REQUEST_SCHEME'] : "http";
-        define('APP_URL', trim($app_scheme.'://'.$_SERVER['SERVER_NAME'].APP_BASE, '/'));
+        $server_port=intval($_SERVER['SERVER_PORT']);
+        $app_port=in_array($server_port, array(80, 443)) ? '' : ':'.$_SERVER['SERVER_PORT'];
+        define('APP_URL', $app_scheme.'://'.$_SERVER['SERVER_NAME'].$app_port.APP_BASE);
     }
 
     // 全局函数
