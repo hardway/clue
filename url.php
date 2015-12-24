@@ -3,8 +3,12 @@
     if(!CLI && !defined('APP_BASE')) define('APP_BASE', '/'.trim(dirname($_SERVER['SCRIPT_NAME']), '/'));
     if(!CLI && !defined('APP_URL')){
         $app_scheme=isset($_SERVER['REQUEST_SCHEME']) ? $_SERVER['REQUEST_SCHEME'] : "http";
+
+        // 不使用常规端口的情况
         $server_port=intval($_SERVER['SERVER_PORT']);
-        $app_port=in_array($server_port, array(80, 443)) ? '' : ':'.$_SERVER['SERVER_PORT'];
+        $app_port=in_array($server_port, array(80, 443)) ? '' : ":$server_port";
+
+        // TODO: 对于非常规的情况，其实在config中自定义APP_URL省很多事
         define('APP_URL', $app_scheme.'://'.$_SERVER['SERVER_NAME'].$app_port.APP_BASE);
     }
 
@@ -15,12 +19,51 @@
         return str_replace(APP_ROOT, APP_URL, $path);
     }
 
-    // TODO: move these to url.php ?
+    function url_normalize($url){
+    	$u=parse_url($url);
+
+    	$url="";
+
+    	if(isset($u['scheme'])) $url.=$u['scheme'].'://';
+    	if(isset($u['user'])){
+    		$url.=$u['user'];
+    		if(isset($u['pass'])){
+    			$url.=":".$u['pass'];
+    		}
+    		$url.="@";
+    	}
+
+    	if(isset($u['host'])) $url.=$u['host'];
+    	if(isset($u['path'])){
+    		$is_root=$u['path'][0]=='/';
+
+    		$path=[];
+    		foreach(explode("/", $u['path']) as $f){
+    			if($f=='.' || empty($f)) continue;
+    			elseif($f=='..'){
+    				array_pop($path);
+    			}
+    			else{
+    				array_push($path, $f);
+    			}
+    		}
+    		$path=($is_root ? '/' : "") . implode("/", $path);
+
+    		$url.=$path;
+    	}
+
+    	if(isset($u['query'])) $url.="?".$u['query'];
+    	if(isset($u['fragment'])) $url.="#".$u['fragment'];
+
+    	return $url;
+    }
+
     function url_for($controller, $action='index', $params=array()){
         global $app;
+
         $url=APP_URL.$app['router']->reform($controller, $action, $params);
 
-        return $url;
+        return url_normalize($url);
     }
 
     function url_for_ssl($controller, $action='index', $params=array()){
@@ -31,7 +74,6 @@
         if($config['ssl']){
             $url=preg_replace('/^http:/', 'https:', $url);
         }
-
         return $url;
     }
 
