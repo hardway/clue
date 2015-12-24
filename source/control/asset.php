@@ -9,12 +9,11 @@ class Asset extends \Clue\Controller{
 
 		$files=@$this->app['config']['asset'][$name];
 		if(is_string($files)) $files=[$files];
-
 		// 支持的路径写法
 		// foo.js ==> SITE/asset/foo.js
 		// /resource/foo/bar.css ==> SITE/resource/foo/bar.css
 		$files=array_map(function($file){
-			if($file[0]!='/') $file="asset/$f";
+			if($file[0]!='/') $file="asset/$file";
 
 			return trim($file, '/');
 		}, $files);

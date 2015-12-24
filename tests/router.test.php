@@ -10,18 +10,27 @@
 		protected function setUp(){
 			// 清空环境变量，避免多个TestCase间相互干扰
 			@$_GET=[];
-
 			$this->app=new Clue\Application(['config'=>null]);
 
 			// 创建空的测试应用
-			mkdir(TEST_APP_ROOT.'/source/control', 0775, true);
-			file_put_contents(TEST_APP_ROOT.'/source/control/index.php', "DUMMY");
+			$this->_mock_controller("index");
 
 			Clue\add_site_path(TEST_APP_ROOT);
 		}
 
 		protected function tearDown(){
 			Clue\Tool::remove_directory(TEST_APP_ROOT);
+		}
+
+		protected function _mock_controller($controller){
+			$path=TEST_APP_ROOT.'/source/control/'.$controller.'.php';
+			@mkdir(dirname($path), 0775, true);
+			file_put_contents($path, "DUMMY");
+		}
+
+		protected function _remove_controller($controller){
+			$path=TEST_APP_ROOT.'/source/control/'.$controller.'.php';
+			unlink($path);
 		}
 
 		function test_alias(){
@@ -51,6 +60,36 @@
 			$this->assertEquals("index", $m['controller']);
 			$this->assertEquals("foo", $m['action']);
 			$this->assertEquals(['bar', 'all.js'], $m['params']);
+
+			$this->_mock_controller("manager/catalog/index");
+			$this->_mock_controller("manager/catalog");
+			$this->_mock_controller("manager");
+
+			$m=$rt->resolve("/manager/catalog?cid=100");
+			$this->assertEquals("manager/catalog/index", $m['controller']);
+			$this->assertEquals("index", $m['action']);
+			$this->assertEquals(['cid'=>100], $m['params']);
+
+			$this->_remove_controller("manager/catalog/index");
+
+			$m=$rt->resolve("/manager/catalog?cid=100");
+			$this->assertEquals("manager/catalog", $m['controller']);
+			$this->assertEquals("index", $m['action']);
+			$this->assertEquals(['cid'=>100], $m['params']);
+
+			$this->_remove_controller("manager/catalog");
+
+			$m=$rt->resolve("/manager/catalog?cid=100");
+			$this->assertEquals("manager", $m['controller']);
+			$this->assertEquals("catalog", $m['action']);
+			$this->assertEquals(['cid'=>100], $m['params']);
+
+			$this->_remove_controller("manager");
+
+			$m=$rt->resolve("/manager/catalog?cid=100");
+			$this->assertEquals("index", $m['controller']);
+			$this->assertEquals("manager", $m['action']);
+			$this->assertEquals(['catalog', 'cid'=>100], $m['params']);
 		}
 	}
 ?>

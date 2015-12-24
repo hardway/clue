@@ -32,7 +32,7 @@ namespace Clue{
 				if($extension=='less'){
 					$extension='css';
 
-					include __DIR__.'/vendor/lessc.php';
+					include_once __DIR__.'/vendor/lessc.php';
 					$less=new \lessc();
 					$content.=$less->compileFile($f);
 				}

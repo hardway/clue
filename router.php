@@ -283,7 +283,6 @@ namespace Clue{
             if($base!='/' && strpos($url, $base)===0){
                 $url=substr($url, strlen($base));
             }
-
 			$parts=parse_url($url);
             parse_str(@$parts['query'], $query);
             // Use controller/action in query string will override PATH_INFO or URL_REWRITE
