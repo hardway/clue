@@ -3,6 +3,7 @@ namespace Clue{
 	class Asset{
 		public $type;
 		public $files;
+		public $last_modified;
 
 		function __construct($files=null){
 			$this->files=array();
@@ -15,6 +16,7 @@ namespace Clue{
 			foreach($files as $f){
 				if(!in_array($f, $this->files)){
 					$this->files[]=$f;
+					$this->last_modified=max($this->last_modified, filemtime($f));
 				}
 			}
 		}
@@ -25,10 +27,21 @@ namespace Clue{
 			// Combine asset file contents
 			$content="";
 			foreach($this->files as $f){
-				$pi=pathinfo($f);
-				@$ext[$pi['extension']]++;
+				$extension=pathinfo($f, PATHINFO_EXTENSION);
 
-				$content.=@file_get_contents($f);
+				if($extension=='less'){
+					$extension='css';
+
+					include __DIR__.'/vendor/lessc.php';
+					$less=new \lessc();
+					$content.=$less->compileFile($f);
+				}
+				else{
+					$content.=@file_get_contents($f);
+				}
+
+				$ext[$extension]++;
+
 			}
 
 			if(count($ext)==1){
@@ -88,6 +101,8 @@ namespace Clue{
 		}
 
 		function dump(){
+			\Clue\Tool::http_auto_cache($this->last_modified, md5(implode(",", $this->files)));
+
 			$content=$this->compile();
 
 			// Output contents according to asset type

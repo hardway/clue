@@ -67,7 +67,7 @@ class HTML extends Syslog{
 					.clue-log-more .clue-log-subject {cursor:pointer; }
 					.clue-log-more .clue-log-subject::before { content: '+'; margin-left:-.75em;}
 					.clue-log-more:hover {z-index:99; box-shadow:0px 0px 10px 3px #966;}
-					.clue-log-more:hover .clue-log-subject {background:#600;}
+					.clue-log-more:hover .clue-log-subject {background:#600; color:#FFF;}
 					.clue-log-more:hover .clue-log-diagnose {background:#FFF;}
 
 					.clue-log-info .clue-log-subject,
