@@ -24,6 +24,70 @@ namespace Clue{
         }
     }
 
+    /**
+     * 执行外部程序 - 使用proc_open
+     *
+     * @param $options [
+     *			cwd 		=> 当前目录
+     *			env 		=> 环境变量
+     * 			timeout 	=> 超时（若规定时间没有任何输出则强行退出）
+     * 		  ]
+     */
+	function run_command($command, $options=[]){
+		$timeout=$options['timeout'] ?: 0;
+		$last_output=null;					// 最后输出时间
+		$verbose=@$options['verbose'] ?: false;
+
+		$cwd=@$options['cwd'] ?: null;
+		$env=@$options['env'] ?: null;
+		$desc = array(
+		   0 => array("pipe", "r"),
+		   1 => array("pipe", "w"),
+		   2 => array("pipe", "w")
+		);
+
+		if($verbose) error_log("[EXEC] $command");
+
+		$process = proc_open($command, $desc, $pipes, $cwd, $env);
+
+		if (is_resource($process)) {
+			fclose($pipes[0]);
+
+			$read = [$pipes[1], $pipes[2]];
+			$write = null;
+			$except = null;
+
+			while ($read) {
+				$c = stream_select($read, $write, $except, 1);
+				if($c===false) break;
+
+				foreach($read as $r){
+					fputs(STDOUT, fgets($r));
+					$last_output=time();    // 更新最后输出时间
+				}
+
+				$read=array_filter([$pipes[1], $pipes[2]], function($p){return !feof($p);});
+
+				if($last_output && $timeout && time() - $last_output > $timeout){
+					// 超过timeout没有任何输出
+					error_log("[CLUE] Proc terminated due to idle timeout: $timeout");
+					proc_terminate($process);
+					break;
+				}
+			}
+
+			proc_terminate($process);
+			fclose($pipes[1]);
+			fclose($pipes[2]);
+			$ret = proc_close($process);
+
+			return $ret;
+		}
+		else{
+			throw new Exception("proc_open failed: $command");
+		}
+	}
+
     function readable_bytes($size){
         $format = array('B', 'KB', 'MB', 'GB', 'TB', 'PB');
         $pos = 0;

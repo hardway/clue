@@ -149,6 +149,9 @@
 				throw new \Exception("Call to undefined static method: $name");
 		}
 
+		/**
+		 * OrderBy支持 +foo,-bar,celia 这样的格式
+		 */
 		static private function _translate_order_by($orderby){
 			if(preg_match('/^order by (.+)/i', $orderby, $m)){
 				$sorts=array_filter(array_map('trim', explode(",", $m[1])), "strlen");

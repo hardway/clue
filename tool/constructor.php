@@ -365,6 +365,23 @@ END
 			exit("Can't find downgrade script $target_version ...\n");
 		}
 
+		function db_schema(){
+			$db=$this->_get_db();
+
+			$schema=["create database if not exists ".$db->config['db'].' default character set '.$db->config['encoding']];
+			$schema[]="use ".$db->config['db'];
+
+			foreach($db->get_col("show tables") as $table){
+				list($_, $sql)=$db->get_row("show create table $table", ARRAY_N);
+				$schema[]=$sql;
+			}
+
+			$db_version=intval($db->get_var("select value from config where name='DB_VERSION'"));
+			$schema[]="insert into config(name, value) values('DB_VERSION', $db_version);";
+
+			echo implode(";\n\n", $schema);
+		}
+
 		function db_diag(){ return $this->db_diagnose(); }
 		function db_diagnose(){
 			$db=$this->_get_db();

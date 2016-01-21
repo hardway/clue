@@ -12,6 +12,8 @@ namespace Clue\Database{
             if(!extension_loaded('mysqli'))
                 throw new \Exception(__CLASS__.": extension mysqli is missing!");
 
+            $this->config=$param;
+
             // Check Parameter, TODO
             // echo "Creating MySQL Connection.\n";
             $this->dbh=mysqli_connect(
