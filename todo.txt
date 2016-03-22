@@ -5,6 +5,10 @@
 * RPC
 	传递binary数据会出错
 
+* Network
+	RESTful Server
+	Websocket Client/Server
+
 * email集成
     F3的smtp类
     http://poss.sourceforge.net/email/news/

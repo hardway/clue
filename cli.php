@@ -38,6 +38,22 @@ namespace Clue{
             fputs(STDERR, vsprintf(func_get_args()[0], array_slice(func_get_args(), 1)));
         }
 
+        static function text($text, $color=null){
+        	if($color) self::ansi($color);
+            fputs(STDERR, $text);
+        	if($color) self::ansi();
+        }
+
+        static function banner($text, $color=null){
+        	$text=trim($text);
+
+        	fputs(STDERR, "\n");
+        	if($color) self::ansi($color."_banner");
+        	fputs(STDERR, "\n  $text\n");
+        	if($color) self::ansi(['RESET']);
+        	fputs(STDERR, "\n");
+        }
+
         static function warning($str){
             self::ansi("yellow");
             fputs(STDERR, vsprintf(func_get_args()[0], array_slice(func_get_args(), 1)));
@@ -77,11 +93,27 @@ namespace Clue{
         }
 
         static function ansi($code=""){
+        	if(is_array($code)){
+        		foreach($code as $c){
+        			self::ansi($c);
+        		}
+        		return;
+        	}
+
             $RESET="\033[0;0m";
             $ANSI=[
+            	'RESET'=>"\033[0;0m",
+            	'RESET_COLOR'=>"\033[39;49m",
+
                 'RED'=>"\033[31m",
                 'YELLOW'=>"\033[33m",
                 'GREEN'=>"\033[32m",
+                'CYAN'=>"\033[36m",
+
+                'RED_BANNER'=>"\033[37;41;1m",
+
+                'ERASE_LINE'=>"\x1b[1K\x1b[999D",
+                'ERASE_SCREEN'=>"\x1b[2J\x1b[H",
             ];
 
             $code=strtoupper($code);
