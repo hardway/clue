@@ -22,7 +22,7 @@ class Fetcher{
         $this->imap_server="{"."$server:$port".$spec."}";
         $this->imap_options=CL_EXPUNGE;
 
-        $this->stream=@imap_open("$this->imap_server$this->imap_folder", $username, $password, OP_HALFOPEN | $this->imap_options, 1);
+        $this->stream=@imap_open("$this->imap_server$this->imap_folder", $username, $password,  OP_HALFOPEN | $this->imap_options, 1);
         $errors=imap_errors();
 
         if(!$this->stream){
@@ -42,7 +42,7 @@ class Fetcher{
 
     function close(){
         if($this->stream && is_resource($this->stream)){
-            imap_expunge($this->stream);
+            // imap_expunge($this->stream);
             imap_close($this->stream, CL_EXPUNGE);
             $this->stream=null;
         }
@@ -127,17 +127,22 @@ class Fetcher{
      * @param bool $reverse
      * @return array Mails ids
      */
-    function sort(&$mails, $criteria = SORTARRIVAL, $reverse = true) {
+    function sort($mails, $criteria = SORTARRIVAL, $reverse = true) {
         $sorts=imap_sort($this->stream, $criteria, $reverse, SE_UID);
 
-        if(is_numeric($mails[0])){
-            return array_values(array_intersect($sorts, $mails));
+        if(empty($mails)){
+        	return $sorts;
         }
         else{
-            $sorts=array_combine(array_values($sorts), array_keys($sorts));
-            usort($mails, function($a, $b) use($sorts){return $sorts[$b['uid']] - $sorts[$a['uid']];});
-            return $mails;
-        }
+	    	if(is_numeric($mails[0])){
+	            return array_values(array_intersect($sorts, $mails));
+	        }
+	        else{
+	            $sorts=array_combine(array_values($sorts), array_keys($sorts));
+	            usort($mails, function($a, $b) use($sorts){return $sorts[$b['uid']] - $sorts[$a['uid']];});
+	            return $mails;
+	        }
+	    }
     }
 
     function delete_mail($ids){
@@ -176,6 +181,15 @@ class Fetcher{
         }, $mails);
 
         return $single ? $mails[0] : $mails;
+    }
+
+    function fetch_raw($id, $id_type='uid'){
+    	$id_type=$id_type=='uid' ? FT_UID : 0;
+
+		$header=imap_fetchheader($this->stream, $id, $id_type | FT_INTERNAL | FT_PREFETCHTEXT);
+		$body=imap_body($this->stream, $id, $id_type);
+
+		return $header.$body;
     }
 
     function fetch_mail($id, $id_type='uid'){
