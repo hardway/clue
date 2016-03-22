@@ -1,14 +1,16 @@
 <?php
 namespace Clue\Web{
 	class Client{
-		public $request_header=[];
+		public $status=null;			// 返回的HTTP状态代码: 200, 404, ...
 		public $header;
-		public $status=null;			// 返回的HTTP状态
 		public $content;
 
 		public $agent="ClueHTTPClient";
 		public $referer=null;
+		public $custom_header=[];		// 类似 {AWS_AUTH:xxxxx, AWS_SECRET:yyyyyy}
 
+		private $cookie_file;
+		private $cookie=[];
 		private $cache;
 		private $curl;
 
@@ -27,15 +29,57 @@ namespace Clue\Web{
 				'timeout'=>60
 			);
 
-			$config=array_merge($default_config, $config);
+			$this->config=array_merge($default_config, $config);
+		}
+
+		function __destruct(){
+			if($this->curl) curl_close($this->curl);
+		}
+
+		function __get($name){
+			if($name=='status'){
+				return curl_getinfo($this->curl, CURLINFO_HTTP_CODE);
+			}
+		}
+
+		function init_request($method, $url, $options=[]){
+			$this->content=null;
+			if($this->curl) curl_close($this->curl);
 
 			$this->curl=curl_init();
+
+			// 目标地址
+			curl_setopt($this->curl, CURLOPT_URL, $url);
+			curl_setopt($this->curl, CURLOPT_HEADER, true);
 			curl_setopt($this->curl, CURLOPT_RETURNTRANSFER, true);
 			curl_setopt($this->curl, CURLOPT_FOLLOWLOCATION, true);
-			curl_setopt($this->curl, CURLOPT_CONNECTTIMEOUT, $config['connect_timeout']);
-			curl_setopt($this->curl, CURLOPT_TIMEOUT, $config['timeout']);
 
-			if(preg_match('/^sock[45s]?:\/\/([a-z0-9\-_\.]+):(\d+)$/i', $config['proxy'], $m)){
+			// 超时设定
+			curl_setopt($this->curl, CURLOPT_CONNECTTIMEOUT, $this->config['connect_timeout']);
+			curl_setopt($this->curl, CURLOPT_TIMEOUT, $this->config['timeout']);
+
+			switch($method){
+				case 'GET':
+					break;
+
+				case 'HEAD':
+					curl_setopt($this->curl, CURLOPT_NOBODY, true);
+
+				case 'POST':
+					curl_setopt($this->curl, CURLOPT_POST, true);
+					curl_setopt($this->curl, CURLOPT_SAFE_UPLOAD, false);
+					break;
+
+				case 'PUT':
+					curl_setopt($this->curl, CURLOPT_PUT, true);
+					break;
+
+				default:
+					curl_setopt($this->curl, CURLOPT_CUSTOMREQUEST, $method);
+			}
+
+			// 代理连接
+			if(preg_match('/^sock[45s]?:\/\/([a-z0-9\-_\.]+):(\d+)$/i', $this->config['proxy'], $m)){
 				list($_, $proxy, $port)=$m;
 				curl_setopt($this->curl, CURLOPT_PROXY, $proxy);
 				curl_setopt($this->curl, CURLOPT_PROXYPORT, $port);
@@ -45,53 +89,78 @@ namespace Clue\Web{
 				curl_setopt($this->curl, CURLOPT_PROXYTYPE, CURLPROXY_SOCKS5_HOSTNAME);
 				// curl_setopt($this->curl, CURLOPT_PROXYTYPE, CURLPROXY_SOCKS5);
 			}
-			elseif(preg_match('/^(http:\/\/)?([a-z0-9\-_\.]+):(\d+)/i', $config['proxy'], $m)){
+			elseif(preg_match('/^(http:\/\/)?([a-z0-9\-_\.]+):(\d+)/i', $this->config['proxy'], $m)){
 				list($_, $scheme, $proxy, $port)=$m;
 
 				curl_setopt($this->curl, CURLOPT_PROXY, $proxy);
 				curl_setopt($this->curl, CURLOPT_PROXYPORT, $port);
 			}
 
+			// HTTP认证
+			if(isset($this->config['http_user']) && isset($this->config['http_pass'])){
+				curl_setopt($this->curl, CURLOPT_HTTPAUTH, CURLAUTH_ANY);
+				curl_setopt($this->curl, CURLOPT_USERPWD, "{$this->config['http_user']}:{$this->config['http_pass']}");
+
+				curl_setopt($this->curl, CURLOPT_PROXYAUTH, CURLAUTH_ANY);
+				curl_setopt($this->curl, CURLOPT_PROXYUSERPWD, "{$this->config['http_user']}:{$this->config['http_pass']}");
+			}
+
+			// HTTP Referer
+			if($this->referer){
+				curl_setopt($this->curl, CURLOPT_REFERER, $this->referer);
+			}
+
+			// User Agent
 			curl_setopt($this->curl, CURLOPT_USERAGENT, $this->agent);
-		}
 
-		function __destruct(){
-			curl_close($this->curl);
-		}
+			// Cookie存取
+			if($this->cookie_file){
+				curl_setopt($this->curl, CURLOPT_COOKIEJAR, $this->cookie_file);	// write
+				curl_setopt($this->curl, CURLOPT_COOKIEFILE, $this->cookie_file);	// read
+			}
+			if($this->cookie){
+				$pair=array();
+				foreach($this->cookie as $k=>$v){
+					$pair[]="$k=$v";
+				}
+				curl_setopt($this->curl, CURLOPT_COOKIE, implode("; ", $pair));
+			}
 
-		function __get($name){
-			if($name=='status'){
-				return curl_getinfo($this->curl, CURLINFO_HTTP_CODE);
+			// 自定义header
+			if($this->custom_header){
+				$headers=[];
+				foreach($this->custom_header as $name=>$value){
+					$headers[]="$name: $value";
+				}
+
+				curl_setopt($this->curl, CURLOPT_HTTPHEADER, $headers);
+			}
+
+			// 额外的curl option
+			foreach($options as $name=>$value){
+				curl_setopt($this->curl, $name, $value);
 			}
 		}
 
 		function enable_cache($cache_dir, $cache_ttl=86400){
 			$this->cache=new CacheStore($cache_dir, $cache_ttl);
 		}
-
-		function disable_cache(){
-			$this->cache=null;
-		}
-
+		function disable_cache(){ $this->cache=null; }
 		function destroy_cache($url){
 			if($this->cache){
 				$this->cache->destroy($url);
 			}
 		}
 
-		function enable_cookie($cookie_file){
-			curl_setopt($this->curl, CURLOPT_COOKIEJAR, $cookie_file);	// write
-			curl_setopt($this->curl, CURLOPT_COOKIEFILE, $cookie_file);	// read
-		}
+		function enable_cookie($cookie_file){ $this->cookie_file=$cookie_file; }
+		function disable_cookie($cookie_file){ $this->cookie_file=null; }
+		function set_cookie($cookies=array()){ $this->cookie=array_merge($this->cookie, $cookies); }
 
-		function set_cookie($cookies=array()){
-			$pair=array();
-			foreach($cookies as $k=>$v){
-				$pair[]="$k=$v";
-			}
-			curl_setopt($this->curl, CURLOPT_COOKIE, implode("; ", $pair));
-		}
+		function set_agent($agent){ $this->agent=$agent; }
 
+		/**
+		 * 辅助函数
+		 */
 		public function follow_url($url, $current=null){
 			if(empty($url)) return $current;
 
@@ -138,26 +207,101 @@ namespace Clue\Web{
 			return implode("", $result);
 		}
 
-		function set_agent($agent){
-			$this->agent=$agent;
-			curl_setopt($this->curl, CURLOPT_USERAGENT, $this->agent);
-		}
 
-		function get($url, $data=array()){
-			if($data){
+		function get($url, $param=[]){
+			// 使用param数组合并url参数
+			if($param){
 				$info=parse_url($url);
 				parse_str(@$info['query'], $query);
-				$info['query']=http_build_query($data+$query);
+				$info['query']=http_build_query($param+$query);
 
 				$url=$this->_build_url($info);
 			}
 
-     		// Build the the final output URL
-			$this->open($url);
+			$this->init_request('GET', $url, [
+				CURLOPT_ENCODING=>''
+			]);
+
+			$this->cache_hit=false;
+
+			// 尝试从cache获取
+			if($this->cache){
+				list($this->content, $meta)=$this->cache->get($url);
+				$this->status=$meta['status'];
+				$this->header=$meta['header'];
+
+				if($this->content) $this->cache_hit=true;
+			}
+
+			if(!$this->content){
+				$this->_parse_response(curl_exec($this->curl));
+
+			    $this->errno=curl_errno($this->curl);
+			    $this->error=curl_error($this->curl);
+
+			    if($this->errno==0 && $this->cache){
+					$this->cache->put($url, $this->content, ['status'=>$this->status, 'header'=>$this->header]);
+				}
+			}
+
 			return $this->content;
 		}
 
-		function _build_url(array $info){
+		function post($url, $data){
+			$this->init_request('POST', $url, [
+				CURLOPT_POSTFIELDS=>$data
+			]);
+
+			$this->_parse_response(curl_exec($this->curl));
+			return $this->content;
+		}
+
+		function delete($url){
+			$this->init_request('DELETE', $url);
+
+			$this->_parse_response(curl_exec($this->curl));
+			return $this->content;
+		}
+
+		function put($url, $file){
+			$this->init_request('PUT', $url, [
+				CURLOPT_INFILE=>$file,
+				CURLOPT_INFILESIZE=>filesize($file)
+			]);
+
+			$this->_parse_response(curl_exec($this->curl));
+			return $this->content;
+		}
+
+		function download($url, $dest){
+			$file=fopen($dest, 'w');
+
+			if($file){
+				$this->init_request('GET', [
+					CURLOPT_URL=>$url,
+					CURLOPT_FILE=>$file,
+					CURLOPT_HEADER=>false,
+				]);
+
+				curl_exec($this->curl);
+				// TODO: check curl_errno
+
+				fclose($file);
+			}
+		}
+
+		/**
+		 * 使Cache失效
+		 */
+		function expire($url){
+			if($this->cache) $this->cache->destroy($url);
+
+		}
+
+		/**
+		 * ParseURL的逆操作
+		 */
+		private function _build_url(array $info){
 			$url=(isset($info["scheme"])?$info["scheme"]."://":"").
 				(isset($info["user"])?$info["user"].":":"").
 				(isset($info["pass"])?$info["pass"]."@":"").
@@ -168,81 +312,6 @@ namespace Clue\Web{
 				(isset($info["fragment"])?"#".$info["fragment"]:"");
 
 			return $url;
-		}
-
-		function post($url, $data){
-			curl_setopt($this->curl, CURLOPT_URL, $url);
-			curl_setopt($this->curl, CURLOPT_POST, true);
-			curl_setopt($this->curl, CURLOPT_HEADER, true);
-			curl_setopt($this->curl, CURLOPT_RETURNTRANSFER, true);
-			if($this->referer)
-				curl_setopt($this->curl, CURLOPT_REFERER, $this->referer);
-
-			if(is_array($data)){
-				$formData=array();
-				foreach($data as $k=>$v){ $formData[]="$k=".rawurlencode($v);}
-				$formData=implode("&", $formData);
-			}
-			else{
-				$formData=$data;
-			}
-
-			curl_setopt($this->curl, CURLOPT_POSTFIELDS, $formData);
-			$this->_parse_response(curl_exec($this->curl));
-
-			return $this->content;
-		}
-
-		function download($url, $dest){
-			$file=fopen($dest, 'w');
-
-			curl_setopt($this->curl, CURLOPT_FILE, $file);
-			curl_setopt($this->curl, CURLOPT_POST, false);
-			curl_setopt($this->curl, CURLOPT_URL, $url);
-			curl_setopt($this->curl, CURLOPT_HEADER, false);
-			if($this->referer)
-				curl_setopt($this->curl, CURLOPT_REFERER, $this->referer);
-
-			curl_exec($this->curl);
-			// TODO: check curl_errno
-
-			fclose($file);
-			@curl_setopt($this->curl, CURLOPT_FILE, null);
-		}
-
-		function open($url, $forceRefresh=false){
-			$this->content=null;
-
-			// 尝试从cache获取
-			if(!$forceRefresh && $this->cache){
-				list($this->content, $meta)=$this->cache->get($url);
-				$this->status=$meta['status'];
-				$this->header=$meta['header'];
-			}
-
-			$this->cache_hit=true;
-
-			if(!$this->content){
-				$this->cache_hit=false;
-
-				curl_setopt($this->curl, CURLOPT_URL, $url);
-				curl_setopt($this->curl, CURLOPT_POST, false);
-				curl_setopt($this->curl, CURLOPT_HEADER, true);
-				curl_setopt($this->curl, CURLOPT_ENCODING , "");
-				curl_setopt($this->curl, CURLOPT_RETURNTRANSFER, true);
-				if($this->referer){
-					curl_setopt($this->curl, CURLOPT_REFERER, $this->referer);
-				}
-
-				$this->_parse_response(curl_exec($this->curl));
-
-			    $this->errno=curl_errno($this->curl);
-			    $this->error=curl_error($this->curl);
-
-			    if($this->errno==0 && $this->cache){
-					$this->cache->put($url, $this->content, ['status'=>$this->status, 'header'=>$this->header]);
-				}
-			}
 		}
 
 		private function _parse_response($response){
@@ -263,10 +332,6 @@ namespace Clue\Web{
 			}
 
 			$this->content=$response;
-		}
-
-		protected function _http_get($url){
-
 		}
 	}
 }
