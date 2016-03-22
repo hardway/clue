@@ -6,7 +6,7 @@ namespace Clue\Database{
 		function __construct(array $param){
 			// Make sure mysqli extension is enabled
 			if(!extension_loaded('sqlite3'))
-				throw new Exception(__CLASS__.": extension sqlite3 is missing!");
+				throw new \Exception(__CLASS__.": extension sqlite3 is missing!");
 
 			// Check Parameter, TODO: access mode
 			$this->dbh=new \SQLite3($param['db'], SQLITE3_OPEN_READWRITE | SQLITE3_OPEN_CREATE);
@@ -34,6 +34,10 @@ namespace Clue\Database{
 		function insert_id(){
 			return $this->dbh->lastInsertRowID();
 		}
+
+        function insert_ignore($table, $fields){
+            return $this->insert($table, $fields, 'insert or ignore');
+        }
 
         function insert($table, $fields, $verb='insert'){
             $cols=array();
@@ -77,11 +81,15 @@ namespace Clue\Database{
 		}
 
 		function exec($sql){
-			parent::exec($sql);
-
 			$result_type=false;
 
 			$this->free_result();
+
+            if(func_num_args()>1){
+                $sql=call_user_func_array(array($this, "format"), func_get_args());
+				$this->audit($sql);
+            }
+
 			$this->_result=$this->dbh->query($sql);
 
 			if(!$this->_result){
@@ -114,9 +122,15 @@ namespace Clue\Database{
 		}
 
 		function get_results($sql, $mode=OBJECT){
-			if(!$this->exec($sql)) return false;
+            if (!call_user_func_array(array($this, "exec"), func_get_args())) {
+                return false;
+            }
 
-			$result=array();
+            $result=array();
+            $mode=func_get_arg(func_num_args()-1);
+            if($mode!=OBJECT && $mode!=ARRAY_A && $mode!=ARRAY_N){
+                $mode=OBJECT;
+            }
 
 			if($mode==OBJECT){
 				while($r=$this->_result->fetchArray(SQLITE3_ASSOC)){

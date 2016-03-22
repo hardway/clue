@@ -77,6 +77,43 @@ namespace Clue{
 			$this->errors=null;
 		}
 
+        function format($sql){
+            $args=func_get_args();
+            $me=$this;
+
+            $idx=1;
+            $sql=preg_replace_callback('/(^|\W)%(t|c|s|d|f|%)(\W|$)/', function($m) use($me, $args, &$idx){
+            	// 转义 %% => %
+                if($m[2]=='%') return $m[1].'%'.$m[3];
+
+                if(!array_key_exists($idx, $args)){
+                    throw new \Exception("Not enough arguments for SQL statement.");
+                }
+
+                $var="";
+                switch($m[2]){
+                    case 't':   // Table/View
+                    case 'c':   // Column
+                        $var="`".$args[$idx]."`";
+                        break;
+                    case 's':
+                        $var=$me->quote($args[$idx]);
+                        break;
+                    case 'd':
+                        $var=intval($args[$idx]);
+                        break;
+                    case 'f':
+                        $var=floatval($args[$idx]);
+                        break;
+                }
+
+                $idx++;
+
+                return $m[1].$var.$m[3];
+            }, $sql);
+            return $sql;
+        }
+
 		// Basic implementation
 		/**
 		 * quote means return type is string
