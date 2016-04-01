@@ -254,11 +254,20 @@ namespace Clue\CLI{
 			$app=array_shift($argv);
 			$this->app=$this->app ?: pathinfo($app)['filename'];
 
-			$cmds=$argv;
-			$argv=[];
+			// 将arguments拆分成cmds和带有"-"开头的args
+			$cmds=$args=[];
+			foreach($argv as $a){
+				if(strpos($a, '-')===0){
+					$args[]=$a;
+				}
+				else{
+					$cmds[]=$a;
+				}
+			}
+
+			$help_mode=false;
 
 			// 是否帮助模式
-			$help_mode=false;
 			if(!empty($cmds) && $cmds[0]=='help'){
 				$help_mode=true;
 				array_shift($cmds);
@@ -271,7 +280,7 @@ namespace Clue\CLI{
 				if($matches) break;
 
 				if(empty($matches)){
-					array_unshift($argv, array_pop($cmds));
+					array_unshift($args, array_pop($cmds));
 				}
 			}
 
@@ -287,7 +296,7 @@ namespace Clue\CLI{
 				return $this->help_command($func);
 			}
 
-			// var_dump($func, $argv);exit();
+			// var_dump($func, $args);exit();
 
 			$help=$this->_parse_command($func);
 
@@ -296,7 +305,8 @@ namespace Clue\CLI{
 
 			// 解析options
 			$waiting_option=null;
-			foreach($argv as $a){
+
+			foreach($args as $a){
 				if(strpos($a, '-')===0){
 					if(strpos($a, '=')>0){
 						@list($k, $v)=explode("=", $a, 2);
@@ -314,9 +324,10 @@ namespace Clue\CLI{
 					$matches=$this->_best_match_option($help['options'], $k);
 
 					if(count($matches)==0){
-						// 不存在的option，提示出错
-						printf("\nUnknown option: $a\n");
-						return $this->help_command($func);
+						// 不存在的option作为definition
+						@define(strtoupper(trim($k, '-')), $v);
+
+						continue;
 					}
 					elseif(count($matches)>1){
 						printf("Ambigous options for: $a\n");
