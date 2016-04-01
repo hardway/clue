@@ -289,6 +289,9 @@ END
 			}
 		}
 
+		/**
+		 * 获得主（启动）数据库（默认为MySQL数据库）
+		 */
 		function _get_db(){
 			$config=\Clue\site_file("config.".strtolower(APP_ENV)) ?: \Clue\site_file("config.php");
 
@@ -299,11 +302,21 @@ END
 			$this->appcfg=include $config;
 			$cfg=$this->appcfg['database'];
 
-			// Detect current database
-			$db=\Clue\Database::create($cfg);
-			if(!$db) throw new \Exception(sprintf("Can't connect to database %s:\"%s\"@%s/%s", $cfg['username'], $cfg['password'], $cfg['host'], $cfg['db']));
+			if($cfg){
+				// 首先从config.php中获取数据库配置
+				$db=\Clue\Database::create($cfg);
+				if(!$db) throw new \Exception(sprintf(
+					"Can't connect to database %s:\"%s\"@%s/%s", $cfg['username'], $cfg['password'], $cfg['host'], $cfg['db']
+				));
 
-			return $db;
+				return $db;
+			}
+			else{
+				// 尝试加载stub.php
+				include \Clue\site_file("stub.php");
+				return $app['db'] ?: $app['mysql'];
+			}
+
 		}
 
 		function db(){

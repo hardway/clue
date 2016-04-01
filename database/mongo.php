@@ -37,6 +37,10 @@ namespace Clue\Database{
 			return $this->insert($collection, $doc);
 		}
 
+		function save($collection, $doc){
+			return $this->insert($collection, $doc);
+		}
+
 		function update($collection, $change, $query=[]){
 			$collection=$this->dbh->selectCollection($collection);
 			$r=$collection->update($query, ['$set'=>$change], ['multiple'=>1]);

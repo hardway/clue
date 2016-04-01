@@ -39,6 +39,8 @@ class Guard{
 			'log_level'=>"WARNING",		# File Log threshold
 			'email_level'=>'ERROR',		# Email log threshold
 			'display_level'=>'ERROR',
+			'stop_level'=>0,			// 发生错误后立刻停止
+
 
 			'mail_to'=>null,
 			'mail_from'=>null,
@@ -47,12 +49,16 @@ class Guard{
 			'mail_username'=>null,
 			'mail_password'=>null,
 
-			'log_file'=>APP_ROOT."/log/".date("Ymd").".log"
+			'log_file'=>'syslog',
+			// 可以是文件地址
+			// 'log_file'=>APP_ROOT."/log/".date("Ymd").".log"
 		);
 
 		// TODO: config兼容性转换
 
 		$config=array_merge($default_config, $option);
+
+		$this->syslog=new \Clue\Logger\Syslog();
 
 		$this->channels=[];
 		$this->channels['display']=[
@@ -76,17 +82,30 @@ class Guard{
 		}
 
 		if($config['log_file']){
-			$this->channels['file']=[
-				'logger'=>new \Clue\Logger\File($config['log_file']),
-				'format'=>'text',
-				'environment'=>true,
-				'level'=>$this->log_level($config['log_level']),
-				'errors'=>[],
-			];
+			if($config['log_file']=='syslog'){
+				$this->channels['file']=[
+					'logger'=>$this->syslog,
+					'format'=>'text',
+					'environment'=>true,
+					'level'=>$this->log_level($config['log_level']),
+					'errors'=>[],
+				];
+			}
+			else{
+				$this->channels['file']=[
+					'logger'=>new \Clue\Logger\File($config['log_file']),
+					'format'=>'text',
+					'environment'=>true,
+					'level'=>$this->log_level($config['log_level']),
+					'errors'=>[],
+				];
+			}
 		}
 
+		$this->stop_level=$this->log_level($config['stop_level']);
+
 		// 只需要error report能够监控到的错误级别
-		$this->error_threshold=max(array_map(function($c){return $c['level'];}, $this->channels));
+		$this->error_threshold=max(array_map(function($c){return $c['level'];}, $this->channels), $this->stop_level);
 
 		$error_reporting=0;
 		foreach(self::$PHP_ERROR_MAP as $lvl=>$err){
@@ -120,11 +139,11 @@ class Guard{
 
 		$context=[
 			'_SERVER'=>$_SERVER,
-			'_GET'=>$_GET,
-			'_POST'=>$_POST,
-			'_COOKIE'=>$_COOKIE,
-			'_FILES'=>$_FILES,
-			'_SESSION'=>$_SESSION,
+			'_GET'=>@$_GET,
+			'_POST'=>@$_POST,
+			'_COOKIE'=>@$_COOKIE,
+			'_FILES'=>@$_FILES,
+			'_SESSION'=>@$_SESSION,
 		];
 		$context=$this->filter_context($context);
 		$resource=@$context['_SERVER']['REQUEST_URI'] ?: $context['_SERVER']['SCRIPT_FILENAME'];
@@ -287,6 +306,11 @@ class Guard{
 		$errtrace=array_values(array_filter($errtrace, function($t){
 			return !(!isset($t['file']) && isset($t['class']) && $t['class']==__CLASS__ && in_array($t['function'], ['on_error', 'on_exception']));
 		}));
+
+		if($errlevel <= $this->stop_level){
+			// E-STOP时不显示function参数
+			exit(sprintf("EMERGENCY STOP: %s %s\n%s\n", self::$PHP_ERROR_MAP[$errno], $errstr, $this->syslog->format_backtrace($errtrace)));
+		}
 
 		$this->errors[]=array(
 			'level'=>$errlevel,

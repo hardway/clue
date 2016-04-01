@@ -25,7 +25,7 @@ class Syslog implements Logger{
     	$text_format="%-22s | %-9s | %s";
     	$text_format_detail="%25s %-9s | %s";
 
-    	$lines[]=sprintf($text_format, $data['timestamp'], strtoupper($data['level']), $data['message']);
+    	$lines[]=sprintf($text_format, $data['timestamp'], strtoupper(@$data['level']), $data['message']);
 
         if($this->option['backtrace'] && isset($data['backtrace'])){
             $lines[]=sprintf($text_format, $data['timestamp'], 'BACKTRACE', $data['backtrace']);
@@ -53,7 +53,7 @@ class Syslog implements Logger{
         $text=[];
         $width=0;
         $trace=array_map(function($t) use(&$width){
-            $t['signature']="{$t['class']}{$t['type']}{$t['function']}()";
+            $t['signature']=sprintf("%s%s%s()", @$t['class'], @$t['type'], @$t['function']);
             $t['location']=(isset($t['file']) || isset($t['line'])) ? "\t({$t['file']}:{$t['line']})":"";
 
             $width=max($width, strlen($t['signature']));
