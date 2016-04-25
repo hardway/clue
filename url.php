@@ -154,17 +154,27 @@
 	function asset($asset){
 		$mapping=\Clue\get_site_path_mapping();
 		$path="asset/".trim($asset, '/ ');
+		$base=APP_BASE;
+
+		// 如果定义了CDN，则从CDN列表中随机抽取
+		global $app;
+		static $cdns=null;
+		if($cdns || is_array($app['cdn'])){
+			if($cdns===null) $cdns=$app['cdn'];
+
+			$base=$cdns[array_rand($cdns)];
+		}
 
 		foreach(\Clue\get_site_path() as $c){
 			if(file_exists($c.'/'.$path)){
-				$url=APP_BASE.'/'.$mapping[$c].'/'.$path;
-				return preg_replace('|/+|','/', $url)."?".filemtime("$c/$path");
+				$url=$base.'/'.$mapping[$c].'/'.$path;
+				return $url."?".filemtime("$c/$path");
 			}
 		}
 
 		// Always return url, let web server handle it
-		$url=APP_BASE.'/asset/'.$asset;
-		$url=str_replace('//', '/', $url);
+		$url=$base.'/asset/'.$asset;
+		$url=url_normalize($url);
 
 		return $url;
 	}
