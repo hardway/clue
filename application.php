@@ -25,9 +25,15 @@ namespace Clue{
             $this['return_url']=urldecode(POST('return_url') ?: GET('return_url') ?: $this['referer_url']);
 
             if($this['config']['database']){
-                $this['db']=array(
-                    'default'=>Database::create($this['config']['database'])
-                );
+            	$default_db=Database::create($this['config']['database']);
+                $this['db']=array('default'=>$default_db);
+
+                // 加载config表中的设定
+                if($default_db && $default_db->has_table('config')){
+                	foreach($default_db->get_hash("select name, value from config") as $name=>$value){
+                		if(!defined($name)) define($name, $value);
+                	}
+                }
             }
 
             // $this['profiler']=new Profiler();
