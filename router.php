@@ -130,7 +130,7 @@ namespace Clue{
 			}
 
 			// remove named variables
-			foreach($params as $k=>$v){
+			if($params) foreach($params as $k=>$v){
 				if(!is_int($k)) unset($params[$k]);
 			}
 
@@ -284,6 +284,8 @@ namespace Clue{
                 $url=substr($url, strlen($base));
             }
 			$parts=parse_url($url);
+			$query=[];
+
             parse_str(@$parts['query'], $query);
             // Use controller/action in query string will override PATH_INFO or URL_REWRITE
             if(isset($query['_c'])){
@@ -309,7 +311,7 @@ namespace Clue{
 			}
 			$url="/".trim($url,'/')."/";
             // url translate后生成的?query也要合并到GET中
-            $_GET=array_merge($_GET, $query);
+            $_GET=array_merge($_GET ?: [], $query);
 			$candidates=explode("/", $url);
 			$params=array();
 
@@ -341,7 +343,7 @@ namespace Clue{
 				if(@$_SERVER['REQUEST_METHOD']=='POST') $mapping['action']="_".$mapping['action'];
 
 				// 将GET/POST一并加入参数中
-				$mapping['params']=array_map(function($v){if(is_string($v)) return rawurldecode($v); else return $v;}, array_merge($params, $_GET, $_POST));
+				$mapping['params']=array_map(function($v){if(is_string($v)) return rawurldecode($v); else return $v;}, array_merge($params, $_GET ?: [], $_POST ?: []));
 
 				return $mapping;
 			}

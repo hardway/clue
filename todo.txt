@@ -17,3 +17,6 @@
 
 * ActiveRecord的错误处理
     http://guides.rubyonrails.org/active_record_validations.html#working-with-validation-errors
+
+* Release Management
+	https://devcenter.heroku.com/articles/releases

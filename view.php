@@ -109,7 +109,7 @@ namespace Clue{
                 $this->vars=array_merge($this->vars, $vars);
 
             // View Logic
-            extract(array_merge($GLOBALS, $this->vars));
+            extract(array_merge($GLOBALS ?: [], $this->vars));
 
             // Code Behind
             if(file_exists("$this->template.php")){
