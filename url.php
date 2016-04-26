@@ -154,7 +154,7 @@
 	function asset($asset){
 		$mapping=\Clue\get_site_path_mapping();
 		$path="asset/".trim($asset, '/ ');
-		$base=APP_BASE;
+		$base=APP_URL;
 
 		// 如果定义了CDN，则从CDN列表中随机抽取
 		global $app;
@@ -167,14 +167,12 @@
 
 		foreach(\Clue\get_site_path() as $c){
 			if(file_exists($c.'/'.$path)){
-				$url=$base.'/'.$mapping[$c].'/'.$path;
-				return $url."?".filemtime("$c/$path");
+				$url=$base.'/'.$mapping[$c].'/'.$path."?".filemtime("$c/$path");
+				return str_replace(APP_URL, '/', url_normalize($url));
 			}
 		}
 
 		// Always return url, let web server handle it
 		$url=$base.'/asset/'.$asset;
-		$url=url_normalize($url);
-
-		return $url;
+		return str_replace(APP_URL, '/', url_normalize($url));
 	}

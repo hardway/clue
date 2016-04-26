@@ -87,11 +87,16 @@ namespace Clue{
             }
 
             // TODO: session storage
-
             session_start();
+
+		    if (!isset($_SESSION['security_token'])) {
+		        $_SESSION['security_token'] = md5(uniqid(rand(), true));
+		    }
         }
 
         function redirect($url){
+        	session_write_close();
+
             if(!headers_sent()){
                 header("Status: 302 Found");
                 header("Location: $url");
@@ -99,6 +104,7 @@ namespace Clue{
             else{
                 echo "<script>window.location=\"$url\"</script>";
             }
+
             exit();
         }
 
