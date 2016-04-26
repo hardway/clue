@@ -25,7 +25,8 @@
 
 		$url="";
 
-		if(isset($u['scheme'])) $url.=$u['scheme'].'://';
+		// 默认使用//作为动态scheme
+		$url.=isset($u['scheme']) ? $u['scheme'].'://' : "//";
 		if(isset($u['user'])){
 			$url.=$u['user'];
 			if(isset($u['pass'])){

@@ -7,6 +7,7 @@
 				'http://abc//def'=>'http://abc/def',
 				'file:/abc//def'=>'file:///abc/def',
 				'http://abc.com///def/./.././abc?n=1#qqq'=>'http://abc.com/abc?n=1#qqq',
+				'//abc//def'=>'//abc/def',
 			];
 
 			foreach($test_cases as $from=>$to){
