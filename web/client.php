@@ -48,6 +48,9 @@ namespace Clue\Web{
 
 			$this->curl=curl_init();
 
+			// DEBUG
+			curl_setopt($this->curl, CURLINFO_HEADER_OUT, true);
+
 			// 目标地址
 			curl_setopt($this->curl, CURLOPT_URL, $url);
 			curl_setopt($this->curl, CURLOPT_HEADER, true);
@@ -67,7 +70,10 @@ namespace Clue\Web{
 
 				case 'POST':
 					curl_setopt($this->curl, CURLOPT_POST, true);
-					curl_setopt($this->curl, CURLOPT_SAFE_UPLOAD, false);
+					// PHP5.6 requires CurlFile
+					if(version_compare(PHP_VERSION, '5.6.0') < 0){
+						curl_setopt($this->curl, @CURLOPT_SAFE_UPLOAD, false);
+					}
 					break;
 
 				case 'PUT':
@@ -248,6 +254,9 @@ namespace Clue\Web{
 		}
 
 		function post($url, $data){
+			// 如果想直接作为raw data提交
+			// $this->custom_header['Content-Type']='text/plain';
+
 			$this->init_request('POST', $url, [
 				CURLOPT_POSTFIELDS=>$data
 			]);
@@ -315,9 +324,14 @@ namespace Clue\Web{
 		}
 
 		private function _parse_response($response){
+			$this->response=$response;
+			$this->status=curl_getinfo($this->curl, CURLINFO_HTTP_CODE);
+
 			$this->header=[
 				'url'=>curl_getinfo($this->curl, CURLINFO_EFFECTIVE_URL)		// 因为有自动跳转，获取真实有效的地址
 			];
+
+			$this->request=curl_getinfo($this->curl, CURLINFO_HEADER_OUT);
 
 			while(preg_match('/^HTTP\/(\d+\.\d+)\s+(\d+).+?\r\n\r\n/ms', $response, $header)){
 				$this->status=$header[2];
