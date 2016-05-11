@@ -20,7 +20,13 @@ namespace Clue{
 		        else
 		            $value=is_int($value) ? $name : $value;
 
-		        $html.="<option value='$value' ".(in_array($value, $selected) ? "selected='1'":"").">$name</option>";
+		        if($name[0]=='-'){
+		        	$name=str_replace('-', '─', $name);
+		        	$html.="<option disabled='disabled'>$name</option>";
+		        }
+		        else{
+		        	$html.="<option value='$value' ".(in_array($value, $selected) ? "selected='1'":"").">$name</option>";
+		        }
 		    }
 
 		    return $html;
