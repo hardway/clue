@@ -168,6 +168,70 @@ namespace Clue\CLI{
 			}
 		}
 
+		function bash_compile($alias=null){
+			$exec_name="php ".realpath($_SERVER['PWD'].'/'.$_SERVER['SCRIPT_NAME']);
+			$default_alias=pathinfo($_SERVER['PHP_SELF'], PATHINFO_FILENAME);
+
+			$alias=$alias ?: $default_alias;
+			$comp_func="_{$alias}_".substr(md5(rand().time()), 0, 6);
+
+			$template=<<<'END'
+{{COMP_FUNC}}()
+{
+    local cur prev options
+    COMPREPLY=()
+    cur="${COMP_WORDS[COMP_CWORD]}"
+    prev="${COMP_WORDS[*]:1}"
+    options=$({{EXEC_NAME}} $prev _bash)
+
+    COMPREPLY=( $(compgen -W "${options}" -- ${cur}) )
+}
+
+alias {{ALIAS}}="{{EXEC_NAME}}"
+complete -F {{COMP_FUNC}} {{ALIAS}}
+
+###########################################################################
+# Put previous content in /etc/bash_completion.d/ or your ~/.bashrc
+#
+# Usage: {{EXEC_NAME}} bash [ALIAS]
+#
+#        ALIAS - default is "{{DEFAULT_ALIAS}}"
+#
+
+END;
+
+			foreach(compact('alias', 'default_alias', 'comp_func', 'exec_name') as $k=>$v){
+				$k=strtoupper($k);
+				$template=str_replace('{{'.$k.'}}', $v, $template);
+			}
+
+			echo $template;
+		}
+
+		function bash_completion($cmds){
+			$suggestions=[];
+
+			$cur=count($cmds) > 0 ? $cmds[count($cmds)-1] : "";
+			$prev=max(0, count($cmds) - 1) + 1;
+
+			foreach($this->_best_match_command($cmds) as $func){
+				$func=explode('_', $func);
+				$func=array_slice($func, $prev);
+
+				if($func && $func[0]==$cur){
+					array_shift($func);
+				}
+
+				if($func){
+					$suggestions[]=array_shift($func);
+				}
+			}
+
+			$suggestions=array_unique($suggestions);
+
+			echo implode(" ", $suggestions);
+		}
+
 		/**
 		 * 允许命令缩写例如msent message test(在不产生歧义的情况下)可以缩写为msent me t
 		 */
@@ -265,12 +329,24 @@ namespace Clue\CLI{
 				}
 			}
 
-			$help_mode=false;
+			$internal=false;
 
 			// 是否帮助模式
 			if(!empty($cmds) && $cmds[0]=='help'){
-				$help_mode=true;
+				$internal='help';
 				array_shift($cmds);
+			}
+			// 是否生成Bash脚本
+			elseif(!empty($cmds) && $cmds[0]=='bash'){
+				$internal='bash';
+				array_shift($cmds);
+				return call_user_func_array([$this, 'bash_compile'], $cmds);
+			}
+			// 是否请求Bash Autocompletion
+			elseif(!empty($cmds) && $cmds[count($cmds)-1]=='_bash'){
+				$internal='_bash';
+				array_pop($cmds);
+				return $this->bash_completion($cmds);
 			}
 
 			// 识别command chain
@@ -292,7 +368,7 @@ namespace Clue\CLI{
 			}
 
 			$func=$matches[0];
-			if($help_mode){
+			if($internal=='help'){
 				return $this->help_command($func);
 			}
 
