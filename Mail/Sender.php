@@ -28,11 +28,11 @@ class Sender{
         $this->dns_server='8.8.8.8';
 
         // 确定本机HOST NAME
-        $this->hostname=@$_SERVER['SERVER_NAME'] ?: "localhost";
+        $this->hostname=defined('APP_HOST') ? APP_HOST : @$_SERVER['SERVER_NAME'] ?: gethostname() ?: "localhost";
 
         $this->sender=new Address($from ?: $this->username);
         $this->recipients=[
-            'to'=>[], 'cc'=>[], 'bcc'=>[]
+            'to'=>[], 'cc'=>[], 'bcc'=>[], 'reply'=>[]
         ];
 
         $this->headers=[];
@@ -45,7 +45,8 @@ class Sender{
      * 添加收件人
      */
     function add_recipient($email, $name=null, $rcpt='to'){
-        if(!in_array($rcpt, ['to', 'cc', 'bcc'])) user_error("Invalid rcpt type, valid values: to, cc, bcc");
+    	$valid_rcpts=['to', 'cc', 'bcc', 'reply'];
+        if(!in_array($rcpt, $valid_rcpts)) user_error("Invalid rcpt type, valid values: ".implode(", ", $valid_rcpts));
 
         $this->recipients[$rcpt][]=new Address($email, $name);
     }
@@ -80,6 +81,9 @@ class Sender{
         $headers['To']=implode(";", $this->recipients['to']);
         if(count($this->recipients['cc'])>0){
             $headers['Cc']=implode(";", $this->recipients['cc']);
+        }
+        if(count($this->recipients['reply'])>0){
+            $headers['Reply-To']=implode(";", $this->recipients['reply']);
         }
 
         // 自动检测是否HTML

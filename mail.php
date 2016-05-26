@@ -18,6 +18,9 @@
                 $this->mailer->Port=$this->options['port'];
                 $this->mailer->CharSet=$this->options['charset'];
 
+                if(@$this->options['hostname']){
+                	$this->mailer->Hostname=$this->options['hostname'];
+                }
                 if(!empty($this->options['username'])){
                     $this->mailer->SMTPAuth=true;
                     $this->mailer->Username=$this->options['username'];
@@ -30,6 +33,7 @@
         }
 
         function send($subject, $html, $to, $from=null, $reply=null){
+        	// 使用PHPMailer
             if($this->mailer){
                 $this->mailer->Subject=$subject;
                 $this->mailer->MsgHTML($html);
@@ -49,7 +53,26 @@
                 return $ret ?: $this->mailer->ErrorInfo;
             }
             else{
-                mail($to, $subject, $html);
+            	$sender=new Mail\Sender(
+            		$this->options['host'], $this->options['port'],
+            		$this->options['username'], $this->options['password'],
+            		$from
+            	);
+
+                if(@$this->options['hostname']){
+                	$sender->hostname=$this->options['hostname'];
+                }
+
+            	$sender->add_recipient($to);
+
+            	if($reply){
+            		$sender->add_recipient($reply, null, 'reply');
+				}
+
+            	$sender->subject=$subject;
+            	$sender->body=$html;
+
+            	$sender->send();
             }
         }
     }
