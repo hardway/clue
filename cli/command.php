@@ -1,8 +1,6 @@
 <?php
-// TODO: 允许生成bash complete配置文件
 // TODO: 允许设置参数为flag，不再支持waiting_option，但是支持-vvvv的特性
-// http://fahdshariff.blogspot.sg/2011/04/writing-your-own-bash-completion.html
-
+// TODO: 支持插入自定义bash complete，比如资源文件
 namespace Clue\CLI{
 	class Command{
 		function __construct($description=null, $app=null){
@@ -265,7 +263,7 @@ END;
 
 			// 检查global option
 			foreach($this->global_options as $o=>$_){
-				if(strpos($o, $opt)===0){
+				if(strpos($o, strtoupper($opt))===0){
 					$matches[]=[$o, 'global'];
 				}
 			}
@@ -275,35 +273,48 @@ END;
 
 		/**
 		 * 添加全局变量
-		 * cli可以通过 --variable=value 来设置
+		 * cli可以通过 --variable=value 来设置，也可以直接引用环境变量
+		 * 		例如: cli --key=val 或者 KEY=val cli
 		 *
-		 * @param $variable 名称
+		 * @param $variable 名称（不区分大小写）
 		 * @param $description 说明
 		 * @param $required 是否必须提供
 		 */
 		function add_global($variable, $description, $required=false){
+			$variable=strtoupper($variable);
 			$this->global_options[$variable]=[
 				'summary'=>$description,
 				'required'=>$required
 			];
+
+			// 检查环境变量
+			if(isset($_SERVER[$variable])){
+				$this->set_global($variable, $_SERVER[$variable]);
+			}
 		}
 
 		function set_global($variable, $value){
+			$variable=strtoupper($variable);
 			$this->global_options[$variable]['value']=$value;
 		}
 
 		function get_global($variable){
-			$missing=false;
-
-			if(!isset($this->global_options[$variable])) $missing=true;
-			if($this->global_options[$variable]['required'] && empty($this->global_options[$variable]['value'])) $missing=true;
-
-			if($missing){
-				throw new \Exception("Missing global option: --$variable");
-			}
-
+			$variable=strtoupper($variable);
 			return @$this->global_options[$variable]['value'];
 		}
+
+		function init_global(){
+			foreach($this->global_options as $k=>$o){
+				$missing=false;
+
+				if($o['required'] && !isset($o['value'])){
+					throw new \Exception("Missing global option: --$k ".$o['summary']);
+				}
+
+				if(!defined($k)) define($k, @$o['value']);
+			}
+		}
+
 
 		function _set_option(&$options, $name, $value, $scope){
 			if($scope=='global'){
@@ -441,6 +452,9 @@ END;
 					$params[$idx]=$v;
 				}
 			}
+
+			// 将global option转换为define
+			$this->init_global();
 
 			return call_user_func_array($func, $params);
 		}
