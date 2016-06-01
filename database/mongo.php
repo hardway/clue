@@ -101,10 +101,10 @@ namespace Clue\Database{
 			return $result;
 		}
 
-		function get_row($collection, $query=[], $mode=OBJECT){
+		function get_row($collection, $query=[], $fields=[]){
 			$collection=$this->dbh->selectCollection($collection);
 
-			$r=$collection->findOne($query);
+			$r=$collection->findOne($query, $fields);
 			return $r;
 		}
 
@@ -118,6 +118,7 @@ namespace Clue\Database{
 			return $result;
 		}
 
+		// TODO: BUG: zend_mm_heap corrupted
 		function iterate_results($collection, $query=[], $fields=[], $options=[]){
 			$collection=$this->dbh->selectCollection($collection);
 

@@ -1,6 +1,7 @@
 <?php
 // TODO: 允许设置参数为flag，不再支持waiting_option，但是支持-vvvv的特性
 // TODO: 支持插入自定义bash complete，比如资源文件
+// TODO: BUG: ENV=XXX cli.php 之后auto_complete不工作
 namespace Clue\CLI{
 	class Command{
 		function __construct($description=null, $app=null){
@@ -81,7 +82,7 @@ namespace Clue\CLI{
 				if($para->isDefaultValueAvailable()){
 					$help['options'][$para->name]=[
 						'default'=>$para->getDefaultValue(),
-						'summary'=>$help['param'][$para->name],
+						'summary'=>@$help['param'][$para->name],
 						'idx'=>$idx
 					];
 					unset($help['param'][$para->name]);
@@ -440,6 +441,11 @@ END;
 			if(count($params) < count($help['param'])){
 				return $this->help_command($func);
 			}
+
+			// Options是--和-选项
+			$this->options=$options;
+			// Args是不含选项的参数
+			$this->args=$params;
 
 			// 将option转换为parameter
 			if($options){

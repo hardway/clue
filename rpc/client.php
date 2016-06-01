@@ -69,7 +69,7 @@ class Client{
 
 		// For Bookkeeping
 		$record=[
-			'call_time'=>date("Y-m-d H:i:s"),
+			'call_time'=>gmdate("Y-m-d H:i:s"),
 			'type'=>'out',
 			'endpoint'=>$this->endpoint,
 			'client'=>$this->client,
@@ -77,7 +77,7 @@ class Client{
 			'request'=>json_encode($arguments)
 		];
 
-		if($this->debug) $this->debug("[RPC] Payload: ".json_encode($payload));
+		if($this->debug) error_log("[RPC] Payload: ".json_encode($payload));
 
 		$payload=json_encode($payload);
 
@@ -170,7 +170,7 @@ redirect:
 
 		if($this->secret){
 			if($this->debug){
-				$this->debug(sprintf("[RPC] ENCRYPTED RESPONSE:\n====================\n%s\n\n", $response));
+				error_log(sprintf("[RPC] ENCRYPTED RESPONSE:\n====================\n%s\n\n", $response));
 			}
 			$response=clue_rpc_decrypt($response, $this->secret);
 		}
@@ -178,7 +178,7 @@ redirect:
 		$this->bookkeep($record+['status'=>200, 'response'=>$response]);
 
 		if($this->debug){
-			$this->debug(sprintf("[RPC] RESPONSE:\n====================\n%s\n\n", $response));
+			error_log(sprintf("[RPC] RESPONSE:\n====================\n%s\n\n", $response));
 		}
 
 		if($this->cache_dir){
