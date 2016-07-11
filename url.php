@@ -14,10 +14,11 @@
 
 	// 全局函数
 	// TODO: 支持timestamp
-	function url_path($path){
+	function url_path($path, $app_url=null){
 		// $path=str_replace(' ', '%20', $path);
+		$app_url=$app_url ?: APP_URL;
 		$path=implode("/", array_map('rawurlencode', explode("/", $path)));
-		return str_replace(APP_ROOT, APP_URL, $path);
+		return str_replace(APP_ROOT, $app_url, $path);
 	}
 
 	function url_normalize($url){
@@ -168,12 +169,10 @@
 
 		foreach(\Clue\get_site_path() as $c){
 			if(file_exists($c.'/'.$path)){
-				$url=$base.'/'.$mapping[$c].'/'.$path."?".filemtime("$c/$path");
-				return str_replace(APP_URL, '/', url_normalize($url));
+				return url_path($path, $base)."?".filemtime($path);
 			}
 		}
 
 		// Always return url, let web server handle it
-		$url=$base.'/asset/'.$asset;
-		return str_replace(APP_URL, '/', url_normalize($url));
+		return url_normalize($base.'/asset/'.$asset);
 	}
