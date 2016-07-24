@@ -132,7 +132,7 @@ class Guard{
 					'level'=>$level,
 					'type'=>self::$PHP_ERROR_MAP[$fatal_error['type']],
 					'message'=>$fatal_error['message'],
-					'trace'=>array(array('file'=>$fatal_error['file'], 'line'=>$fatal_error['line'])),
+					'backtrace'=>array(array('file'=>$fatal_error['file'], 'line'=>$fatal_error['line'])),
 				);
 			}
 		}
@@ -166,6 +166,7 @@ class Guard{
 
 				foreach($errors as $err){
 					// TODO: format_error()
+
 					$text=[];
 					$text[]=$err['type']. ": ". $err['message'];
 					$text[]="";
