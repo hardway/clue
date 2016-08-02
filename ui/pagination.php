@@ -73,38 +73,21 @@ namespace Clue\UI{
 		function render($url_option=['url_param'=>'p']){
 			if($this->pageCount==1) return;
 
-			if($this->page>1){
-				$prevLink="<li><a href='".$this->page_url($this->page - 1, $url_option)."'><i class='icon-chevron-left'></i></a></li>";
-			}
-			else
-				$prevLink="";
+			$prevLink=$this->page > 1 ? $this->page_url($this->page - 1, $url_option) : "";
+			$nextLink=$this->page < $this->pageCount ? $this->page_url($this->page + 1, $url_option) : "";
 
-			if($this->page<$this->pageCount){
-				$nextLink="<li><a href='".$this->page_url($this->page + 1, $url_option)."'><i class='icon-chevron-right'></i></a></li>";
-			}
-			else
-				$nextLink="";
-
-			$links="";
 			$begin=$this->page > $this->navPages/2 ? floor($this->page - $this->navPages/2) : 1;
 			$end=$this->page + $this->navPages/2 > $this->pageCount ? $this->pageCount : floor($this->page + $this->navPages/2);
 
+			$currentPage=$this->page;
+			$links=[];
+
 			for($p=$begin; $p<=$end; $p++){
-				if($p==$this->page){
-					$links.="<li class='active'><a>$p</a></li>";
-				}
-				else{
-					$links.="<li><a href='".$this->page_url($p, $url_option)."'>$p</a></li>";
-				}
+				$links[$p]=$this->page_url($p, $url_option);
 			}
 
-			echo "
-				<div class='pagination'><ul>
-					$prevLink
-					$links
-					$nextLink
-				</ul></div>
-			";
+            $view=new \Clue\View("clue/pagination");
+            $view->render(compact("prevLink", 'nextLink', 'links', 'currentPage'));
 		}
 	}
 }
