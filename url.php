@@ -12,15 +12,52 @@
 		define('APP_URL', $app_scheme.'://'.$_SERVER['SERVER_NAME'].$app_port.APP_BASE);
 	}
 
-	// 全局函数
-	// TODO: 支持timestamp
+	/**
+	 * 将绝对路径转化为对应可访问网址
+	 */
 	function url_path($path, $app_url=null){
-		// $path=str_replace(' ', '%20', $path);
 		$app_url=$app_url ?: APP_URL;
-		$path=implode("/", array_map('rawurlencode', explode("/", $path)));
-		return str_replace(APP_ROOT, $app_url, $path);
+		$mtime=file_exists($path) ? filemtime($path) : null;
+
+		$mapping=\Clue\get_site_path_mapping();
+
+		foreach($mapping as $folder=>$map){
+			if(strpos($path, $folder)===0){
+				$path=substr($path, strlen($folder));
+				$path=implode("/", array_map('rawurlencode', explode("/", $path)));
+
+				$url=rtrim($app_url, '/').path_normalize('/'.$map.'/'.$path);
+
+				if($mtime) $url.="?".$mtime;
+				return $url;
+			}
+		}
+
+		return $app_url;
 	}
 
+	/**
+	 * 路径规范化
+	 */
+	function path_normalize($path){
+		$is_root=$path[0]=='/';
+
+		$p=[];
+		foreach(explode("/", $path) as $f){
+			if($f=='.' || empty($f)) continue;
+			elseif($f=='..'){
+				array_pop($p);
+			}
+			else{
+				array_push($p, $f);
+			}
+		}
+		return ($is_root ? '/' : "") . implode("/", $p);
+	}
+
+	/**
+	 * 网址规范化
+	 */
 	function url_normalize($url){
 		$u=parse_url($url);
 
@@ -37,24 +74,7 @@
 		}
 
 		if(isset($u['host'])) $url.=$u['host'];
-		if(isset($u['path'])){
-			$is_root=$u['path'][0]=='/';
-
-			$path=[];
-			foreach(explode("/", $u['path']) as $f){
-				if($f=='.' || empty($f)) continue;
-				elseif($f=='..'){
-					array_pop($path);
-				}
-				else{
-					array_push($path, $f);
-				}
-			}
-			$path=($is_root ? '/' : "") . implode("/", $path);
-
-			$url.=$path;
-		}
-
+		if(isset($u['path'])) $url.=path_normalize($u['path']);
 		if(isset($u['query'])) $url.="?".$u['query'];
 		if(isset($u['fragment'])) $url.="#".$u['fragment'];
 
@@ -154,7 +174,6 @@
 	 * @return $url 文件URL
 	 */
 	function asset($asset){
-		$mapping=\Clue\get_site_path_mapping();
 		$path="asset/".trim($asset, '/ ');
 		$base=APP_URL;
 
@@ -167,9 +186,11 @@
 			$base=$cdns[array_rand($cdns)];
 		}
 
+		$mapping=\Clue\get_site_path_mapping();
 		foreach(\Clue\get_site_path() as $c){
-			if(file_exists($c.'/'.$path)){
-				return url_path($path, $base)."?".filemtime($path);
+			$filepath=$c.'/'.$path;
+			if(file_exists($filepath)){
+				return url_path($filepath, $base);
 			}
 		}
 

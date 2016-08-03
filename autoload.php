@@ -28,7 +28,20 @@ namespace Clue{
 	}
 
 	function get_site_path_mapping(){
-		return PathConfig::$SITE_PATH_MAPPING;
+		// 如果没有对应的映射名称，必须是APP_ROOT下面的子目录
+		// 如果是APP_ROOT之外的目录，必须有映射路径
+		$mapping=[];
+		foreach(PathConfig::$SITE_PATH_MAPPING as $path=>$map){
+			if(empty($map) && strpos($path, APP_ROOT)===false) continue;
+			if(empty($map)) $map=str_replace(APP_ROOT, '', $path);
+
+			$mapping[$path]=$map;
+		}
+
+		// 按照路径从长到短排序
+		uksort($mapping, function($a, $b){return strlen($b)-strlen($a);});
+
+		return $mapping;
 	}
 
 	/**
