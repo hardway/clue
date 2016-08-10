@@ -6,23 +6,37 @@ namespace Clue{
 
 		function __construct($app){
 			$this->app=$app;
-			$this->debug=defined("CLUE_ROUTE_DEBUG") && CLUE_ROUTE_DEBUG;
+			$this->debug=false;
 
-			$this->rules=array();
+			$this->connection=[];		// 连接规则
+			$this->translates=[];	// URL重写
 		}
 
+		/**
+		 * 别名，直接转换URL格式（类似url-rewrite）
+		 */
 		function alias($from, $to){
 			$this->translates[]=array('from'=>$from, 'to'=>$to);
 		}
 
+		/**
+		 * 连接URL和后端处理程序（可以是controller/action，也可以是任意callable）
+		 */
 		function connect($url){
 			$args=func_get_args();
 			$url=array_shift($args);
+			$mapping=[];
 
-			$mapping=is_array($args[count($args)-1]) ? array_pop($args) : array();
+			if(is_callable($args[0])){
+				$handler=$args[0];
+			}
+			else{
+				$mapping=is_array($args[count($args)-1]) ? array_pop($args) : array();
 
-			list($c, $a)=$args;
-			$mapping=array_merge(array('controller'=>$c, 'action'=>$a), $mapping);
+				list($c, $a)=$args;
+				// 检查Controller/Action
+				$handler=$this->determine_handler($c, $a);
+			}
 
 			// decode url pattern into name list
 			$pattern=preg_replace_callback('/:([a-zA-Z0-9_]+)/', function($m) use(&$names, $mapping){
@@ -33,8 +47,7 @@ namespace Clue{
 					return '([^/]*)';
 				else{
 				    if(isset($mapping[$name])){
-				        $p=$mapping[$name];
-				        return "($p)";
+				        return "({$mapping[$name]})";
 			        }
 			        else
 					    return '([^/]+)';
@@ -43,20 +56,24 @@ namespace Clue{
 
 			$pattern="^$pattern\$";
 
-			$this->rules[]=array(
-				'reformation'=>$url,
+			$this->connection[]=array(
 				'pattern'=>$pattern,
 				'names'=>$names,
-				'mapping'=>$mapping
+				'handler'=>$handler
 			);
 
 			return true;
 		}
 
-		function controller(){
-			return $this->controller;
+		// 根据controller/action定位并返回相应的callable handler
+		function determine_handler($controller, $action){
+			// TODO
 		}
 
+
+		/**
+		 * 定位到controll/action/params并执行
+		 */
 		function route($controller, $action, $params=array()){
 			$path=Controller::find_controller($controller);
 			$view=$action;
@@ -112,43 +129,6 @@ namespace Clue{
 			else
 				return $this->app->http_error(404, "Can't find action or view $action of $controller");
 
-			// detect parameters using reflection
-			$callArgs=array();
-
-			$rfxMethod=new \ReflectionMethod($class, $action);
-
-			// 1st round, take named variables
-			foreach($rfxMethod->getParameters() as $idx=>$rfxParam){
-				if(isset($params[$rfxParam->name])){
-					$callArgs[$idx]=$params[$rfxParam->name];
-
-					unset($params[$rfxParam->name]);
-				}
-				else{
-					$callArgs[$idx]=null;
-				}
-			}
-
-			// remove named variables
-			if($params) foreach($params as $k=>$v){
-				if(!is_int($k)) unset($params[$k]);
-			}
-
-			// 2nd round, take by position
-			foreach($rfxMethod->getParameters() as $idx=>$rfxParam){
-				if($callArgs[$idx]===null){
-					if(count($params)>0){
-						$callArgs[$idx]=array_shift($params);
-					}
-					elseif($rfxParam->isDefaultValueAvailable()){
-						$callArgs[$idx]=$rfxParam->getDefaultValue();
-					}
-				}
-			}
-
-			// 3rd, append all remaining params
-			$callArgs=array_merge($callArgs, $params);
-
 			// Initialize controller and
 			$obj=new $class($controller, $action);
 
@@ -162,6 +142,7 @@ namespace Clue{
             // 执行Controll::Action(Params)
             $ret=null;
             try{
+            	$callArgs=$this->resolve_params([$obj, $action], $params);
             	$ret=call_user_func_array(array($obj, $obj->action), $callArgs);
             }
             catch(\Exception $e){
@@ -181,59 +162,6 @@ namespace Clue{
 			// one argument shortcut
 			// eg. reform('c', 'a', 'hello') ==> c/a/hello
 			if(is_string($params)) $params=array($params);
-
-			foreach($this->rules as $r){
-				if(
-					isset($r['mapping']['controller']) &&
-					strcasecmp($r['mapping']['controller'], $controller)!=0
-				) continue;
-
-				if(
-					isset($r['mapping']['action']) &&
-					strcasecmp($r['mapping']['action'], $action)!=0
-					//!preg_match('/'.$r['mapping']['action'].'/i',$action)
-				) continue;
-
-				$allParamsAreMet=true;
-				foreach(array_keys($params) as $name){
-				    if(isset($r['mapping'][$name]) && !preg_match('!'.$r['mapping'][$name].'!i', $params[$name])) continue;
-				}
-
-				$params['controller']=$controller=='index' ? '' : $controller;
-				$params['action']=$action=='index' ? '' : $action;
-
-				$url=preg_replace_callback('/\:([a-zA-Z0-9_]+)/', function($m) use(&$params, &$allParamsAreMet, $r){
-				    $name=$m[1];
-
-					if(isset($params[$name])){
-						$ret=$params[$name];
-						if($name!='controller' && $name!='action'){
-							$ret=urlencode($ret);
-						}
-
-						unset($params[$name]);
-						return $ret;
-					}
-					else{
-					    $allParamsAreMet=false;
-					    return "";
-						// TODO: Clue_RouterException
-						// throw new Exception("Couldn't found parameter '$name' in mapping rule.");
-					}
-				}, $r['reformation']);
-
-				if(!$allParamsAreMet) continue;
-
-				$query=array();
-				if($params) foreach($params as $n=>$v){
-					if($n=='controller' || $n=='action') continue;
-					$query[]="$n=".urlencode($v);
-				}
-				if(count($query)>0)
-					$url.='?'.implode('&', $query);
-
-				return $url;
-			}
 
 			# Try to reform in default way
 			$query=array();
@@ -258,8 +186,66 @@ namespace Clue{
 			return $url;
 		}
 
+		function handle($callable, $params){
+			// detect parameters using reflection
+			$args=$this->resolve_params($callable, $params);
+
+			return call_user_func_array($callable, $args);
+		}
+
 		/**
-		 * 将URL转换为controller和action，不做实际route
+		 * 根据callable的参数构型，准备正确的参数队列，方便后续函数调用
+		 *
+		 * @param $callable Closure或者[Class, Action]
+		 */
+		function resolve_params($callable, $params){
+			$callArgs=array();
+
+			if(is_array($callable)){
+				$rfx=new \ReflectionMethod($callable[0], $callable[1]);
+			}
+			else{
+				$rfx=new \ReflectionFunction($callable);
+			}
+
+			// 1. 填充命名变量
+			foreach($rfx->getParameters() as $idx=>$rfxParam){
+				if(isset($params[$rfxParam->name])){
+					$callArgs[$idx]=$params[$rfxParam->name];
+
+					unset($params[$rfxParam->name]);
+				}
+				else{
+					$callArgs[$idx]=null;
+				}
+			}
+
+			// 2. 命名变量无法匹配则抛弃
+			if($params) foreach($params as $k=>$v){
+				if(!is_int($k)) unset($params[$k]);
+			}
+
+			// 3. 传入剩余变量（填充默认值）
+			foreach($rfx->getParameters() as $idx=>$rfxParam){
+				if($callArgs[$idx]===null){
+					if(count($params)>0){
+						$callArgs[$idx]=array_shift($params);
+					}
+					elseif($rfxParam->isDefaultValueAvailable()){
+						$callArgs[$idx]=$rfxParam->getDefaultValue();
+					}
+				}
+			}
+
+			// 3rd, append all remaining params
+			$callArgs=array_merge($callArgs, $params);
+
+			return $callArgs;
+		}
+
+		/**
+		 * 将URL转换为controller和action（不做实际route），或者返回已连接的callable
+		 *
 		 * 对于/a/b/c的url，应该依次寻找:
 		 *	controller=a/b/c, action=index
 		 * 	controller=a/b, action=c
@@ -283,10 +269,42 @@ namespace Clue{
             if($base!='/' && strpos($url, $base)===0){
                 $url=substr($url, strlen($base));
             }
+
 			$parts=parse_url($url);
 			$query=[];
-
             parse_str(@$parts['query'], $query);
+
+			// strip query from url
+			if(($p=strpos($url, '?'))!==FALSE){
+				$url=substr($url, 0, $p);
+			}
+
+			// 优先尝试用url来match connection
+			foreach($this->connection as $c){
+				if(preg_match(chr(27).$c['pattern'].chr(27), $url, $m)){
+					array_shift($m);	// 去除完整匹配
+					$params=[];
+
+					// 匹配的命名变量
+					for($i=0; $i<count($c['names']); $i++){
+						$params[$c['names'][$i]]=$m[$i];
+					}
+					// 查询条件中的变量
+					foreach($query as $k=>$v) $params[$k]=$v;
+					// 剩余的参数（若有）
+					for(; $i<count($m); $i++){
+						$params[]=$m[$i];
+					}
+
+					return [
+						'handler'=>$c['handler'],
+						'params'=>$params
+					];
+				}
+			}
+
+			// 按照HMVC目录结构解析
+
             // Use controller/action in query string will override PATH_INFO or URL_REWRITE
             if(isset($query['_c'])){
                 return array(
@@ -295,12 +313,6 @@ namespace Clue{
                 	'params'=>$query
                 );
             }
-
-			// strip query from url
-			if(($p=strpos($url, '?'))!==FALSE){
-				$url=substr($url, 0, $p);
-			}
-
 
 			// Translate url，只针对URL部分，不包括query
 			foreach($this->translates as $tr){

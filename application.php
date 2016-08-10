@@ -207,8 +207,9 @@ namespace Clue{
 
             $map=$this['router']->resolve($url);
 
-            $this->controller=$map['controller'];
-            $this->action=$map['action'];
+            // Controller / Action在认证资源的时候需要用到
+            $this->controller=@$map['controller'];
+            $this->action=@$map['action'];
             $this->params=$map['params'];
 
             // TODO: deprecate this callback, since we can always use event listener to archive
@@ -217,8 +218,15 @@ namespace Clue{
             }
 
             $this->fire_event("before_route");
-            // 执行Controll::Action(Params)
-            $ret=$this['router']->route($this->controller, $this->action, $this->params);
+
+            if(is_callable(@$map['handler'])){
+				$ret=$this['router']->handle($map['handler'], $map['params']);
+	        }
+	        else{
+	            // 执行Controll::Action(Params)
+	            $ret=$this['router']->route($this->controller, $this->action, $this->params);
+	        }
+
             $this->fire_event("after_route", $ret);
 
             return $ret;

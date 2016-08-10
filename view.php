@@ -5,60 +5,43 @@ namespace Clue{
         protected $template;
         protected $vars;
 
-        static function find($view, $parent=null, $extension="htm|php"){
-            $view_candidates=is_array($view) ? $view : [$view];
-            $parent_view=is_object($parent) ? dirname($parent->view) : $parent;
-
-            foreach($view_candidates as $view){
-                // 相对路径的定位
-                // Example:
-                //  find_view('view', '/folder')    ==> /folder/view
-                //  find_view('/view', '/folder')   ==> /view
-                if($view[0]!='/' && !preg_match('/:/', $view) && $parent_view){
-                    $view=$parent_view.'/'.$view;
-                }
-
-                $template=null;
-                foreach(\Clue\get_site_path() as $dir){
-                    foreach(explode("|", $extension) as $ext){
-                        if(file_exists($dir."/source/view/".strtolower($view).".".$ext)){
-                            $v=new View($view);
-                            $v->path=$dir.strtolower($view).".".$ext;
-
-                            return $v;
-                        }
-                    }
-                }
-            }
-
-            return null;
-        }
-
         /**
          * 定位view所在路径
-         * TODO: deprecate with View::find();
          */
         static function find_view($view, $parent=null, $extension="htm|php"){
             // 相对路径的定位
             // Example:
             //  find_view('view', '/folder')    ==> /folder/view
             //  find_view('/view', '/folder')   ==> /view
+
             if($view[0]!='/' && !preg_match('/:/', $view) && $parent){
                 $view=dirname($parent->view).'/'.$view;
             }
 
-            $view="/source/view/".$view;
+            $candidates=[];
 
-            $template=null;
+            // 先找VIEW_PATH
+            foreach(\Clue\get_view_path() as $dir){
+                foreach(explode("|", $extension) as $ext){
+                	$candidates[]=$dir.'/'.strtolower($view).".".$ext;
+                }
+            }
+            // 然后是SITE_PATH下面的/source/view/
             foreach(\Clue\get_site_path() as $dir){
                 foreach(explode("|", $extension) as $ext){
-                    if(file_exists($dir.strtolower($view).".".$ext)){
-                        return $dir.strtolower($view);
-                    }
+                	$candidates[]=$dir.strtolower("/source/view/$view").".".$ext;
                 }
             }
 
-            return $template;
+            // var_dump($candidates);
+
+            foreach($candidates as $path){
+            	if(file_exists($path)){
+            		return substr($path, 0, strrpos($path, '.'));
+            	}
+            }
+
+            return null;
         }
 
         function __construct($view=null, $parent=null){
@@ -70,6 +53,12 @@ namespace Clue{
 
             $this->view=strtolower(trim($view, '/'));
             $this->vars=array();
+        }
+
+        function bind(array $data){
+        	$this->vars=array_merge($this->vars, $data);
+
+        	return $this;
         }
 
         function set($name, $value){

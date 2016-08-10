@@ -1,12 +1,17 @@
 <?php
 // Class Path和Include Path设定
 namespace Clue{
+	static $VIEW_PATH=[];
+
 	class PathConfig{
 		static $CLASS_PATH=[];
 		static $SITE_PATH=[];
 		static $SITE_PATH_MAPPING=[];
 
 	}
+
+	function add_view_path($path){ global $VIEW_PATH; $VIEW_PATH[]=$path; }
+	function get_view_path(){ global $VIEW_PATH; return $VIEW_PATH;	}
 
 	/**
 	 * Site path is LIFO stack
