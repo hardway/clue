@@ -17,6 +17,7 @@
 * email集成
     F3的smtp类
     http://poss.sourceforge.net/email/news/
+
 * queue参考laravel的queue实现(http://laravel.com/docs/4.2/queues)
     以及Photon （http://www.photon-project.com/doc/tasks.html） 实现命令行queue工具
 
@@ -25,3 +26,11 @@
 
 * Release Management
 	https://devcenter.heroku.com/articles/releases
+
+#### Database
+
+ - clue mysql 异常退出(未定义函数fatal error)后如何rollback
+
+#### Competitor
+
+ - http://lumen.laravel-china.org/docs/introduction
