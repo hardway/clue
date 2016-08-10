@@ -124,6 +124,7 @@ namespace Clue\Database{
 
 			$cursor=$collection->find($query, $fields);
 			if(isset($options['limit'])) $cursor->limit($options['limit']);
+			if(isset($options['skip'])) $cursor->skip($options['skip']);
 
 			foreach($cursor as $r){
 				yield $r;
