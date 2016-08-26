@@ -56,7 +56,7 @@ namespace Clue\CLI{
 			$comment=$r->getDocComment();
 			$comment=explode("\n", $comment);
 			$comment=array_slice($comment, 1, -1);  // 跳过首尾行
-			$comment=array_map(function($c){return trim($c, '* ');}, $comment);
+			$comment=array_map(function($c){return preg_replace('/^\s*\*/', '', $c);}, $comment);
 
 			$help=[
 				'summary'=>'',
@@ -68,9 +68,15 @@ namespace Clue\CLI{
 			foreach($comment as $line){
 				if(empty($line)) continue;
 
-				if(preg_match('/^@([a-z0-9_]+)\s+\$([a-z0-9_]+)\s+(.*)$/i', $line, $m)){
-					$help[$m[1]][$m[2]]=$m[3];
+				// 解析@开始的参数说明
+				if(preg_match('/^@([a-z0-9_]+)\s+(\$?[a-z0-9_]+)\s+(.*)$/i', trim($line), $m)){
+					$type=$m[1];
+					$var=trim($m[2], '$');
+					$comment=$m[3];
+
+					$help[$type][$var]=$comment;
 				}
+				// 默认作为帮助说明
 				else{
 					$help['detail'][]=$line;
 				}
@@ -140,20 +146,29 @@ namespace Clue\CLI{
 		function help_command($func){
 			$help=$this->_parse_command($func);
 
-			printf("\n %s\n%s\n\n", $help['summary'], str_repeat('-', 40));
-			printf(" usage: %s %s\n\n",
+			printf("\n %s\n%s\n", $help['summary'], str_repeat('-', 40));
+
+			foreach($help['detail'] as $line){
+				printf("%s\n", $line);
+			}
+
+			printf("\n usage: %s %s\n\n",
 				str_replace('_', ' ', substr($func, strlen($this->app)+1)),
 				implode(" ", array_map('strtoupper', array_keys($help['param'])))
 			);
-
-			foreach($help['detail'] as $line){
-				printf("  %s\n", $line);
-			}
 
 			if(@$help['param']){
 				echo " parameters:\n\n";
 				foreach($help['param'] as $param=>$h){
 					printf("   %-12s   %s\n", strtoupper($param), $h);
+				}
+				echo "\n";
+			}
+
+			if(@$help['flag']){
+				echo " flags:\n\n";
+				foreach($help['flag'] as $flag=>$h){
+					printf("   %-12s   %s\n", strtoupper($flag), $h);
 				}
 				echo "\n";
 			}
