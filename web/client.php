@@ -51,6 +51,11 @@ namespace Clue\Web{
 			// DEBUG
 			curl_setopt($this->curl, CURLINFO_HEADER_OUT, true);
 
+			// CURLOPT_VERBOSE不能和CURLINFO_HEADER_OUT同时使用
+			// if(@$this->config['verbose']){
+			// 	curl_setopt($this->curl, CURLOPT_VERBOSE, true);
+			// }
+
 			// 目标地址
 			curl_setopt($this->curl, CURLOPT_URL, $url);
 			curl_setopt($this->curl, CURLOPT_HEADER, true);
@@ -100,6 +105,11 @@ namespace Clue\Web{
 
 				curl_setopt($this->curl, CURLOPT_PROXY, $proxy);
 				curl_setopt($this->curl, CURLOPT_PROXYPORT, $port);
+			}
+
+			// HTTPS
+			if(@$this->config['ignore_certificate']){
+				curl_setopt($this->curl, CURLOPT_SSL_VERIFYPEER, false);
 			}
 
 			// HTTP认证
@@ -286,8 +296,7 @@ namespace Clue\Web{
 			$file=fopen($dest, 'w');
 
 			if($file){
-				$this->init_request('GET', [
-					CURLOPT_URL=>$url,
+				$this->init_request('GET', $url, [
 					CURLOPT_FILE=>$file,
 					CURLOPT_HEADER=>false,
 				]);
@@ -330,6 +339,8 @@ namespace Clue\Web{
 			$this->header=[
 				'url'=>curl_getinfo($this->curl, CURLINFO_EFFECTIVE_URL)		// 因为有自动跳转，获取真实有效的地址
 			];
+
+			$this->referer=curl_getinfo($this->curl, CURLINFO_EFFECTIVE_URL);
 
 			$this->request=curl_getinfo($this->curl, CURLINFO_HEADER_OUT);
 
