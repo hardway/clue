@@ -6,7 +6,14 @@ namespace Clue\Text{
 		public $columns;
 		public $rows;
 
-		static $DEFAULT_OPTIONS=array('header'=>true, 'length'=>4096, 'delimiter'=>",", 'enclosure'=>'"', 'escape'=>'\\');
+		static $DEFAULT_OPTIONS=array(
+			'header'=>true,
+			'length'=>4096,
+			'delimiter'=>",",
+			'enclosure'=>'"',
+			'escape'=>'\\',
+			'col_index'=>false,	// 使用column name作为下标，而不是数字列名
+		);
 
 		function __construct($filename, $options=array()){
 			// 自动识别TSV和CSV
@@ -21,22 +28,27 @@ namespace Clue\Text{
 
 			$this->filename=$filename;
 
+			$this->_fh=fopen($this->filename, "r");
+			if(!$this->_fh) throw new \Exception("Can't open CSV file: $this->filename");
+
 			if($this->options['header']){
 				// 读取首行，标题
-				$f=fopen($this->filename, "r");
-				if(!$f) throw new \Exception("Can't open CSV file: $this->filename");
-
-				$this->columns=$this->parse_row($f);
-				fclose($f);
+				$this->columns=$this->parse_row();
 			}
 		}
 
-		function parse_row($f){
-			return fgetcsv($f, $this->options['length'], $this->options['delimiter'], $this->options['enclosure'], $this->options['escape']);
+		function __destruct(){
+			// 正确关闭文件
+			if($this->_fh){
+				fclose($this->_fh);
+				$this->_fh=null;
+			}
+
+			return true;
 		}
 
-		function write_row($f, $fields){
-			return fputcsv($f, $fields, $this->options['delimiter'], $this->options['enclosure'], $this->options['escape']);
+		function parse_row($fh=null){
+			return fgetcsv($fh ?: $this->_fh, $this->options['length'], $this->options['delimiter'], $this->options['enclosure'], $this->options['escape']);
 		}
 
 		function col($name){
@@ -58,25 +70,24 @@ namespace Clue\Text{
 		}
 
 		function read($batch=false){
-			$f=fopen($this->filename, "r");
+			while(!feof($this->_fh)){
+				$r=$this->parse_row();
+				if(!is_array($r)) continue;
 
-			try{
-				// TODO: BUG 第一行会被扔掉
-				$this->columns=$this->parse_row($f);
-				while(!feof($f)){
-					$r=$this->parse_row($f);
-					if(!is_array($r)) continue;
-
-					if($batch){
-						$this->rows[]=$r;
+				if($this->options['col_index']){
+					$nr=[];
+					foreach($this->columns as $idx=>$col){
+						$nr[$col]=@$r[$idx];
 					}
-					else{
-						yield $r;
-					}
+					$r=$nr;
 				}
-			}
-			finally{
-				fclose($f);
+
+				if($batch){
+					$this->rows[]=$r;
+				}
+				else{
+					yield $r;
+				}
 			}
 		}
 
@@ -85,7 +96,7 @@ namespace Clue\Text{
 
 			try{
 				foreach($table as $row){
-					$this->write_row($f, $row);
+					fputcsv($f, $row, $this->options['delimiter'], $this->options['enclosure'], $this->options['escape']);
 				}
 			}
 			finally{
