@@ -73,6 +73,7 @@ namespace Clue\Text{
 			while(!feof($this->_fh)){
 				$r=$this->parse_row();
 				if(!is_array($r)) continue;
+				if($r==[null]) continue;
 
 				if($this->options['col_index']){
 					$nr=[];
