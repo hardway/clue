@@ -8,7 +8,7 @@ namespace Clue{
 			$this->app=$app;
 			$this->debug=false;
 
-			$this->connection=[];		// 连接规则
+			$this->connection=[];	// 连接规则
 			$this->translates=[];	// URL重写
 		}
 
@@ -26,9 +26,11 @@ namespace Clue{
 			$args=func_get_args();
 			$url=array_shift($args);
 			$mapping=[];
+			$verb="*";
 
 			if(is_callable($args[0])){
 				$handler=$args[0];
+				$verb=$args[1] ?: "*";	// GET, POST, HEAD, PUT, DELETE, TRACE, OPTIONS, CONNECT, PATCH
 			}
 			else{
 				$mapping=is_array($args[count($args)-1]) ? array_pop($args) : array();
@@ -57,6 +59,7 @@ namespace Clue{
 			$pattern="^$pattern\$";
 
 			$this->connection[]=array(
+				'verb'=>$verb,
 				'pattern'=>$pattern,
 				'names'=>$names,
 				'handler'=>$handler
@@ -280,7 +283,12 @@ namespace Clue{
 			}
 
 			// 优先尝试用url来match connection
-			foreach($this->connection as $c){
+			$rules=array_filter($this->connection, function($c){return $c['verb']==$_SERVER['REQUEST_METHOD'];});
+			$rules=array_merge($rules, array_filter($this->connection, function($c){return $c['verb']=='*';}));
+			foreach($rules as $c){
+				// 检查HTTP Verb
+				if($c['verb']!='*' && $c['verb']!=$_SERVER['REQUEST_METHOD']) continue;
+
 				if(preg_match(chr(27).$c['pattern'].chr(27), $url, $m)){
 					array_shift($m);	// 去除完整匹配
 					$params=[];
