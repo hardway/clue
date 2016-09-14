@@ -181,11 +181,13 @@ class Parser{
 	}
 
 	function remove_element($xpath, $context=null){
-		$node=$this->get_element($xpath, $context);
-		if($node)
-			$node->parentNode->removeChild($node);
-		else
-			echo $xpath;
+		$node=$this->getElement($xpath, $context);
+		if($node){
+			$node->destroy();
+			return $node;
+		}
+
+		return false;
 	}
 
 	function dump($el=null, $level=0){
