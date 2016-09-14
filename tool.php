@@ -203,7 +203,7 @@ namespace Clue{
                 if($path->getFileName()=='.' || $path->getFileName()=='..') continue;
 
                 if($path->isFile()){
-                    $zip->addFile($path, str_replace($folder, '', $path));
+                    $zip->addFile($path, str_replace($folder.'/', '', $path));
                 }
             }
 
