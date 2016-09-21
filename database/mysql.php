@@ -321,7 +321,10 @@ namespace Clue\Database{
                 return false;
             }
 
+            if($this->_result===true) return [];
+
             $result=array();
+
             $mode=func_get_arg(func_num_args()-1);
             if($mode!=OBJECT && $mode!=ARRAY_A && $mode!=ARRAY_N){
                 $mode=OBJECT;
