@@ -24,7 +24,8 @@ namespace Clue{
             $this['referer_url']=isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : null;
             $this['return_url']=urldecode(POST('return_url') ?: GET('return_url') ?: $this['referer_url']);
 
-            if($this['config']['database']){
+            if(@$this['config']['database']){
+            	// TODO: 按需加载，不再需要设置default
             	$default_db=Database::create($this['config']['database']);
                 $this['db']=array('default'=>$default_db);
 
