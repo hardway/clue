@@ -2,7 +2,9 @@
 	require_once dirname(__DIR__).'/cli/Command.php';
 
 	function test_dummy(){}
-	function test_basic($foo, $bar="default"){}
+	function test_basic($foo, $bar="default"){
+		//print_r(compact('foo', 'bar'));
+	}
 
 	class Test_Command extends PHPUnit_Framework_TestCase{
 		function test_env_as_global(){
@@ -31,6 +33,10 @@
 			$this->assertEquals('foo', $cmd->args[0]);
 			$this->assertEquals('bar', $cmd->args[1]);
 
+			$cmd->handle(['test','basic', 'f', '-bar=b']);
+			$this->assertEquals('f', $cmd->args[0]);
+			$this->assertEquals('b', $cmd->options['bar']);
+
 			$cmd->handle(['test','basic', 'foo']);
 			$this->assertEquals('foo', $cmd->args[0]);
 			$this->assertFalse(isset($cmd->args[1]));
@@ -40,6 +46,9 @@
 			$cmd=new \Clue\CLI\Command();
 			$cmd->handle(['test','basic', '-1']);
 			$this->assertEquals('-1', $cmd->args[0]);
+
+			$cmd->handle(['test','basic', '-1week']);
+			$this->assertEquals('-1week', $cmd->args[0]);
 		}
 	}
 ?>
