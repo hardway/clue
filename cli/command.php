@@ -410,7 +410,7 @@ END;
 			$waiting_option=null;
 
 			foreach($args as $a){
-				if(strpos($a, '-')===0){
+				if(strpos($a, '-')===0 && !is_numeric($a)){
 					if(strpos($a, '=')>0){
 						@list($k, $v)=explode("=", $a, 2);
 						$waiting_option=false;

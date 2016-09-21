@@ -2,6 +2,7 @@
 	require_once dirname(__DIR__).'/cli/Command.php';
 
 	function test_dummy(){}
+	function test_basic($foo, $bar="default"){}
 
 	class Test_Command extends PHPUnit_Framework_TestCase{
 		function test_env_as_global(){
@@ -22,6 +23,23 @@
 
 			$this->assertEquals('abc', $cmd->get_global('TEST'));
 			$this->assertEquals('abc', TEST);
+		}
+
+		function test_arguments(){
+			$cmd=new \Clue\CLI\Command();
+			$cmd->handle(['test','basic', 'foo', 'bar']);
+			$this->assertEquals('foo', $cmd->args[0]);
+			$this->assertEquals('bar', $cmd->args[1]);
+
+			$cmd->handle(['test','basic', 'foo']);
+			$this->assertEquals('foo', $cmd->args[0]);
+			$this->assertFalse(isset($cmd->args[1]));
+		}
+
+		function test_argument_value_as_negative_number(){
+			$cmd=new \Clue\CLI\Command();
+			$cmd->handle(['test','basic', '-1']);
+			$this->assertEquals('-1', $cmd->args[0]);
 		}
 	}
 ?>
