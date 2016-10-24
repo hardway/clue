@@ -392,6 +392,56 @@ namespace Clue\Database{
             return $cnt;
         }
 
+	    /**
+	     * Result generator
+	     *
+	     * @param string $sql     SQL Statement
+	     * @param string $handler Callback function which accepts row data as parameter
+	     * @param string $mode    Row data type
+	     *
+	     * @return int Row count
+	     */
+	    function iterate_results($sql, $mode=OBJECT)
+	    {
+            $args=func_get_args();
+
+            $mode=array_pop($args);
+            if($mode!=OBJECT && $mode!=ARRAY_A && $mode!=ARRAY_N){
+                array_push($args, $mode);
+                $mode=OBJECT;
+            }
+
+            if (!call_user_func_array(array($this, "exec"), $args)) {
+                return;
+            }
+
+	        // 长期保持的结果集，避免被清除
+	        $persistent_rs=$this->_result;
+	        $this->_result=null;
+
+	        while (true) {
+	            switch($mode){
+	            case OBJECT:
+	                $r=mysqli_fetch_object($persistent_rs);
+	                break;
+	            case ARRAY_A:
+	                $r=mysqli_fetch_assoc($persistent_rs);
+	                break;
+	            case ARRAY_N:
+	                $r=mysqli_fetch_row($persistent_rs);
+	                break;
+	            }
+
+	            if (empty($r)) {
+	                break;
+	            }
+
+	            yield $r;
+	        }
+
+	        $persistent_rs->close();
+	    }
+
         function has_table($table){
             $tables=$this->get_col("show tables");
             return in_array($table, $tables);
