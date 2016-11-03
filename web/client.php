@@ -171,6 +171,18 @@ namespace Clue\Web{
 		function enable_cookie($cookie_file){ $this->cookie_file=$cookie_file; }
 		function disable_cookie($cookie_file){ $this->cookie_file=null; }
 		function set_cookie($cookies=array()){ $this->cookie=array_merge($this->cookie, $cookies); }
+		function get_cookie(){
+			$cookies=[];
+			if(file_exists($this->cookie_file)){
+				foreach(file($this->cookie_file) as $line){
+					if(preg_match('/^\..*\s+(\S+)\s+(\S+)$/', $line, $m)){
+						$cookies[$m[1]]=$m[2];
+					}
+				}
+			}
+
+			return array_merge($cookies, $this->cookie);
+		}
 
 		function set_agent($agent){ $this->agent=$agent; }
 
@@ -349,6 +361,14 @@ namespace Clue\Web{
 				foreach(explode("\n", $header[0]) as $row){
 					if(preg_match('/^([a-z0-9-]+):(.+)$/i', $row, $m)){
 						$this->header[trim($m[1])]=trim($m[2]);
+
+						// 保存临时Cookie
+						if(trim($m[1])=='Set-Cookie'){
+							$sc=explode(";", trim($m[2]), 2);
+							list($n, $v)=explode("=", $sc[0], 2);
+
+							$this->cookie[$n]=$v;
+						}
 					}
 				}
 
