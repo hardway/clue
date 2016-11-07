@@ -7,7 +7,7 @@ class Asset extends \Clue\Controller{
 
 		$name=implode("/", func_get_args());
 
-		$files=@$this->app['config']['asset'][$name];
+		$files=@$this->app['config']['asset'][$name] ?: [];
 		if(is_string($files)) $files=[$files];
 		// 支持的路径写法
 		// foo.js ==> SITE/asset/foo.js
