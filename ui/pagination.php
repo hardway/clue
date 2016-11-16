@@ -73,6 +73,8 @@ namespace Clue\UI{
 		function render($url_option=['url_param'=>'p']){
 			if($this->pageCount==1) return;
 
+			$totalPages=$this->pageCount;
+
 			$prevLink=$this->page > 1 ? $this->page_url($this->page - 1, $url_option) : "";
 			$nextLink=$this->page < $this->pageCount ? $this->page_url($this->page + 1, $url_option) : "";
 
@@ -87,7 +89,7 @@ namespace Clue\UI{
 			}
 
             $view=new \Clue\View("clue/pagination");
-            $view->render(compact("prevLink", 'nextLink', 'links', 'currentPage'));
+            $view->render(compact("prevLink", 'nextLink', 'links', 'currentPage', 'totalPages'));
 		}
 	}
 }
