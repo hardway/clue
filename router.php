@@ -30,7 +30,7 @@ namespace Clue{
 
 			if(is_callable($args[0])){
 				$handler=$args[0];
-				$verb=$args[1] ?: "*";	// GET, POST, HEAD, PUT, DELETE, TRACE, OPTIONS, CONNECT, PATCH
+				$verb=@$args[1] ?: "*";	// GET, POST, HEAD, PUT, DELETE, TRACE, OPTIONS, CONNECT, PATCH
 			}
 			else{
 				$mapping=is_array($args[count($args)-1]) ? array_pop($args) : array();

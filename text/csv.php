@@ -17,7 +17,7 @@ namespace Clue\Text{
 
 		function __construct($filename, $options=array()){
 			// 自动识别TSV和CSV
-			$ext=pathinfo($filename)['extension'];
+			$ext=@pathinfo($filename)['extension'];
 			if($ext=='tsv'){
 				self::$DEFAULT_OPTIONS['delimiter']="\t";
 			}

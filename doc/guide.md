@@ -65,7 +65,7 @@ Controller定义在`source/control`目录中<br/>
     └── index.htm           # .htm和.php后缀均可以
     └── hello.php           # 不过.php会优先于.htm执行，因此建议将一些逻辑处理代码放在.php
     └── hello.htm           # 而仅显示内容放在.htm
-    └── post.php
+    └── post.php 			# View的后缀建议用PHP，方便IDE识别，以及避免代码泄漏
 </pre>
 
 事实上Controller的Action可自由选择调用哪一个视图(View)，例如(control/index.php):

@@ -180,7 +180,7 @@
 		// 如果定义了CDN，则从CDN列表中随机抽取
 		global $app;
 		static $cdns=null;
-		if($cdns || is_array($app['cdn'])){
+		if($cdns || (isset($app['cdn']) && is_array($app['cdn']))){
 			if($cdns===null) $cdns=$app['cdn'];
 
 			$base=$cdns[array_rand($cdns)];
