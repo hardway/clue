@@ -45,13 +45,17 @@ namespace Clue{
         }
 
         static function banner($text, $color=null){
-        	$text=trim($text);
+            $text=trim($text);
 
-        	fputs(STDERR, "\n");
-        	if($color) self::ansi($color."_banner");
-        	fputs(STDERR, "\n  $text\n");
-        	if($color) self::ansi(['RESET']);
-        	fputs(STDERR, "\n");
+            // $cols = exec('tput cols');
+            // $rows = exec('tput lines');
+
+            self::ansi($color."_banner");
+
+        	fputs(STDERR, "\n\n$text\n\x1b[K");
+            self::ansi(['RESET']);
+
+            fputs(STDERR, "\n");
         }
 
         static function warning($str){
@@ -105,12 +109,23 @@ namespace Clue{
             	'RESET'=>"\033[0;0m",
             	'RESET_COLOR'=>"\033[39;49m",
 
+                'BLACK'=>"\033[30m",
                 'RED'=>"\033[31m",
-                'YELLOW'=>"\033[33m",
                 'GREEN'=>"\033[32m",
+                'YELLOW'=>"\033[33m",
+                'BLUE'=>"\033[34m",
+                'MAGENTA'=>"\033[35m",
                 'CYAN'=>"\033[36m",
+                'WHITE'=>"\033[37m",
 
+                'BLACK_BANNER'=>"\033[37;40;1m",
                 'RED_BANNER'=>"\033[37;41;1m",
+                'GREEN_BANNER'=>"\033[37;42;1m",
+                'YELLOW_BANNER'=>"\033[37;43;1m",
+                'BLUE_BANNER'=>"\033[37;44;1m",
+                'MAGENTA_BANNER'=>"\033[37;45;1m",
+                'CYAN_BANNER'=>"\033[37;46;1m",
+                'WHITE_BANNER'=>"\033[30;47;1m",
 
                 'ERASE_LINE'=>"\x1b[1K\x1b[999D",
                 'ERASE_SCREEN'=>"\x1b[2J\x1b[H",
