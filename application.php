@@ -13,7 +13,12 @@ namespace Clue{
         public $action;
         public $params;
 
+        protected $default_config=[
+            'override_definition_table'=>'config', // 加载数据库的config表以设置definition
+        ];
+
         function __construct($values=array()){
+            $values=array_merge($this->default_config, $values);
             $this->_values=$values;
 
             $this['router']=new Router($this);
@@ -30,8 +35,10 @@ namespace Clue{
                 $this['db']=array('default'=>$default_db);
 
                 // 加载config表中的设定
-                if($default_db && $default_db->has_table('config')){
-                	foreach($default_db->get_hash("select name, value from config") as $name=>$value){
+                $config_table=$this['override_definition_table'];
+                if($default_db && $default_db->has_table($config_table)){
+                    $defines=$default_db->get_hash("select name, value from %t", $config_table);
+                	foreach($defines as $name=>$value){
                 		if(!defined($name)) define($name, $value);
                 	}
                 }
