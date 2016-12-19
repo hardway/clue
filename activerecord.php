@@ -376,8 +376,8 @@
 		// Call back handlers
 		function after_construct(){}    // new AR()
 		function after_retrieve(){}     // AR::get(id)
-		function before_save(){ return true; }
-		function after_save(){} // TODO: transaction integrity
+		function before_save($dirty){ return true; }
+		function after_save($new, $old){} // TODO: transaction integrity
 		function before_destroy(){ return true; }
 		function after_destroy(){}
 
