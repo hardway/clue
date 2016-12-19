@@ -82,7 +82,8 @@ namespace Clue\Web{
 					break;
 
 				case 'PUT':
-					curl_setopt($this->curl, CURLOPT_PUT, true);
+                    curl_setopt($this->curl, CURLOPT_PUT, true);
+                    // $this->custom_header['X-HTTP-Method-Override']='PUT';
 					break;
 
 				default:
@@ -295,10 +296,26 @@ namespace Clue\Web{
 		}
 
 		function put($url, $file){
+            if(is_resource($file)){
+                // 已经是文件，到最尾端，确定长度
+                fseek($file, 0, SEEK_END);
+            }
+            else{
+                $content=is_string($file) ? $file : json_encode($file);
+
+                $file=fopen('php://temp', 'wb+');
+                fputs($file, $content);
+            }
+
+            $size=ftell($file);
+            fseek($file, 0);
+
+            // 直接上传文件
 			$this->init_request('PUT', $url, [
 				CURLOPT_INFILE=>$file,
-				CURLOPT_INFILESIZE=>filesize($file)
+				CURLOPT_INFILESIZE=>$size
 			]);
+
 
 			$this->_parse_response(curl_exec($this->curl));
 			return $this->content;
