@@ -224,8 +224,8 @@ namespace Clue{
             $map=$this['router']->resolve($url);
 
             // Controller / Action在认证资源的时候需要用到
-            $this->controller=@$map['controller'];
-            $this->action=@$map['action'];
+            $this->controller=isset($map['controller']) ? $map['controller'] : null;
+            $this->action=isset($map['action']) ? $map['action'] : null;
             $this->params=$map['params'];
 
             // TODO: deprecate this callback, since we can always use event listener to archive

@@ -8,7 +8,7 @@ trait Events{
             call_user_func([$this, "on_$event"], $this, $data);
         }
 
-        if(is_array(@$this->_events)) foreach($this->_events as $name=>$listeners){
+        if(isset($this->_events) && is_array($this->_events)) foreach($this->_events as $name=>$listeners){
             if(preg_match('/'.$name.'/', $event)){
                 if(is_array($listeners)) foreach($listeners as $l){
                     if(is_callable($l)){

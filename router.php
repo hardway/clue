@@ -275,7 +275,7 @@ namespace Clue{
 
 			$parts=parse_url($url);
 			$query=[];
-            parse_str(@$parts['query'], $query);
+            if(isset($parts['query'])) parse_str($parts['query'], $query);
 
 			// strip query from url
 			if(($p=strpos($url, '?'))!==FALSE){
