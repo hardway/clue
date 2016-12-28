@@ -379,7 +379,7 @@
 		function before_save($dirty){ return true; }
 		function after_save($new, $old){} // TODO: transaction integrity
 		function before_destroy(){ return true; }
-		function after_destroy(){}
+		function after_destroy($old){}
 
 		public function _snap_shot(){
 			$model=self::model();
