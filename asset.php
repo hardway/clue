@@ -40,8 +40,7 @@ namespace Clue{
 					$content.=@file_get_contents($f);
 				}
 
-				$ext[$extension]++;
-
+				@$ext[$extension]++;
 			}
 
 			if(count($ext)==1){
