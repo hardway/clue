@@ -295,6 +295,17 @@ namespace Clue\Web{
 			return $this->content;
 		}
 
+        function options($url, $content){
+            $content=is_string($content) ? $content : json_encode($content);
+
+            $this->init_request('OPTIONS', $url, [
+                CURLOPT_POSTFIELDS=>$content
+            ]);
+
+            $this->_parse_response(curl_exec($this->curl));
+            return $this->content;
+        }
+
 		function put($url, $file){
             if(is_resource($file)){
                 // 已经是文件，到最尾端，确定长度
