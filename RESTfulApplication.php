@@ -44,7 +44,7 @@ namespace Clue{
             // 数据验证通过assert来保证，返回400 Bad Request
             assert_options(ASSERT_ACTIVE, 1);
             assert_options(ASSERT_CALLBACK, function($script, $line, $message, $description){
-                error_reporting("[ASSERT/FAIL] $script:$line");
+                error_log("[ASSERT/FAIL] $script:$line");
                 self::$_INSTANCE->error($description, 400);
             });
 
