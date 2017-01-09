@@ -7,6 +7,10 @@ class HTML extends Syslog{
 		'context'=>false,
 	];
 
+    function format_backtrace($trace){
+        return htmlspecialchars(parent::format_backtrace($trace));
+    }
+
 	function write_log($item){
 		$this->write_html_prerequisite();
 
