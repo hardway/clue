@@ -3,8 +3,13 @@ namespace Clue\Mail;
 
 class Address{
     function __construct($email, $name=null){
+        if($email instanceof Address){
+            $copy=$email;
+            $this->email=$copy->email;
+            $this->name=$copy->name;
+        }
         // RFC2822
-        if($name==null && preg_match('/(.*?)<([^>]+)>(.*?)/', $email, $m)){
+        elseif($name==null && preg_match('/(.*?)<([^>]+)>(.*?)/', $email, $m)){
             $this->email=$m[2];
             $this->name=trim($m[1].$m[3], " \"'<>");
         }

@@ -69,7 +69,7 @@ class Guard{
 		];
 
 		if($config['mail_to']){
-			$mail_from=$config['mail_from'] ? new \Clue\Mail\Address($config['mail_from']) : null;
+			$mail_from=$config['mail_from'] ?: null;
 			$mailer=new \Clue\Mail\Sender($config['mail_host'], $config['mail_port'], $config['mail_username'], $config['mail_password'], $mail_from);
 
 			$this->channels['email']=[
