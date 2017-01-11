@@ -113,6 +113,13 @@ namespace Clue{
         function redirect($url){
         	session_write_close();
 
+            // 默认限制站外跳转
+            // TODO: 可以通过配置修改策略以允许或替换 (deny, allow, replace)
+            $app_host=parse_url(APP_URL, PHP_URL_HOST);
+            $red_host=parse_url($url, PHP_URL_HOST);
+
+            if($red_host && $red_host!=$app_host) panic("External redirection not allowed");
+
             if(!headers_sent()){
                 header("Status: 302 Found");
                 header("Location: $url");
