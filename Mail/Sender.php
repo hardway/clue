@@ -174,22 +174,58 @@ class Sender{
 
         // 登录认证
         $reply=$this->dialog('EHLO '.$this->hostname);
-        if (strtolower($scheme)=='tls') {
+
+        // 检查服务器特性
+        $cap=[];
+        $lines=array_map(function($line){
+            $line=preg_replace('/^250-?/', '', $line);
+            return $line;
+        }, explode("\n", $reply));
+
+        foreach(@$lines as $line){
+            @list($k, $v)=explode(" ", trim($line), 2);
+            $cap[$k]=$v ?: true;
+        }
+
+        // 如果服务器支持TLS
+        if (strtolower($scheme)=='tls' || $cap['STARTTLS']) {
             $this->dialog('STARTTLS');
-            stream_socket_enable_crypto($socket,TRUE,STREAM_CRYPTO_METHOD_TLS_CLIENT);
+
+            // 忽略SSL证书验证
+            // TODO: 支持设置
+            stream_context_set_option($socket, [
+                'ssl'=>['verify_peer'=>false, 'verify_peer_name'=>false]
+            ]);
+
+            if(!stream_socket_enable_crypto($socket,TRUE,STREAM_CRYPTO_METHOD_TLS_CLIENT)) throw new \Exception("Create TLS connection failed.");
+
             $reply=$this->dialog('EHLO '.$this->hostname);
-            if (preg_match('/8BITMIME/',$reply))
+            if (isset($cap['8BITMIME']))
                 $headers['Content-Transfer-Encoding']='8bit';
             else {
                 $headers['Content-Transfer-Encoding']='quoted-printable';
-                $message=quoted_printable_encode($message);
+                $data=quoted_printable_encode($data);
             }
         }
-        if ($this->username && $this->password && preg_match('/AUTH/',$reply)) {
+
+        if ($this->username && $this->password && @$cap['AUTH']) {
             // Authenticate
-            $this->dialog('AUTH LOGIN');
-            $this->dialog(base64_encode($this->username));
-            $this->dialog(base64_encode($this->password));
+            if(strpos($cap['AUTH'], 'LOGIN')!==false){
+                $this->dialog('AUTH LOGIN');
+                $this->dialog(base64_encode($this->username));
+                $this->dialog(base64_encode($this->password));
+            }
+            elseif(strpos($cap['AUTH'], 'PLAIN')!==false){
+                $this->dialog('AUTH PLAIN '.base64_encode("$this->username\0$this->username\0$this->password"));
+            }
+            else{
+                throw new \Exception("Unknown AUTH scheme: ".$cap['AUTH']);
+            }
+
+            // 检查认证是否成功
+            if(substr($this->last_reply, 0, 1)!='2'){
+                throw new \Exception("Authentication failed: ".$this->last_reply);
+            }
         }
 
         // Start message dialog
@@ -236,6 +272,9 @@ class Sender{
         }
 
         if($this->debug) error_log(" << $reply");
+
+        // 保存
+        $this->last_reply=$reply;
 
         return $reply;
     }
