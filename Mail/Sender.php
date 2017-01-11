@@ -39,6 +39,7 @@ class Sender{
         $this->attachments=[];
 
         $this->socket=null;
+        $this->debug=defined("CLUE_DEBUG_MAIL") && CLUE_DEBUG_MAIL;
     }
 
     /**
@@ -220,7 +221,7 @@ class Sender{
     protected function dialog($cmd=NULL,$log=TRUE) {
         $socket=&$this->socket;
 
-        $this->debug(" >> $cmd");
+        if($this->debug) error_log(" >> $cmd");
 
         if (!is_null($cmd)) fputs($socket,$cmd."\r\n");
 
@@ -234,14 +235,8 @@ class Sender{
             if (preg_match('/(?:^|\n)\d{3} .+?\r\n/s',$reply)) break;
         }
 
-        $this->debug(" << $reply");
+        if($this->debug) error_log(" << $reply");
 
         return $reply;
-    }
-
-    protected function debug($message){
-        if(defined('DEBUG') && DEBUG){
-            error_log($message);
-        }
     }
 }
