@@ -4,6 +4,7 @@ namespace Clue{
 
     class RESTfulApplication extends Application{
         static protected $_INSTANCE=null;
+        const PHP_ERROR=E_ERROR | E_USER_ERROR | E_CORE_ERROR | E_COMPILE_ERROR | E_RECOVERABLE_ERROR | E_PARSE;
 
         /**
          * @param $options[title]   API文档名称
@@ -22,6 +23,11 @@ namespace Clue{
         }
 
         function guard(){
+            // 返回结果是JSON，即便开发环境也不要显示错误信息
+            ini_set('display_errors', 0);
+
+            // error_reporting(self::PHP_ERROR);
+
             // 设置Singleton保护
             if(is_object(self::$_INSTANCE)) throw new Exception("RestfulAPI is a singleton");
             self::$_INSTANCE=$this;
@@ -29,9 +35,8 @@ namespace Clue{
             // 系统运行时错误返回500错误
             set_error_handler(function($errno, $errstr, $errfile, $errline){
                 error_log("$errno: $errstr ($errfile:$errline)");
-                if($errno & (E_ERROR | E_USER_ERROR | E_CORE_ERROR | E_COMPILE_ERROR | E_RECOVERABLE_ERROR | E_PARSE))
-                    self::$_INSTANCE->error($errstr, 500);
-            });
+                self::$_INSTANCE->error($errstr, 500);
+            }, self::PHP_ERROR);
 
             set_exception_handler(function($e){
                 error_log(sprintf("%s (%d)", $e->getMessage(), $e->getCode()));
@@ -51,9 +56,9 @@ namespace Clue{
             register_shutdown_function(function(){
                 // 最后的机会捕捉到fatal error
                 $fatal=error_get_last();
-                if(is_array($fatal)){
+                if(is_array($fatal) && $fatal['type'] & self::PHP_ERROR){
                     error_log(sprintf("[Fatal %s] %s @ %s:%s", $fatal['type'], $fatal['message'], $fatal['file'], $fatal['line']));
-                    self::$_INSTANCE->error($$fatal['message'], 500);
+                    self::$_INSTANCE->error($fatal['message'], 500);
                 }
             });
         }
@@ -97,6 +102,7 @@ namespace Clue{
         }
 
         function success($result, $code=200){
+            error_log("SUCCESS: $code");
             http_response_code($code);
             header("Content-Type: text/json");
             exit(json_encode($result));
