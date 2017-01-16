@@ -3,6 +3,9 @@
  * REF: http://www.termsys.demon.co.uk/vtansi.htm
  */
 namespace Clue{
+    // 避免cgi模式下STDERR缺少定义
+    if(!defined('STDERR')) define('STDERR', fopen('php://stderr', 'w'));
+
     class CLI{
         static $_SAVEPOINT=[];
 
