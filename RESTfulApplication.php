@@ -4,7 +4,6 @@ namespace Clue{
 
     class RESTfulApplication extends Application{
         static protected $_INSTANCE=null;
-        const PHP_ERROR=E_ERROR | E_USER_ERROR | E_CORE_ERROR | E_COMPILE_ERROR | E_RECOVERABLE_ERROR | E_PARSE;
 
         /**
          * @param $options[title]   API文档名称
@@ -12,6 +11,8 @@ namespace Clue{
          */
         function __construct($options=array()){
             parent::__construct($options);
+
+            $this->PHP_ERROR=E_ERROR | E_WARNING | E_PARSE;
 
             $this->guard();
 
@@ -36,7 +37,7 @@ namespace Clue{
             set_error_handler(function($errno, $errstr, $errfile, $errline){
                 error_log("$errno: $errstr ($errfile:$errline)");
                 self::$_INSTANCE->error($errstr, 500);
-            }, self::PHP_ERROR);
+            }, $this->PHP_ERROR);
 
             set_exception_handler(function($e){
                 error_log(sprintf("%s (%d)", $e->getMessage(), $e->getCode()));
@@ -56,7 +57,7 @@ namespace Clue{
             register_shutdown_function(function(){
                 // 最后的机会捕捉到fatal error
                 $fatal=error_get_last();
-                if(is_array($fatal) && $fatal['type'] & self::PHP_ERROR){
+                if(is_array($fatal) && $fatal['type'] & $this->PHP_ERROR){
                     error_log(sprintf("[Fatal %s] %s @ %s:%s", $fatal['type'], $fatal['message'], $fatal['file'], $fatal['line']));
                     self::$_INSTANCE->error($fatal['message'], 500);
                 }
