@@ -188,7 +188,7 @@ class Sender{
         }
 
         // 如果服务器支持TLS
-        if (strtolower($scheme)=='tls' || $cap['STARTTLS']) {
+        if (strtolower($scheme)=='tls' || @$cap['STARTTLS']) {
             $this->dialog('STARTTLS');
 
             // 忽略SSL证书验证
