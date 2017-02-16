@@ -105,7 +105,7 @@ class Guard{
 		$this->stop_level=$this->log_level($config['stop_level']);
 
 		// 只需要error report能够监控到的错误级别
-		$this->error_threshold=max(array_map(function($c){return $c['level'];}, $this->channels), $this->stop_level);
+		$this->error_threshold=max(array_map(function($c){return $c['level'];}, $this->channels)+[$this->stop_level]);
 
 		$error_reporting=0;
 		foreach(self::$PHP_ERROR_MAP as $lvl=>$err){
