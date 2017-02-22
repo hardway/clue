@@ -276,6 +276,22 @@ namespace Clue{
 			return true;
 	    }
 
+        /**
+         * 切换为系统用户user
+         */
+        function require_user($user){
+            if(is_int($user)){
+                $uid=$user;
+            }
+            else{
+                $uinfo=posix_getpwnam($user);
+                $uid=$uinfo['uid'];
+            }
+
+            posix_seteuid($uid);
+            if(posix_geteuid()!=$uid) panic("Switch to user $user failed.");
+        }
+
 	    # user PHP_OS or php_uname() to get operation system name
 
 		static function http_auto_cache($timestamp, $etag=null){
