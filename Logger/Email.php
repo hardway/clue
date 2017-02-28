@@ -21,8 +21,8 @@ class Email extends Syslog{
     function write($data){
         $this->mailer->subject=sprintf("%s %s %s",
             $data['timestamp'],
-            $data['level'] ? "| {$data['level']} |" : "",
-            substr($data['message'], 0, 160)
+            substr($data['message'], 0, 160),
+            '['.@$data['first_error'].'] ('.@$data['first_trace'].')'
         );
 
         $body="";

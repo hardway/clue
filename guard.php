@@ -146,19 +146,22 @@ class Guard{
 			'_SESSION'=>@$_SESSION,
 		];
 		$context=$this->filter_context($context);
-		$resource=@$context['_SERVER']['REQUEST_URI'] ?: $context['_SERVER']['SCRIPT_FILENAME'];
 
-		// 按照各个channel的threshold进行分拣和输出
-		foreach($this->channels as $type=>$channel){
-			$errors=array_filter($this->errors, function($err) use($channel){
-				return $err['level'] <= $channel['level'];
-			});
+        // 按照各个channel的threshold进行分拣和输出
+        foreach($this->channels as $type=>$channel){
+            $errors=array_filter($this->errors, function($err) use($channel){
+                return $err['level'] <= $channel['level'];
+            });
 
-			if(empty($errors)) continue;
+            if(empty($errors)) continue;
+
+    		$resource=@$context['_SERVER']['REQUEST_URI'] ?: $context['_SERVER']['SCRIPT_FILENAME'];
 
 			$output=[
 				'message'=>count($errors)." error occured recently at \"$resource\"",
 				'timestamp'=>date("Y-m-d H:i:s"),
+                'first_error'=>$errors[0]['type'].' '.$errors[0]['message'],
+                'first_trace'=>$errors[0]['backtrace'][0]['file'].':'.$errors[0]['backtrace'][0]['line']
 			];
 
 			if(isset($channel['format'])){

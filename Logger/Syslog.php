@@ -25,7 +25,7 @@ class Syslog implements Logger{
     	$text_format="%-22s | %-9s | %s";
     	$text_format_detail="%25s %-9s | %s";
 
-    	$lines[]=sprintf($text_format, $data['timestamp'], strtoupper(@$data['level']), $data['message']);
+    	$lines[]=sprintf($text_format, $data['timestamp'], $data['message'], '['.$data['first_error'].'] ('.$data['first_trace'].')');
 
         if($this->option['backtrace'] && isset($data['backtrace'])){
             $lines[]=sprintf($text_format, $data['timestamp'], 'BACKTRACE', $data['backtrace']);
