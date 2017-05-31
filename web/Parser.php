@@ -402,7 +402,8 @@ class Element implements \ArrayAccess{
 		foreach($this->el->childNodes as $n){
 			$d=new \DOMDocument();
 			$d->appendChild($d->importNode($n, true));
-			$html.=html_entity_decode($d->saveHTML(), ENT_NOQUOTES, "UTF-8");
+            // $html.=html_entity_decode($d->saveHTML(), ENT_NOQUOTES, "UTF-8");
+			$html.=$d->saveHTML();
 		}
 
 		return $html;
