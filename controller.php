@@ -72,8 +72,10 @@ namespace Clue{
             }
 
             $layout=new View("/layout/$this->layout");
-            if($layout)
+            if($layout){
+                $layout->bind(@$this->layout_vars ?: []);
                 $layout->render(array('content'=>$content));
+            }
             else
                 echo $content;
         }
