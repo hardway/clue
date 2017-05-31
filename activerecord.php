@@ -25,6 +25,7 @@
             if(!isset($model['complete'])){
                 $class=get_called_class();
 
+                // 自动根据类名推导表名
                 if(!isset($model['table'])){
                     $table=strtolower($class);
                     if(strpos($table, "\\")!==false){
@@ -32,6 +33,9 @@
                     }
                     $model['table']="$table";
                 }
+
+                // 正式名称 `DB.TABLE`
+                $model['table_ref']=sprintf("%s`%s`", isset($model['schema']) ? $model['schema'].'.' : "", $model['table']);
 
                 if(!isset($model['pkey'])){
                     $model['pkey']='id';
@@ -109,7 +113,7 @@
             $model=self::model();
             $pkey=$model['columns'][$model['pkey']]['name'];
 
-            $row=self::db()->get_row("select * from `{$model['table']}` where `$pkey`='".self::db()->escape($id)."'", ARRAY_A);
+            $row=self::db()->get_row("select * from {$model['table_ref']} where `$pkey`='".self::db()->escape($id)."'", ARRAY_A);
             if($row){
                 $class=get_called_class();
                 $r=new $class($row);
@@ -287,7 +291,7 @@
             }
             else{
                 // 条件数组
-                $sql="select * from `{$model["table"]}` ";
+                $sql="select * from {$model["table_ref"]} ";
                 $sql.=self::_get_where_clause($condition, $range);
             }
 
@@ -304,7 +308,7 @@
 
         static function count($condition=array()){
             $model=self::model();
-            $sql="select count(*) from `{$model["table"]}` ".self::_get_where_clause($condition);
+            $sql="select count(*) from {$model["table_ref"]} ".self::_get_where_clause($condition);
 
             return intval(self::db()->get_var($sql));
         }
@@ -442,7 +446,7 @@
                     $vlist[]=self::db()->quote($this->$c);
 
                 }
-                $sql="insert into `{$model['table']}` (".join(", ", $clist).") values(".join(",", $vlist).")";
+                $sql="insert into {$model['table_ref']} (".join(", ", $clist).") values(".join(",", $vlist).")";
             }
             else{ // Update Value
                 $list=array();
@@ -453,7 +457,7 @@
                     $list[]="`".$m['name']."`=".self::db()->quote($this->$c);
                 }
                 if(count($list)>0){
-                    $sql="update `{$model['table']}` set ".join(",", $list)." where `$pkfield`='".$this->$pkey."'";
+                    $sql="update {$model['table_ref']} set ".join(",", $list)." where `$pkfield`='".$this->$pkey."'";
                 }
                 else{
                     // Nothing has changed.
@@ -490,7 +494,7 @@
             $pkey=$model['pkey'];
             $pkfield=@$model['columns'][$pkey]['name'] ?: $pkey;
 
-            $sql="delete from `{$model["table"]}` where `$pkfield`='".$this->$pkey."'";
+            $sql="delete from {$model["table_ref"]} where `$pkfield`='".$this->$pkey."'";
 
             $ret=self::db()->exec($sql);
             $this->_snap_shot();
