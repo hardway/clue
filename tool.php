@@ -455,5 +455,8 @@ namespace{
 		    throw new Exception($message);
 		}
 	}
+
+    function collect($items){
+        return new Clue\Collection($items);
+    }
 }
-?>
