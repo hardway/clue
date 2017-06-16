@@ -185,7 +185,12 @@ namespace Clue{
         function alert($messages, $context='website', $level='alert'){
             if(!is_array($messages)) $messages=array($messages);
             foreach($messages as $m){
-                $_SESSION["app_msg"][$level][$context][]=$m;
+                if($this->is_ajax()){
+                    echo "<script>alert(\"$m\", \"$level\", 10000)</script>";   // 10秒后消失
+                }
+                else{
+                    $_SESSION["app_msg"][$level][$context][]=$m;
+                }
             }
         }
 
@@ -219,6 +224,11 @@ namespace Clue{
         function success($message, $context='website'){ $this->alert($message, $context, 'success'); }
         function display_succeeds($context_pattern='.*'){ $this->display_alerts($context_pattern, 'success'); }
         function get_succeeds($context_pattern='.*'){ return $this->get_alerts($context_pattern, 'success'); }
+
+        // 是否AJAX请求
+        public function is_ajax(){
+            return isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest';
+        }
 
         function run(){
             if(isset($_SERVER['PATH_INFO']))

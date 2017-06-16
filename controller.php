@@ -107,6 +107,8 @@ namespace Clue{
 			global $app;
 			$app->redirect_referer($default_url);
 		}
+
+        function is_ajax(){return $this->app->is_ajax();}
 	}
 }
 ?>
