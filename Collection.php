@@ -138,6 +138,14 @@ class Collection implements \ArrayAccess, \Countable, \IteratorAggregate, \JsonS
 
     function random($cnt){$rand=array_rand($this->items, $cnt); return new static(array_intersect_key($this->items, array_flip($rand)));}
 
+    function pluck($field){
+        return new static(array_map(function($field){return $item[$field];}, $this->items));
+    }
+
+    function implode($glue){
+        return implode($glue, $this->items);
+    }
+
     function partition($func){
         panic("Not Implemented");
     }
