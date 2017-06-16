@@ -459,4 +459,40 @@ namespace{
     function collect($items){
         return new Clue\Collection($items);
     }
+
+    /**
+     * 强制转换对象类型
+     */
+    function cast($class, $obj){
+        $c=unserialize(
+            preg_replace(
+                '/^O:\d+:"[^"]++"/',
+                'O:'.strlen($class).':"'.$class.'"',
+                serialize($obj)
+            )
+        );
+
+        // 必须是继承关系
+        if(!is_subclass_of($obj, $class) && !is_subclass_of($c, get_class($obj))){
+            panic("Cast classes not related is not allowed.");
+        }
+
+        return $c;
+    }
+
+    if(version_compare(PHP_VERSION, '5.6.0') >=0){
+        /**
+         * 仅返回key在fields中的结果
+         */
+        function array_include($ary, $fields){
+            return array_filter($ary, function($f) use($fields){return in_array($f, $fields);}, ARRAY_FILTER_USE_KEY);
+        }
+
+        /**
+         * 剔除key在fields中的结果
+         */
+        function array_exclude($ary, $fields){
+            return array_filter($ary, function($f) use($fields){return !in_array($f, $fields);}, ARRAY_FILTER_USE_KEY);
+        }
+    }
 }
