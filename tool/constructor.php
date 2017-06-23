@@ -333,7 +333,7 @@ END
 			echo "Database: ".$db->get_var("select database()")."\n";
 			echo "Data Version: $current_version"."\n";
 
-			exit("\nMore Usage: clue db [upgrade | downgrade | diagnose]\n");
+			exit("\nMore Usage: clue db [upgrade | downgrade | diagnose | schema]\n");
 		}
 
 		function db_up(){return $this->db_upgrade(); }
