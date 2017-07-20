@@ -5,6 +5,7 @@
 namespace Clue{
     // 避免cgi模式下STDERR缺少定义
     if(!defined('STDERR')) define('STDERR', fopen('php://stderr', 'w'));
+    @define("TERM", $_SERVER['TERM']);
 
     class CLI{
         static $_SAVEPOINT=[];
@@ -48,14 +49,15 @@ namespace Clue{
         }
 
         static function banner($text, $color=null){
-            $text=trim($text);
+            $text="  $text  ";
 
             // $cols = exec('tput cols');
             // $rows = exec('tput lines');
 
             self::ansi($color."_banner");
-
-        	fputs(STDERR, "\n\n$text\n\x1b[K");
+            fputs(STDERR, "\n".(TERM=='screen' ? str_repeat(" ", strlen($text)) : "")."\n");
+        	fputs(STDERR, $text);
+            fputs(STDERR, "\n".(TERM=='screen' ? str_repeat(" ", strlen($text)) : "\x1b[K"));
             self::ansi(['RESET']);
 
             fputs(STDERR, "\n");
