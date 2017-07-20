@@ -56,16 +56,23 @@ namespace Clue{
 		set_include_path($path.PATH_SEPARATOR.get_include_path());
 	}
 
-	function add_class_path($path){
+	function add_class_path($path, $namespace=null){
 		$_CLASS_PATH=&PathConfig::$CLASS_PATH;
 
 		if($_CLASS_PATH==null) $_CLASS_PATH=array();
 
 		// Normalize path
-		$path=realpath($path);
+        $path=preg_match('/phar:\/\//', $path) ? $path : realpath($path);
+        $path=rtrim($path);
 
 		if($path!==false && !in_array($path, $_CLASS_PATH)){
-			$_CLASS_PATH[]=$path;
+			if($namespace){
+                $namespace=str_replace(NS, "/", trim($namespace, " \\")).'/';   // 直接将\转换为/
+                $_CLASS_PATH[$namespace]=$path;
+            }
+            else{
+                $_CLASS_PATH[]=$path;
+            }
 		}
 	}
 
@@ -97,30 +104,28 @@ namespace Clue{
 
 	function autoload_load($class){
 		$_CLASS_PATH=&PathConfig::$CLASS_PATH;
-
 		$class=str_replace(NS, '/', $class);
 
-		if(preg_match('/^clue\//i', $class)){
-			// Special treat for Clue\ classes. For they might reside in a phar file.
-			$class=substr($class, 5);
+        // 扫描所有的ClassPath
+        foreach($_CLASS_PATH as $ns=>$path){
+            // Namespace匹配失败，无需继续
+            if(is_string($ns) && strpos($class, $ns)!==0) continue;
 
-			foreach(array($class, strtolower($class)) as $cls){
-				if(file_exists(__DIR__.'/'.$cls.".php")){
-					require_once __DIR__.'/'.$cls.".php";
-					return;
-				}
-			}
-		}
-		else{
-			foreach($_CLASS_PATH as $path){
-				foreach([$class, strtolower($class), str_replace('_', '/', $class), str_replace('_', '/', strtolower($class))] as $cls){
-					if(file_exists($path.'/'.$cls.".php")){
-						require_once $path.'/'.$cls.".php";
-						return;
-					}
-				}
-			}
-		}
+            // 枚举各种大小写组合，以及用"_"和"\"分隔多个目录
+            foreach([$class, strtolower($class), str_replace('_', '/', $class), str_replace('_', '/', strtolower($class))] as $cls){
+                $searches=[];
+                if(stripos($cls, $ns)===0){
+                    $searches[]=sprintf("%s/%s.php", $path, str_ireplace($ns, '', $cls), '.php');
+                }
+                $searches[]=sprintf("%s/%s.php", $path, $cls, '.php');
+
+                foreach($searches as $file){
+                    if(file_exists($file)){
+                        return require_once $file;
+                    }
+                }
+            }
+        }
 	}
 
 	/**
@@ -165,6 +170,9 @@ namespace Clue{
 	add_site_path(".");         // 当前执行目录
 	add_site_path(__DIR__);     // 文件所属目录
 	add_site_path(APP_ROOT);    // 主目录
+
+    #Clue路径
+    add_class_path(__DIR__, "Clue");
 
 	#第三方库应该放在lib目录
 	add_class_path(APP_ROOT."/lib");
