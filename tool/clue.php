@@ -370,6 +370,21 @@ END
                 "Can't connect to database %s:\"%s\"@%s/%s", $cfg['username'], $cfg['password'], $cfg['host'], $cfg['db']
             ));
 
+            // 如果没有Config表，自动创建
+            if(!$db->has_table('config')){
+                $db->exec("
+                    CREATE TABLE `config` (
+                      `name` varchar(128) NOT NULL,
+                      `value` varchar(1024) DEFAULT '',
+                      `category` varchar(32) DEFAULT NULL,
+                      `title` varchar(64) DEFAULT NULL,
+                      `description` varchar(1024) DEFAULT NULL,
+                      PRIMARY KEY (`name`)
+                    ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+                ");
+                $db->insert('config', ['name'=>'DB_VERSION', 'value'=>0]);
+            }
+
             return $db;
         }
         else{
