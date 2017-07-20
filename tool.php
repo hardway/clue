@@ -451,8 +451,8 @@ namespace{
 	}
 
 	if(!function_exists('panic')){
-		function panic($message){
-		    throw new Exception($message);
+		function panic($message, $code=null){
+		    throw new \Exception($message, $code);
 		}
 	}
 
