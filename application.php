@@ -103,9 +103,7 @@ namespace Clue{
             // 指定Session名称
             if(isset($options['name'])) session_name($options['name']);
 
-            session_start([
-                'session.gc_maxlifetime'=>$timeout
-            ]);
+            session_start();
 
 		    if (!isset($_SESSION['security_token'])) {
 		        $_SESSION['security_token'] = md5(uniqid(rand(), true));

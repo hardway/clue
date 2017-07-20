@@ -29,6 +29,8 @@ class DBSession implements \SessionHandlerInterface{
                 )
             ");
         }
+
+        return true;
     }
 
     public function read($session_id){
@@ -97,6 +99,8 @@ class FileSession implements \SessionHandlerInterface{
             $ok=mkdir($this->folder, 0775, true);
             if(!$ok) panic("Can't create session folder ($this->folder).");
         }
+
+        return true;
     }
 
     public function read($session_id){
