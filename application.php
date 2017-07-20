@@ -93,21 +93,36 @@ namespace Clue{
             }
         }
 
-        function start_session($timeout=null, $name=null, $storage=null){
-            if($timeout!==null){
-                ini_set('session.gc_maxlifetime', $timeout);
-            }
+        function start_session($timeout=null, array $options=[]){
+            $this['session']=Session::init($this, $options+[
+                'ttl'=>$timeout,
+                'folder'=>"/tmp/session/".APP_NAME,         // FileSession默认路径
+                'db'=>$this['db']['default']                // DBSession默认数据库
+            ]);
 
-            if($name!==null){
-                session_name($name);
-            }
+            // 指定Session名称
+            if(isset($options['name'])) session_name($options['name']);
 
-            // TODO: session storage
-            session_start();
+            session_start([
+                'session.gc_maxlifetime'=>$timeout
+            ]);
 
 		    if (!isset($_SESSION['security_token'])) {
 		        $_SESSION['security_token'] = md5(uniqid(rand(), true));
 		    }
+        }
+
+        /**
+          * 记住Session多少天（通过Cookie）
+          * @param $retention 天数
+          */
+        function remember_session($retention){
+            if(!$this['session']) return false;
+
+            session_set_cookie_params($retention * 86400);
+            $this['session']->remember($retention);
+
+            return true;
         }
 
         function redirect($url){
