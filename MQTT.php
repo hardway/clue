@@ -83,9 +83,8 @@ class MQTT{
         do{
             error_log(sprintf("Reconnecting #%d", $this->reconnects++));
             sleep(rand(5,10));  // 随机等待
-            $ok=$this->connect(true, $this->will);
-        }
-        while($ok);
+            $ok=$this->connect($this->will);
+        } while(!$ok);
 
         // 重新订阅
         foreach($this->topics as $key=>$top){
