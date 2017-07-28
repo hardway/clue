@@ -480,19 +480,37 @@ namespace{
         return $c;
     }
 
-    if(version_compare(PHP_VERSION, '5.6.0') >=0){
-        /**
-         * 仅返回key在fields中的结果
-         */
-        function array_include($ary, $fields){
+    /**
+     * 仅返回key在fields中的结果
+     */
+    function array_include($ary, $fields){
+        if(version_compare(PHP_VERSION, '5.6.0') >=0){
             return array_filter($ary, function($f) use($fields){return in_array($f, $fields);}, ARRAY_FILTER_USE_KEY);
         }
+        else{
+            foreach($ary as $k=>$v){
+                if(!in_array($k, $fields)){
+                    unset($ary[$k]);
+                }
+            }
+            return $ary;
+        }
+    }
 
-        /**
-         * 剔除key在fields中的结果
-         */
-        function array_exclude($ary, $fields){
+    /**
+     * 剔除key在fields中的结果
+     */
+    function array_exclude($ary, $fields){
+        if(version_compare(PHP_VERSION, '5.6.0') >=0){
             return array_filter($ary, function($f) use($fields){return !in_array($f, $fields);}, ARRAY_FILTER_USE_KEY);
+        }
+        else{
+            foreach($ary as $k=>$v){
+                if(in_array($k, $fields)){
+                    unset($ary[$k]);
+                }
+            }
+            return $ary;
         }
     }
 }
