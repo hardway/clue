@@ -21,7 +21,7 @@ class DBSession implements \SessionHandlerInterface{
                 create table $this->table(
                     id varchar(32) not null primary key,
                     ipaddr varchar(16) not null,
-                    useragent varchar(256) not null,
+                    useragent varchar(256),
                     created datetime not null,
                     retention int not null default 0,   -- 多少天内可以用cookie恢复
                     last_update timestamp not null,
