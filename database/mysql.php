@@ -14,6 +14,15 @@ namespace Clue\Database{
 
             $this->config=$param;
 
+            $this->connect();
+        }
+
+        function __destruct(){
+            $this->close();
+        }
+
+        function connect(){
+            $param=$this->config;
             // Check Parameter, TODO
             // echo "Creating MySQL Connection.\n";
             $this->dbh=mysqli_connect(
@@ -32,10 +41,6 @@ namespace Clue\Database{
                 $encoding=$param['encoding'];
                 $this->exec("set names $encoding");
             }
-        }
-
-        function __destruct(){
-            $this->close();
         }
 
         function close(){
@@ -224,6 +229,10 @@ namespace Clue\Database{
 
             if(func_num_args()>1){
                 $sql=call_user_func_array(array($this, "format"), func_get_args());
+            }
+
+            if(!mysqli_ping($this->dbh)){
+                $this->connect();
             }
 
             $query_begin=microtime(true);
