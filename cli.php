@@ -69,6 +69,12 @@ namespace Clue{
             self::ansi();
         }
 
+        static function info($str){
+            self::ansi("cyan");
+            fputs(STDERR, vsprintf(func_get_args()[0], array_slice(func_get_args(), 1)));
+            self::ansi();
+        }
+
         static function success($str){
             self::ansi("green");
             fputs(STDERR, vsprintf(func_get_args()[0], array_slice(func_get_args(), 1)));
