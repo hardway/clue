@@ -74,6 +74,13 @@ class Test_ActiveRecord extends PHPUnit_Framework_TestCase{
         $this->assertEquals([1,2,3,4], $c->sort(function($v){return $v*2;})->values());
     }
 
+    function test_pluck(){
+        $c=new Collection([
+            ['id'=>1], ['id'=>2], ['id'=>3]
+        ]);
+        $this->assertEquals([1,2,3], $c->pluck('id')->values());
+    }
+
     function test_group(){
         $c=new Collection([
             ['group'=>'A', 'val'=>2],

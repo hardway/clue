@@ -119,7 +119,7 @@ class Collection implements \ArrayAccess, \Countable, \IteratorAggregate, \JsonS
         return new static($items);
     }
 
-    function unique($field){
+    function unique($field=null){
         if (is_null($field)) {
             return new static(array_unique($this->items, SORT_REGULAR));
         }
@@ -139,7 +139,7 @@ class Collection implements \ArrayAccess, \Countable, \IteratorAggregate, \JsonS
     function random($cnt){$rand=array_rand($this->items, $cnt); return new static(array_intersect_key($this->items, array_flip($rand)));}
 
     function pluck($field){
-        return new static(array_map(function($field){return $item[$field];}, $this->items));
+        return new static(array_map(function($item) use($field){return $item[$field];}, $this->items));
     }
 
     function implode($glue){
