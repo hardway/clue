@@ -28,7 +28,7 @@ namespace Clue{
         static function confirm($question, $default='N'){
             echo $question." "; self::flush();
 
-            $confirmation=trim(fgetc(STDIN));
+            $confirmation=trim(fgets(STDIN));
             if(empty($confirmation)) $confirmation=$default;
 
             return $confirmation=='Y' || $confirmation=='y';
