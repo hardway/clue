@@ -243,6 +243,15 @@ namespace Clue{
             return isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest';
         }
 
+        // 是否跨域POST请求
+        // TODO: 支持CORS
+        public function is_csrf(){
+            $actual_host=@$_SERVER['SERVER_NAME'];
+            $expect_host=@parse_url(APP_URL)['host'];
+
+            return $actual_host && $expect_host && $actual_host!=$expect_host;
+        }
+
         function run(){
             if(isset($_SERVER['PATH_INFO']))
                 $url=$_SERVER['PATH_INFO'];
