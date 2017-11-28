@@ -400,7 +400,7 @@ namespace Clue{
 
 	class Browser{
 		static function is_ie(){
-			return strpos($_SERVER['HTTP_USER_AGENT'], 'MSIE')!==false;
+			return strpos(@$_SERVER['HTTP_USER_AGENT'], 'MSIE')!==false;
 		}
 	}
 }

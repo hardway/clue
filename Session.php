@@ -43,7 +43,7 @@ class DBSession implements \SessionHandlerInterface{
 
         if($idle > $this->ttl){
             // 综合IP和Agent，是否可以根据Cookie恢复
-            if($s->retention && $idle < $s->retention*86400 && $_SERVER['REMOTE_ADDR']==$s->ipaddr && $_SERVER['HTTP_USER_AGENT']==$s->useragent){
+            if($s->retention && $idle < $s->retention*86400 && $_SERVER['REMOTE_ADDR']==$s->ipaddr && @$_SERVER['HTTP_USER_AGENT']==$s->useragent){
                 $this->write($session_id, $s->data);
             }
             else{
@@ -60,7 +60,7 @@ class DBSession implements \SessionHandlerInterface{
             insert into $this->table (id, ipaddr, useragent, created, data)
             values(%s, %s, %s, now(), %s)
             on duplicate key update data=%s, last_update=now()
-        ", $session_id, $_SERVER['REMOTE_ADDR'], $_SERVER['HTTP_USER_AGENT'], $session_data, $session_data);
+        ", $session_id, $_SERVER['REMOTE_ADDR'], @$_SERVER['HTTP_USER_AGENT'], $session_data, $session_data);
 
         return true;
     }
@@ -113,7 +113,7 @@ class FileSession implements \SessionHandlerInterface{
         // 检测是否超时
         if($idle > $this->ttl){
             // 综合IP和Agent，是否可以根据Cookie恢复
-            if(@$json['retention'] && $idle < $json['retention']*86400 && $_SERVER['REMOTE_ADDR']==$json['ipaddr'] && $_SERVER['HTTP_USER_AGENT']==$json['useragent']){
+            if(@$json['retention'] && $idle < $json['retention']*86400 && $_SERVER['REMOTE_ADDR']==$json['ipaddr'] && @$_SERVER['HTTP_USER_AGENT']==$json['useragent']){
                 $this->write($session_id, $s->data);
             }
             else{
@@ -131,7 +131,7 @@ class FileSession implements \SessionHandlerInterface{
         if(!file_exists($path)){
             $json=[
                 'ipaddr'=>$_SERVER['REMOTE_ADDR'],
-                'useragent'=>$_SERVER['HTTP_USER_AGENT'],
+                'useragent'=>@$_SERVER['HTTP_USER_AGENT'],
                 'created'=>time(),
             ];
         }
