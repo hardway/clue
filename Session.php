@@ -18,7 +18,7 @@ class DBSession implements \SessionHandlerInterface{
         // 创建Session表
         if(!$this->db->has_table($this->table)){
             $this->db->exec("
-                create table $this->table(
+                CREATE TABLE `$this->table`(
                     id varchar(32) not null primary key,
                     ipaddr varchar(16) not null,
                     useragent varchar(256),
@@ -26,7 +26,7 @@ class DBSession implements \SessionHandlerInterface{
                     retention int not null default 0,   -- 多少天内可以用cookie恢复
                     last_update timestamp not null,
                     data text
-                )
+                ) DEFAULT CHARSET=utf8
             ");
         }
 
