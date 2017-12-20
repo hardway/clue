@@ -123,6 +123,7 @@
 	 */
 	function url_follow($url, $current){
 		if(empty($url)) return $current;
+        if(empty($current)) return $url;
 
 		$parts=parse_url(trim($url));
 
@@ -130,7 +131,7 @@
 		if(isset($parts['host'])) return $url;
 		if(isset($parts['scheme'])) return $url;
 
-		$current=parse_url($current ?: $this->referer);
+		$current=parse_url($current);
 
 		$path=isset($current['path']) ? explode("/",  $current['path']) : array("");
 		if(isset($parts['path'])){
