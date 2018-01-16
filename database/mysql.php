@@ -25,7 +25,7 @@ namespace Clue\Database{
             $param=$this->config;
             // Check Parameter, TODO
             // echo "Creating MySQL Connection.\n";
-            $this->dbh=mysqli_connect(
+            $this->dbh=@mysqli_connect(
                 $param['host'],
                 $param['username'], $param['password'],
                 $param['db'],
@@ -33,7 +33,19 @@ namespace Clue\Database{
             );
 
             if(!$this->dbh){
-                $this->setError(array('code'=>mysqli_connect_errno(), 'error'=>mysqli_connect_error()));
+                $errno=mysqli_connect_errno();
+                $error=mysqli_connect_error();
+
+                // 尝试创建数据库
+                $this->dbh=@mysqli_connect($param['host'], $param['username'], $param['password'], null, @$param['port']);
+                if($this->dbh){
+                    $this->exec("create database {$param['db']} default character set utf8");
+                    $this->dbh=@mysqli_connect($param['host'], $param['username'], $param['password'], $param['db'], @$param['port']);
+                }
+
+                if(!$this->dbh){
+                    $this->setError(array('code'=>$errno, 'error'=>$error));
+                }
             }
 
             // set default client encoding as UTF8
