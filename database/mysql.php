@@ -243,7 +243,7 @@ namespace Clue\Database{
                 $sql=call_user_func_array(array($this, "format"), func_get_args());
             }
 
-            if(!mysqli_ping($this->dbh)){
+            if(!@mysqli_ping($this->dbh)){
                 $this->connect();
             }
 

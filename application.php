@@ -274,6 +274,18 @@ namespace Clue{
 
             $this->fire_event("before_route");
 
+            if($this->is_ajax()){
+                // TODO: 集成guard
+                global $guard;
+                if($guard instanceof Guard){
+                    $guard->add_event_listener('error', function($g, $e){
+                        $g->summarized=true;
+                        header("HTTP/1.0 ".$e['code']);
+                        exit($e['message']);
+                    });
+                }
+            }
+
             if(is_callable(@$map['handler'])){
 				$ret=$this['router']->handle($map['handler'], $map['params']);
 	        }

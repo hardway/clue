@@ -2,6 +2,8 @@
 namespace Clue;
 
 class Guard{
+    use Traits\Events;
+
 	# Converts php error level to Guard log level
 	static $PHP_ERROR_MAP=array(
 	    E_NOTICE=>"NOTICE",				# 8
@@ -33,6 +35,7 @@ class Guard{
 
 	protected $errors=array();
 	protected $channels=[];
+    public $summarized=false;
 
 	public function __construct(array $option=array()){
 		$default_config=array(
@@ -115,11 +118,12 @@ class Guard{
 		error_reporting($error_reporting);
 
 		// 开始监控
-        set_exception_handler(array($this, "on_exception"));
-        set_error_handler(array($this, "on_error"));
+        set_exception_handler(array($this, "handle_exception"));
+        set_error_handler(array($this, "handle_error"));
 
         // 统一输出
         register_shutdown_function(array($this, "summarize"));
+        $this->summarized=false;
 	}
 
 	public function summarize(){
@@ -137,58 +141,60 @@ class Guard{
 			}
 		}
 
-		$context=[
-			'_SERVER'=>$_SERVER,
-			'_GET'=>@$_GET,
-			'_POST'=>@$_POST,
-			'_COOKIE'=>@$_COOKIE,
-			'_FILES'=>@$_FILES,
-			'_SESSION'=>@$_SESSION,
-		];
-		$context=$this->filter_context($context);
+        if(!$this->summarized){
+    		$context=[
+    			'_SERVER'=>$_SERVER,
+    			'_GET'=>@$_GET,
+    			'_POST'=>@$_POST,
+    			'_COOKIE'=>@$_COOKIE,
+    			'_FILES'=>@$_FILES,
+    			'_SESSION'=>@$_SESSION,
+    		];
+    		$context=$this->filter_context($context);
 
-        // 按照各个channel的threshold进行分拣和输出
-        foreach($this->channels as $type=>$channel){
-            $errors=array_filter($this->errors, function($err) use($channel){
-                return $err['level'] <= $channel['level'];
-            });
+            // 按照各个channel的threshold进行分拣和输出
+            foreach($this->channels as $type=>$channel){
+                $errors=array_filter($this->errors, function($err) use($channel){
+                    return $err['level'] <= $channel['level'];
+                });
 
-            if(empty($errors)) continue;
+                if(empty($errors)) continue;
 
-    		$resource=@$context['_SERVER']['REQUEST_URI'] ?: $context['_SERVER']['SCRIPT_FILENAME'];
+        		$resource=@$context['_SERVER']['REQUEST_URI'] ?: $context['_SERVER']['SCRIPT_FILENAME'];
 
-			$output=[
-				'message'=>count($errors)." error occured recently at \"$resource\"",
-				'timestamp'=>date("Y-m-d H:i:s"),
-                'first_error'=>$errors[0]['type'].' '.$errors[0]['message'],
-                'first_trace'=>$errors[0]['backtrace'][0]['file'].':'.$errors[0]['backtrace'][0]['line']
-			];
+    			$output=[
+    				'message'=>count($errors)." error occured recently at \"$resource\"",
+    				'timestamp'=>date("Y-m-d H:i:s"),
+                    'first_error'=>$errors[0]['type'].' '.$errors[0]['message'],
+                    'first_trace'=>$errors[0]['backtrace'][0]['file'].':'.$errors[0]['backtrace'][0]['line']
+    			];
 
-			if(isset($channel['format'])){
-				$diagnose=[];
+    			if(isset($channel['format'])){
+    				$diagnose=[];
 
-				foreach($errors as $err){
-					// TODO: format_error()
+    				foreach($errors as $err){
+    					// TODO: format_error()
 
-					$text=[];
-					$text[]=$err['type']. ": ". $err['message'];
-					$text[]="";
-					$text[]="Backtracing:";
-					$text[]=$channel['logger']->format_backtrace($err['backtrace']);
-					$text[]="";
-					$diagnose[]=implode("\n", $text);
-				}
+    					$text=[];
+    					$text[]=$err['type']. ": ". $err['message'];
+    					$text[]="";
+    					$text[]="Backtracing:";
+    					$text[]=$channel['logger']->format_backtrace($err['backtrace']);
+    					$text[]="";
+    					$diagnose[]=implode("\n", $text);
+    				}
 
-				$output['diagnose']=implode("\n", $diagnose);
-			}
-			else{
-				$output['diagnose']=$errors;
-			}
+    				$output['diagnose']=implode("\n", $diagnose);
+    			}
+    			else{
+    				$output['diagnose']=$errors;
+    			}
 
-			$output['context']=$context;
+    			$output['context']=$context;
 
-			$channel['logger']->write($output);
-		}
+    			$channel['logger']->write($output);
+    		}
+        }
 
 		// 清理
 		$this->errors=[];
@@ -292,13 +298,13 @@ class Guard{
 	/**
 	 * Exception作为E_ERROR级别的错误
 	 */
-	function on_exception($e){
+	function handle_exception($e){
 		$trace=$e->getTrace();
 		array_unshift($trace, ["file"=>$e->getFile(), 'line'=>$e->getLine()]);
-		return $this->on_error(E_ERROR, "Exception: ".$e->getMessage(), $e->getFile(), $e->getLine(), $GLOBALS, $trace);
+		return $this->handle_error(E_ERROR, "Exception: ".$e->getMessage(), $e->getFile(), $e->getLine(), $GLOBALS, $trace);
 	}
 
-	function on_error($errno, $errstr, $errfile=null, $errline=null, array $errcontext=null, array $errtrace=array()){
+	function handle_error($errno, $errstr, $errfile=null, $errline=null, array $errcontext=null, array $errtrace=array()){
 		// if error has been supressed with an @
 	    if ((error_reporting() & $errno) == 0) return;
 
@@ -308,13 +314,8 @@ class Guard{
 		# Unset $errcontext for this function ($GLOBALS is too big to display)
 
 		$errtrace=array_values(array_filter($errtrace, function($t){
-			return !(!isset($t['file']) && isset($t['class']) && $t['class']==__CLASS__ && in_array($t['function'], ['on_error', 'on_exception']));
+			return !(!isset($t['file']) && isset($t['class']) && $t['class']==__CLASS__ && in_array($t['function'], ['handle_error', 'handle_exception']));
 		}));
-
-		if($errlevel <= $this->stop_level){
-			// E-STOP时不显示function参数
-			exit(sprintf("EMERGENCY STOP: %s %s\n%s\n", self::$PHP_ERROR_MAP[$errno], $errstr, $this->syslog->format_backtrace($errtrace)));
-		}
 
 		$this->errors[]=array(
 			'level'=>$errlevel,
@@ -323,6 +324,13 @@ class Guard{
 			'backtrace'=>$errtrace,
 			'context'=>$this->filter_context($errcontext)
 		);
+
+        $this->fire_event('error', ['code'=>$errno, 'message'=>$errstr]);
+
+        if($errlevel <= $this->stop_level){
+            // E-STOP时不显示function参数
+            exit(sprintf("EMERGENCY STOP: %s %s\n%s\n", self::$PHP_ERROR_MAP[$errno], $errstr, $this->syslog->format_backtrace($errtrace)));
+        }
 
 		return true;
 	}
