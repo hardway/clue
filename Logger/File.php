@@ -38,7 +38,8 @@ class File extends Syslog{
         $subject=sprintf("%s %s %s",
             $data['timestamp'],
             $data['level'] ? "| {$data['level']} |" : "",
-            substr($data['message'], 0, 160)
+            $data['message']
+            // substr($data['message'], 0, 160)
         );
 
         $body="";

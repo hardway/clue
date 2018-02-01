@@ -104,22 +104,28 @@ trait Logger{
         $data['timestamp']=$timestamp;
 
         // 附加Backtrace
-        $data['backtrace']=self::_get_backtrace(2);
+        if(@$context['backtrace']!==false){
+            $data['backtrace']=self::_get_backtrace(@$context['backtrace'] ?: 0);
+        }
 
         // 附加内存统计
-        $data['memory']=[
-            'usage'=>memory_get_usage(true),
-            'peak'=>memory_get_peak_usage(true)
-        ];
+        if(@$context['memory']!==false){
+            $data['memory']=[
+                'usage'=>memory_get_usage(true),
+                'peak'=>memory_get_peak_usage(true)
+            ];
+        }
 
         // 附加HTTP信息
-        $data['context']=[
-            'url'=>@$_SERVER['REQUEST_URI'],
-            'method'=>@$_SERVER['REQUEST_METHOD'],
-            'ip'=>@$_SERVER['REMOTE_ADDR'],
-            'browser'=>@$_SERVER['HTTP_USER_AGENT'],
-            'referrer'=>@$_SERVER['HTTP_REFERER'],
-        ];
+        if(php_sapi_name()!='cli'){
+            $data['context']=[
+                'url'=>@$_SERVER['REQUEST_URI'],
+                'method'=>@$_SERVER['REQUEST_METHOD'],
+                'ip'=>@$_SERVER['REMOTE_ADDR'],
+                'browser'=>@$_SERVER['HTTP_USER_AGENT'],
+                'referrer'=>@$_SERVER['HTTP_REFERER'],
+            ];
+        }
 
         self::$log_handler->write($data);
     }
@@ -130,7 +136,7 @@ trait Logger{
     static function _get_backtrace($depth=null){
         $trace=debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS);
 
-        $trace=is_numeric($depth) ? array_slice($trace, 2, $depth) : array_slice($trace, 2);
+        $trace=$depth ? array_slice($trace, 2, $depth) : array_slice($trace, 2);
         return $trace;
 
         return implode("\n\t", array_map(function($t){
