@@ -157,6 +157,14 @@ class Collection implements \ArrayAccess, \Countable, \IteratorAggregate, \JsonS
     function rfold($m, $f){
         panic("Not Implemented");
     }
+
+    /**
+     * 数组交集
+     */
+    function intersect($ary){
+        $this->items=array_intersect($this->items, $ary);
+        return $this;
+    }
 }
 
 /**
