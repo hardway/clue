@@ -1,4 +1,7 @@
 <?php
+/**
+ * 只支持PHP5
+ */
 namespace Clue\Database{
 	class Mongo extends \Clue\Database{
 		protected $_result;
@@ -48,7 +51,7 @@ namespace Clue\Database{
 			return $r['ok'];
 		}
 
-		function delete($collection, $query){
+		function delete($collection, $query=[]){
 			$collection=$this->dbh->selectCollection($collection);
 			$r=$collection->remove($query);
 

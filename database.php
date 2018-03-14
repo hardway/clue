@@ -13,6 +13,9 @@ namespace Clue{
         static function create(array $param){
             $dbms=$param['type'];
 
+            // 兼容
+            if(PHP_MAJOR_VERSION==5 && $dbms=='mongodb') $dbms='mongo';
+
             $factory="Clue\\Database\\".$dbms;
             if(!class_exists($factory)) throw new \Exception("Database: $dbms is not implemented!");
 
