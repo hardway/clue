@@ -43,9 +43,9 @@ namespace Clue{
         }
 
         static function text($text, $color=null){
-        	if($color) self::ansi($color);
+        	if($color) fputs(STDERR, self::ansi($color));
             fputs(STDERR, $text);
-        	if($color) self::ansi();
+        	if($color) fputs(STDERR, self::ansi());
         }
 
         static function banner($text, $color=null){
@@ -54,37 +54,37 @@ namespace Clue{
             // $cols = exec('tput cols');
             // $rows = exec('tput lines');
 
-            self::ansi($color."_banner");
+            fputs(STDERR, self::ansi($color."_banner"));
             fputs(STDERR, "\n".(TERM=='screen' ? str_repeat(" ", strlen($text)) : "")."\n");
         	fputs(STDERR, $text);
             fputs(STDERR, "\n".(TERM=='screen' ? str_repeat(" ", strlen($text)) : "\x1b[K"));
-            self::ansi(['RESET']);
+            fputs(STDERR, self::ansi(['RESET']));
 
             fputs(STDERR, "\n");
         }
 
         static function warning($str){
-            self::ansi("yellow");
+            fputs(STDERR, self::ansi("yellow"));
             fputs(STDERR, vsprintf(func_get_args()[0], array_slice(func_get_args(), 1)));
-            self::ansi();
+            fputs(STDERR, self::ansi());
         }
 
         static function info($str){
-            self::ansi("cyan");
+            fputs(STDERR, self::ansi("cyan"));
             fputs(STDERR, vsprintf(func_get_args()[0], array_slice(func_get_args(), 1)));
-            self::ansi();
+            fputs(STDERR, self::ansi());
         }
 
         static function success($str){
-            self::ansi("green");
+            fputs(STDERR, self::ansi("green"));
             fputs(STDERR, vsprintf(func_get_args()[0], array_slice(func_get_args(), 1)));
-            self::ansi();
+            fputs(STDERR, self::ansi());
         }
 
         static function error($str){
-            self::ansi("red");
+            fputs(STDERR, self::ansi("red"));
             fputs(STDERR, vsprintf(func_get_args()[0], array_slice(func_get_args(), 1)));
-            self::ansi();
+            fputs(STDERR, self::ansi());
         }
 
         static function restore_cursor($name){
@@ -109,10 +109,11 @@ namespace Clue{
 
         static function ansi($code=""){
         	if(is_array($code)){
+                $ansi="";
         		foreach($code as $c){
-        			self::ansi($c);
+        			$ansi.=self::ansi($c);
         		}
-        		return;
+        		return $ansi;
         	}
 
             $RESET="\033[0;0m";
@@ -143,8 +144,9 @@ namespace Clue{
             ];
 
             $code=strtoupper($code);
+            $ansi=isset($ANSI[$code]) ? $ANSI[$code] : $RESET;
 
-            fputs(STDERR, isset($ANSI[$code]) ? $ANSI[$code] : $RESET);
+            return $ansi;
         }
     }
 }
