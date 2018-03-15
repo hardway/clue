@@ -32,7 +32,6 @@ namespace Clue\Database{
             $rs=$this->conn->executeWriteCommand($this->db, $cmd);
             $r=$rs->toArray()[0];
 
-            $this->affected_records=$r->n;
             if(@$r->writeErrors) foreach($r->writeErrors as $e){
                 $this->setError(['code'=>$e->code, 'error'=>$e->errmsg]);
             }
@@ -133,6 +132,18 @@ namespace Clue\Database{
             $r=$rs->toArray()[0];
 
             return $r;
+        }
+
+        function aggregate($collection, $stage){
+            $cmd=[
+                'aggregate'=>$collection,
+                'pipeline'=>[$stage],
+            ];
+
+            $rs=$this->conn->executeReadCommand($this->db, new \MongoDB\Driver\Command($cmd));
+            $r=$rs->toArray()[0];
+
+            return json_decode(json_encode($r->result), true);
         }
 
         function get_var($path, $query=[]){
