@@ -363,6 +363,10 @@ END;
 				$internal='help';
 				array_shift($cmds);
 			}
+            if(end($args)=='-h' || end($args)=='--help'){
+                $internal='help';
+            }
+
 			// 是否生成Bash脚本
 			elseif(!empty($cmds) && $cmds[0]=='bash'){
 				$internal='bash';
