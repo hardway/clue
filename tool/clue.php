@@ -375,7 +375,7 @@ END
                 $db->exec("
                     CREATE TABLE `config` (
                       `name` varchar(128) NOT NULL,
-                      `value` varchar(1024) DEFAULT '',
+                      `value` text DEFAULT '',
                       `category` varchar(32) DEFAULT NULL,
                       `title` varchar(64) DEFAULT NULL,
                       `description` varchar(1024) DEFAULT NULL,
