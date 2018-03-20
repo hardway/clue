@@ -1,11 +1,11 @@
 <?php
     require_once dirname(__DIR__).'/stub.php';
 
-    define("TEST_ENABLE_BOOKKEEPING", 1);
+    define("TEST_ENABLE_BOOKKEEPING", 0);
 
     class TestService{
-        function ping(){
-            return "pong";
+        function ping($payload=null){
+            return $payload ?: "pong";
         }
 
         function trigger_error(){
@@ -96,6 +96,12 @@
         function test_redirect(){
             $c=new Clue\RPC\Client("http://localhost:31415/redirect");
             $this->assertEquals("pong", $c->ping());
+        }
+
+        function test_compression(){
+            $c=new Clue\RPC\Client("http://localhost:31415/", ['compression'=>1]);
+            $block=str_repeat(rand(), 1000);
+            $this->assertEquals($block, $c->ping($block));
         }
 
         /**

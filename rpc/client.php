@@ -41,6 +41,7 @@ class Client{
 		$this->secret=@$options['secret'];		// 预共享密钥，用于加密通信数据
 		$this->timeout=@$options['timeout'] ?: 30;
 		$this->proxy=@$options['proxy'];
+        $this->compression=@$options['compression'];
 
 		$this->cache_dir=null;
 	}
@@ -93,9 +94,13 @@ class Client{
 			}
 		}
 
-		if($this->secret){
-			$payload=clue_rpc_encrypt($payload, $this->secret);
-		}
+        if($this->compression){
+            $payload=gzencode($payload);
+        }
+
+        if($this->secret){
+            $payload=clue_rpc_encrypt($payload, $this->secret);
+        }
 
 		$c=curl_init();
 

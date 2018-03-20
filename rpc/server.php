@@ -39,11 +39,16 @@ class Server{
 		self::info("[RPC] Connected from: ".$_SERVER['REMOTE_ADDR']);
 
 		$payload=file_get_contents("php://input");
-		if(isset($options['secret'])){
-			$payload=clue_rpc_decrypt($payload, $options['secret']);
-		}
+
+        if(isset($options['secret'])){
+            $payload=clue_rpc_decrypt($payload, $options['secret']);
+        }
+
+        // 自动识别gzip压缩内容
+        if("\x1f\x8b"==substr($payload, 0, 2)) $payload=gzdecode($payload);
 
 		$payload = json_decode($payload, true);
+
 		$method=$payload['method'];
 		$params=$payload['params'];
 
