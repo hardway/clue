@@ -44,10 +44,9 @@
         Clue\RPC\Client::enable_bookkeeping(init_bookkeeper(), 'rpc_log');
     }
 
-
     if(!class_exists("PHPUnit_Framework_TestCase")){
         class PHPUnit_Framework_TestCase {}
-        if($_SERVER["REQUEST_URI"]=='/redirect'){
+        if(@$_SERVER["REQUEST_URI"]=='/redirect'){
             header("Location: /"); exit();
         }
 
@@ -57,6 +56,7 @@
     class Test_RPC extends PHPUnit_Framework_TestCase{
         static $SVC;
         static $PIPES;
+        static $ENDPOINT;
 
         static function setUpBeforeClass(){
             $spec = array(
@@ -65,8 +65,11 @@
                2 => array("pipe", "w")
             );
 
+            $port=rand(1024, 65535);
+            self::$ENDPOINT="http://127.0.0.1:$port";
+
             echo "Starting Dummy Server ...";
-            self::$SVC = proc_open('php -S localhost:31415 '.__FILE__, $spec, self::$PIPES);
+            self::$SVC = proc_open("php -S 127.0.0.1:$port ".__FILE__, $spec, self::$PIPES);
             sleep(1);
             echo "\n";
         }
@@ -80,26 +83,26 @@
                 self::$SVC=null;
             }
 
-            exec("kill \$(ps -af|grep \"php -S localhost:31415\" | awk '{print $2}')");
+            exec("kill \$(ps -af|grep \"php -S .*rpc.test.php\" | awk '{print $2}')");
         }
 
         function test_basic(){
-            $c=new Clue\RPC\Client("http://localhost:31415/");
+            $c=new Clue\RPC\Client(self::$ENDPOINT);
             $this->assertEquals("pong", $c->ping());
         }
 
         function test_reverse(){
-            $c=new Clue\RPC\Client("http://localhost:31415/");
+            $c=new Clue\RPC\Client(self::$ENDPOINT);
             $this->assertEquals("olleh", $c->reverse("hello"));
         }
 
         function test_redirect(){
-            $c=new Clue\RPC\Client("http://localhost:31415/redirect");
+            $c=new Clue\RPC\Client(self::$ENDPOINT."/redirect");
             $this->assertEquals("pong", $c->ping());
         }
 
         function test_compression(){
-            $c=new Clue\RPC\Client("http://localhost:31415/", ['compression'=>1]);
+            $c=new Clue\RPC\Client(self::$ENDPOINT, ['compression'=>1]);
             $block=str_repeat(rand(), 1000);
             $this->assertEquals($block, $c->ping($block));
         }
@@ -110,7 +113,7 @@
          * @expectedExceptionCode 100
          */
         function test_exception(){
-            $c=new Clue\RPC\Client("http://localhost:31415/");
+            $c=new Clue\RPC\Client(self::$ENDPOINT);
             echo $c->trigger_error();
         }
     }

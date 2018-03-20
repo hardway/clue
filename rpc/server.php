@@ -20,9 +20,9 @@ class Server{
 	}
 
 	static function error_rpc($err){
-		self::bookkeep(self::$record+['status'=>422, 'response'=>'Unprocessable entity']);
+		self::bookkeep(self::$record+['status'=>422, 'response'=>$err]);
 
-		header("HTTP/1.0 422 Unprocessable entity.");
+		header("HTTP/1.0 422 $err");
 		exit($err);
 	}
 
@@ -35,8 +35,8 @@ class Server{
 	}
 
 	static function bind($svc, $options=array()){
-		self::info("[RPC] Endpoint: ".$_SERVER['REQUEST_URI']);
-		self::info("[RPC] Connected from: ".$_SERVER['REMOTE_ADDR']);
+		self::info("[RPC] Endpoint: ".@$_SERVER['REQUEST_URI']);
+		self::info("[RPC] Connected from: ".@$_SERVER['REMOTE_ADDR']);
 
 		$payload=file_get_contents("php://input");
 
@@ -55,8 +55,8 @@ class Server{
 		self::$record=[
 			'call_time'=>date("Y-m-d H:i:s"),
 			'type'=>'in',
-			'endpoint'=>$_SERVER['REQUEST_URI'],
-			'ip'=>ip2long($_SERVER['REMOTE_ADDR']),
+			'endpoint'=>@$_SERVER['REQUEST_URI'],
+			'ip'=>ip2long(@$_SERVER['REMOTE_ADDR']),
 			'client'=>@$payload['client'],
 			'method'=>$method,
 			'request'=>json_encode($params)
