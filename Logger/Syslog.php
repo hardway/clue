@@ -7,7 +7,7 @@ class Syslog implements Logger{
         'context'=>false,
     ];
 
-    function _construct(array $option=array()){
+    function __construct(array $option=array()){
         $this->option=array_merge($this->option, $option);
     }
 
@@ -27,21 +27,23 @@ class Syslog implements Logger{
 
     	$lines[]=sprintf($text_format, $data['timestamp'], $data['message'], '['.$data['first_error'].'] ('.$data['first_trace'].')');
 
-        if($this->option['backtrace'] && isset($data['backtrace'])){
-            $lines[]=sprintf($text_format, $data['timestamp'], 'BACKTRACE', $data['backtrace']);
-        }
+        if(isset($data['diagnose'])) foreach($data['diagnose'] as $d){
+            if($this->option['backtrace'] && isset($d['backtrace'])){
+                $lines[]=sprintf("\n%s\n%s\n", 'BACKTRACE', $this->format_backtrace($d['backtrace']));
+            }
 
-        if($this->option['context'] && isset($data['http'])){
-            $lines[]=sprintf($text_format_detail, 'HTTP', 'URL', $data['http']['url']);
-            $lines[]=sprintf($text_format_detail, 'HTTP', 'METHOD', $data['http']['method']);
-            $lines[]=sprintf($text_format_detail, 'HTTP', 'IP', $data['http']['ip']);
-            $lines[]=sprintf($text_format_detail, 'HTTP', 'BROWSER', $data['http']['browser']);
-            $lines[]=sprintf($text_format_detail, 'HTTP', 'REFERRER', $data['http']['referrer']);
-        }
+            if($this->option['context'] && isset($d['http'])){
+                $lines[]=sprintf($text_format_detail, 'HTTP', 'URL', $d['http']['url']);
+                $lines[]=sprintf($text_format_detail, 'HTTP', 'METHOD', $d['http']['method']);
+                $lines[]=sprintf($text_format_detail, 'HTTP', 'IP', $d['http']['ip']);
+                $lines[]=sprintf($text_format_detail, 'HTTP', 'BROWSER', $d['http']['browser']);
+                $lines[]=sprintf($text_format_detail, 'HTTP', 'REFERRER', $d['http']['referrer']);
+            }
 
-        if($this->option['context'] && isset($data['memory'])){
-            $lines[]=sprintf($text_format_detail, "MEMORY", 'USAGE', $data['memory']['usage']);
-            $lines[]=sprintf($text_format_detail, "MEMORY", 'PEAK', $data['memory']['peak']);
+            if($this->option['context'] && isset($d['memory'])){
+                $lines[]=sprintf($text_format_detail, "MEMORY", 'USAGE', $d['memory']['usage']);
+                $lines[]=sprintf($text_format_detail, "MEMORY", 'PEAK', $d['memory']['peak']);
+            }
         }
 
         return $lines;
