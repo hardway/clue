@@ -394,15 +394,50 @@ namespace Clue{
 		static protected $alpha = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
 	}
 
+    class Base36 extends BaseCoder{
+        static protected $alpha = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    }
+
 	class Base16 extends BaseCoder{
 		static protected $alpha = "ABCDEF1234567890";
 	}
+
+    class Base62 extends BaseCoder{
+        static protected $alpha = "0123456789abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    }
 
 	class Browser{
 		static function is_ie(){
 			return strpos(@$_SERVER['HTTP_USER_AGENT'], 'MSIE')!==false;
 		}
 	}
+
+    // REF: https://github.com/fwolf/uuid.php
+    /**
+     *  @param $custom 自定义信息（例如服务器编号，客户IP, ...）
+     */
+    function uuid($custom=null){
+        static $TIMESTAMP_OFFSET = 1514764800;    // 2018-01-01
+        static $LEN_TIME=9;
+        static $LEN_CUSTOM=6;
+        static $LEN_RANDOM=5;
+
+        // 时间，秒(6byte) + 毫秒(4bytes)
+        list($ms, $sec) = explode(' ', microtime());
+        $ms = str_pad(round($ms * 1000000), 6, '0', STR_PAD_LEFT);
+
+        $time_part = base_convert($sec - $TIMESTAMP_OFFSET . $ms, 10, 36);
+        $time_part = substr(str_pad($time_part, $LEN_TIME, '0', STR_PAD_LEFT), 0-$LEN_TIME);
+
+        $custom_part = substr(str_pad($custom, $LEN_CUSTOM, '0', STR_PAD_LEFT), 0-$LEN_CUSTOM);
+
+        $random_part =base_convert(round(substr(uniqid('', true), -8) / 2), 10, 36);
+        $random_part = substr(str_pad($random_part, $LEN_RANDOM, '0', STR_PAD_LEFT), 0-$LEN_RANDOM);
+
+        $uuid = implode("", [$time_part, $custom_part, $random_part]);
+
+        return $uuid;
+    }
 }
 
 namespace{
