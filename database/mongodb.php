@@ -134,10 +134,14 @@ namespace Clue\Database{
             return $r;
         }
 
+        /**
+         * @param $collection
+         * @param $stage 第一个管道（可依次增加更多）
+         */
         function aggregate($collection, $stage){
             $cmd=[
                 'aggregate'=>$collection,
-                'pipeline'=>[$stage],
+                'pipeline'=>array_slice(func_get_args(), 1),
             ];
 
             $rs=$this->conn->executeReadCommand($this->db, new \MongoDB\Driver\Command($cmd));
@@ -213,6 +217,7 @@ namespace Clue\Database{
             if($fields) $cmd['projection']=$fields;
             if(isset($options['limit'])) $cmd['limit']=$options['limit'];
             if(isset($options['skip'])) $cmd['skip']=$options['skip'];
+            if(isset($options['sort'])) $cmd['sort']=$options['sort'];
 
             $rs=$this->conn->executeReadCommand($this->db, new \MongoDB\Driver\Command($cmd));
             foreach($rs as $r){
