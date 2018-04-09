@@ -345,6 +345,37 @@ END
     }
 
     /**
+     * 生成命令行界面
+     *
+     * @param $script 文件名
+     * @param $title 程序名称
+     */
+    function clue_gen_cli($script, $title="CLI Tool"){
+        if(!file_exists($script)){
+            file_put_contents($script, <<<END
+<?php
+    require_once __DIR__.'/stub.php';
+
+    \$cmd=new Clue\CLI\Command("$title", "cli");
+
+    try{
+        printf("\\n");
+        \$cmd->handle(\$argv);
+        printf("\\n");
+    }
+    catch(Exception \$e){
+        error_log("\\n");
+        cli::banner(\$e->getMessage(), 'red');
+        error_log(\$e->getTraceAsString());
+    }
+END
+            );
+
+            printf("%d bytes written.\n", filesize($script));
+        }
+    }
+
+    /**
      * 当前项目的配置内容
      */
     function _current_config(){
