@@ -27,7 +27,7 @@ class Syslog implements Logger{
 
     	$lines[]=sprintf($text_format, $data['timestamp'], $data['message'], '['.$data['first_error'].'] ('.$data['first_trace'].')');
 
-        if(isset($data['diagnose'])) foreach($data['diagnose'] as $d){
+        if(is_array(@$data['diagnose'])) foreach($data['diagnose'] as $d){
             if($this->option['backtrace'] && isset($d['backtrace'])){
                 $lines[]=sprintf("\n%s\n%s\n", 'BACKTRACE', $this->format_backtrace($d['backtrace']));
             }
