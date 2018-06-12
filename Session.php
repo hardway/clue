@@ -171,6 +171,9 @@ class Session{
     static function init($app, $options){
         $session=null;
 
+        ini_set('session.cookie_lifetime', $options['ttl']);
+        ini_set('session.gc_maxlifetime', $options['ttl']);
+
         switch(@$options['storage']){
             // 指定Session存储
             case 'DB':
