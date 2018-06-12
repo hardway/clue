@@ -90,6 +90,26 @@ class Color{
         return [$X, $Y, $Z];
     }
 
+    static function rgb2lab($r, $g, $b){
+        list($x, $y, $z)=self::rgb2xyz($r, $g, $b);
+
+        //Ovserver = 2*, Iluminant=D65
+        $x /= 95.047;
+        $y /= 100;
+        $z /= 108.883;
+
+        $xyz = array_map(function($item){
+            if ($item > 0.008856) {
+                //return $item ^ (1/3);
+                return pow($item, 1/3);
+            } else {
+                return (7.787 * $item) + (16 / 116);
+            }
+        }, compact('x', 'y', 'z'));
+
+        return [(116 * $xyz['y']) - 16, 500 * ($xyz['x'] - $xyz['y']), 200 * ($xyz['y'] - $xyz['z'])];
+    }
+
     static function argb2xyz($r, $g, $b){
         //aR, aG and aB (RGB Adobe 1998) input range = 0 ÷ 255
         //X, Y and Z output refer to a D65/2° standard illuminant.
