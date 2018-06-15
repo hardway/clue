@@ -12,8 +12,8 @@ namespace Clue\Database{
             if(!extension_loaded('mysqli'))
                 throw new \Exception(__CLASS__.": extension mysqli is missing!");
 
+            $this->result_mode=MYSQLI_STORE_RESULT;
             $this->config=$param;
-
             $this->connect();
         }
 
@@ -238,7 +238,7 @@ namespace Clue\Database{
         {
             $this->free_result();
             $this->last_error=null;
-            $this->result_mode=MYSQLI_USE_RESULT;
+            // $this->result_mode=MYSQLI_STORE_RESULT;
 
             if(func_num_args()>1){
                 $sql=call_user_func_array(array($this, "format"), func_get_args());
@@ -433,24 +433,24 @@ namespace Clue\Database{
                 $mode=OBJECT;
             }
 
-            if (!call_user_func_array(array($this, "exec"), $args)) {
+            $cursor_con=new self($this->config);
+            $cursor_con->result_mode=MYSQLI_USE_RESULT;
+
+            if (!call_user_func_array(array($cursor_con, "exec"), $args)) {
                 return;
             }
 
 	        // 长期保持的结果集，避免被清除
-	        $persistent_rs=$this->_result;
-	        $this->_result=null;
-
 	        while (true) {
 	            switch($mode){
 	            case OBJECT:
-	                $r=mysqli_fetch_object($persistent_rs);
+	                $r=mysqli_fetch_object($cursor_con->_result);
 	                break;
 	            case ARRAY_A:
-	                $r=mysqli_fetch_assoc($persistent_rs);
+	                $r=mysqli_fetch_assoc($cursor_con->_result);
 	                break;
 	            case ARRAY_N:
-	                $r=mysqli_fetch_row($persistent_rs);
+	                $r=mysqli_fetch_row($cursor_con->_result);
 	                break;
 	            }
 
@@ -461,7 +461,7 @@ namespace Clue\Database{
                 yield $r;
 	        }
 
-	        $persistent_rs->close();
+	        $cursor_con->close();
 	    }
 
         function has_table($table){
