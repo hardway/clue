@@ -238,6 +238,7 @@ namespace Clue\Database{
         {
             $this->free_result();
             $this->last_error=null;
+            $this->result_mode=MYSQLI_USE_RESULT;
 
             if(func_num_args()>1){
                 $sql=call_user_func_array(array($this, "format"), func_get_args());
@@ -248,7 +249,7 @@ namespace Clue\Database{
             }
 
             $query_begin=microtime(true);
-            $this->_result=mysqli_query($this->dbh, $sql);
+            $this->_result=mysqli_query($this->dbh, $sql, $this->result_mode);
             $query_end=microtime(true);
 
             // Backtrace调用位置
@@ -457,7 +458,7 @@ namespace Clue\Database{
 	                break;
 	            }
 
-	            yield $r;
+                yield $r;
 	        }
 
 	        $persistent_rs->close();
