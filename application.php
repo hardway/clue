@@ -255,13 +255,15 @@ namespace Clue{
 
         function run(){
             if(isset($_SERVER['PATH_INFO']))
-                $url=$_SERVER['PATH_INFO'];
+                $path=$_SERVER['PATH_INFO'];
             else{
-                $url=isset($_SERVER['HTTP_X_REWRITE_URL']) ? $_SERVER['HTTP_X_REWRITE_URL'] : $_SERVER['REQUEST_URI'];
-                if($url==$_SERVER['PHP_SELF']) $url='/';
+                $url=parse_url(isset($_SERVER['HTTP_X_REWRITE_URL']) ? $_SERVER['HTTP_X_REWRITE_URL'] : $_SERVER['REQUEST_URI']);
+                $path=$url['path'].(isset($url['query']) ? "?".$url['query'] : "");
+                error_log("CLUE PATH: $path");
+                if($path==$_SERVER['PHP_SELF']) $path='/';
             }
 
-            $map=$this['router']->resolve($url);
+            $map=$this['router']->resolve($path);
 
             // Controller / Action在认证资源的时候需要用到
             $this->controller=isset($map['controller']) ? $map['controller'] : null;
