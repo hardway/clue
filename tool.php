@@ -457,7 +457,7 @@ namespace{
 	function GET($name=null, $default=false){
 		if(! isset($name)) return ($_SERVER['REQUEST_METHOD']=='GET');
 
-		return isset($_GET[$name]) ? $_GET[$name] : $default;
+		return isset($_GET[$name]) ? str_replace('+', ' ', $_GET[$name]) : $default;
 	}
 
 	function SERVER($name=null, $default=false){
