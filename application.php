@@ -257,8 +257,10 @@ namespace Clue{
             if(isset($_SERVER['PATH_INFO']))
                 $path=$_SERVER['PATH_INFO'];
             else{
-                $url=parse_url(isset($_SERVER['HTTP_X_REWRITE_URL']) ? $_SERVER['HTTP_X_REWRITE_URL'] : $_SERVER['REQUEST_URI']);
+                // Normalize Path
+                $url=parse_url(preg_replace('/^\/\//', '/', @$_SERVER['HTTP_X_REWRITE_URL'] ?: $_SERVER['REQUEST_URI']));
                 $path=$url['path'].(isset($url['query']) ? "?".$url['query'] : "");
+
                 if($path==$_SERVER['PHP_SELF']) $path='/';
             }
 
