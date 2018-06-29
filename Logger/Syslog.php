@@ -5,6 +5,7 @@ class Syslog implements Logger{
     protected $option=[
         'backtrace'=>false,
         'context'=>false,
+        'console'=>false
     ];
 
     function __construct(array $option=array()){
@@ -12,7 +13,15 @@ class Syslog implements Logger{
     }
 
     function write($data){
-    	array_map('error_log', $this->format($data));
+        $lines=$this->format($data);
+
+        if($this->option['console']){
+            // 第一行红色显示
+            $first_line=array_shift($lines);
+            \Clue\CLI::banner($first_line."\n", "red");
+        }
+
+    	array_map('error_log', $lines);
     }
 
     static function indent($text){

@@ -62,7 +62,7 @@ class Guard{
         $config=array_merge($default_config, $option);
 
         $this->syslog=new \Clue\Logger\Syslog();
-        $this->display_logger=php_sapi_name()=='cli' ? new \Clue\Logger\Syslog(['backtrace'=>true]) : new \Clue\Logger\HTML;
+        $this->display_logger=php_sapi_name()=='cli' ? new \Clue\Logger\Syslog(['console'=>true, 'backtrace'=>true]) : new \Clue\Logger\HTML;
 
         $this->channels=[];
         $this->channels['display']=[
@@ -113,7 +113,9 @@ class Guard{
 
         $error_reporting=0;
         foreach(self::$PHP_ERROR_MAP as $lvl=>$err){
-            if(self::$ERROR_LEVEL[$err] <= $this->error_threshold) $error_reporting=$error_reporting | $lvl;
+            if(self::$ERROR_LEVEL[$err] <= $this->error_threshold){
+                $error_reporting=$error_reporting | $lvl;
+            }
         }
 
         error_reporting($error_reporting);
@@ -310,6 +312,7 @@ class Guard{
         if ((error_reporting() & $errno) == 0) return;
 
         $errlevel=self::$ERROR_LEVEL[self::$PHP_ERROR_MAP[$errno]];
+        if($errlevel > $this->error_threshold) return true;
 
         if(empty($errtrace)) $errtrace=debug_backtrace();
         # Unset $errcontext for this function ($GLOBALS is too big to display)
@@ -317,6 +320,12 @@ class Guard{
         $errtrace=array_values(array_filter($errtrace, function($t){
             return !(!isset($t['file']) && isset($t['class']) && $t['class']==__CLASS__ && in_array($t['function'], ['handle_error', 'handle_exception']));
         }));
+
+        // 过滤大型参数
+        foreach($errtrace as &$et){
+            if(!is_array($et['args'])) continue;
+            $et['args']=array_map(function($a){return strlen(json_encode($a)) > 1024 ? "ARGUMENT_TOO_LARGE_TO_SHOW" : $a;}, $et['args']);
+        }; unset($et);
 
         $this->errors[]=array(
             'level'=>$errlevel,
