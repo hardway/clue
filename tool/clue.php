@@ -375,6 +375,28 @@ END
         }
     }
 
+
+    /**
+     * RPC测试
+     * @param $endpoint 服务端
+     * @param $client 用户
+     * @param $token 密钥
+     * @param $function 调用函数
+     * @param $params 参数（如果是文件名，则加载其中的JSON数据）
+     */
+    function clue_rpc($endpoint, $client, $token, $function, $params){
+        $c=new Clue\RPC\Client($endpoint, array('debug'=>true, 'client'=>$client, 'token'=>$token));
+        $c->enable_log();
+
+        if(is_string($params) && file_exists($params)){
+            $params=json_decode(file_get_contents($params), true);
+        }
+
+        $ret=call_user_func_array(array($c, $function), $params);
+
+        print_r($ret);
+    }
+
     /**
      * 当前项目的配置内容
      */
