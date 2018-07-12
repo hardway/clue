@@ -9,19 +9,25 @@ namespace Clue\Database{
 class ClickHouse extends \Clue\Database{
     private $endpoint;
 
-    function __construct(array $param){
-        $server=@$param['host'] ?: '127.0.0.1';
-        $port=@$param['port'] ?: 8123;
+    function __construct(array $options=[]){
+        $default_options=[
+            'host'=>'127.0.0.1',
+            'port'=>8123,
+            'connection_timeout'=>5,
+            'timeout'=>30,
+            'debug'=>false,
+        ];
 
-        $this->debug=@$param['debug'] ?: false;
-        $this->endpoint="http://$server:$port";
-        $this->db=@$param['db']; // 当前数据库
+        $this->options=$options+$default_options;
+
+        $this->endpoint="http://{$this->options['host']}:{$this->options['port']}";
+        $this->db=@$this->options['db']; // 当前数据库
 
         $this->curl=curl_init();
 
         // 尝试连接
         if(!$this->ping()){
-            throw new \Exception("Can't connect to server: $server:$port");
+            throw new \Exception("Can't connect to server: $this->endpoint");
         }
     }
 
@@ -35,8 +41,8 @@ class ClickHouse extends \Clue\Database{
         if($param) $url.="?".http_build_query($param);
 
         curl_reset($this->curl);
-        curl_setopt($this->curl, CURLOPT_CONNECTTIMEOUT, 5);
-        curl_setopt($this->curl, CURLOPT_TIMEOUT, 10);
+        curl_setopt($this->curl, CURLOPT_CONNECTTIMEOUT, $this->options['connection_timeout']);
+        curl_setopt($this->curl, CURLOPT_TIMEOUT, $this->options['timeout']);
         curl_setopt($this->curl, CURLOPT_RETURNTRANSFER, true);
 
         $type=strtolower($type);
@@ -54,18 +60,21 @@ class ClickHouse extends \Clue\Database{
                 throw new \Exception("No API defined for $type");
         }
 
-        if($this->debug) error_log("[Clue\\ClickHouse] >> $url");
-        if($this->debug && $content) error_log("[Clue\\ClickHouse] >> $content");
 
         curl_setopt($this->curl, CURLOPT_URL, $url);
         $raw=curl_exec($this->curl);
 
-        if($this->debug) error_log("[Clue\\ClickHouse] << $raw");
 
         $this->http_status=intval(curl_getinfo($this->curl, CURLINFO_HTTP_CODE));
 
         if(!in_array($this->http_status, [200, 204])){
-            throw new \Exception($raw, $this->http_status);
+            $error=$raw;
+
+            if($this->http_status==0 && empty($raw)){
+                $error="Timeout";
+            }
+
+            throw new \Exception($error, $this->http_status);
         }
 
         switch($type){
