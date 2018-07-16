@@ -15,16 +15,34 @@
     @define("DB_USER", "root");
     @define("DB_PASS", "");
 
-    $config=[];
+    // 自定义Guard
+    @define("ERROR_LOG_LEVEL", 'ERROR');
+    @define("ERROR_MAIL_LEVEL", 'ERROR');
+    @define("ERROR_DISPLAY_LEVEL", 'ERROR');
+    @define("ERROR_MAIL_TO", 'hou.danwu@gmail.com');
 
-    if(DB_HOST && DB_NAME && DB_USER){
-        $config['database']=[
+    // 自定义Profiler
+    @define('APP_PROFILER', false);
+
+    $config=[
+        'database'=>array(
             'type'=>'mysql',
             'host'=>DB_HOST,
             'db'=>DB_NAME,
             'username'=>DB_USER,
-            'password'=>DB_PASS
-        ];
-    }
+            'password'=>DB_PASS,
+            'encoding'=>"UTF8"
+        ),
+        'asset'=>[
+            'all.css'=>'asset/css/*.js',
+        ],
+        'profiler'=>APP_PROFILER,
+        'guard'=>[
+            'mail_to'=>ERROR_MAIL_TO,
+            'log_level'=>ERROR_LOG_LEVEL,
+            'email_level'=>ERROR_MAIL_LEVEL,
+            'display_level'=>ERROR_DISPLAY_LEVEL,
+        ]
+    ];
 
     return $config;

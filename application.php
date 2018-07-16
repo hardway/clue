@@ -44,7 +44,16 @@ namespace Clue{
                 }
             }
 
-            // $this['profiler']=new Profiler();
+            // 集成guard
+            if(@$this['config']['guard']){
+                $this['guard']=new Guard($this['config']['guard']);
+            }
+
+            if(@$this['config']['profiler']){
+                $profiler=new Profiler;
+                $profiler->start();
+                $this['profiler']=$profiler;
+            }
         }
 
         // Dependency Injection, Ref: Pimple
@@ -278,16 +287,12 @@ namespace Clue{
 
             $this->fire_event("before_route");
 
-            if($this->is_ajax()){
-                // TODO: 集成guard
-                global $guard;
-                if($guard instanceof Guard){
-                    $guard->add_event_listener('error', function($g, $e){
-                        $g->summarized=true;
-                        header("HTTP/1.0 ".$e['code']);
-                        exit($e['message']);
-                    });
-                }
+            if($this->is_ajax() && $this['guard'] instanceof Guard){
+                $this['guard']->add_event_listener('error', function($g, $e){
+                    $g->summarized=true;
+                    header("HTTP/1.0 ".$e['code']);
+                    exit($e['message']);
+                });
             }
 
             if(is_callable(@$map['handler'])){
