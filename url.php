@@ -2,14 +2,12 @@
     # URL路径
     if(!CLI && !defined('APP_BASE')) define('APP_BASE', '/'.trim(dirname($_SERVER['SCRIPT_NAME']), '/'));
     if(!CLI && !defined('APP_URL')){
-        $app_scheme=isset($_SERVER['REQUEST_SCHEME']) ? $_SERVER['REQUEST_SCHEME'] : "http";
-
         // 不使用常规端口的情况
         $server_port=intval($_SERVER['SERVER_PORT']);
         $app_port=in_array($server_port, array(80, 443)) ? '' : ":$server_port";
 
         // TODO: 对于非常规的情况，其实在config中自定义APP_URL省很多事
-        @define('APP_URL', $app_scheme.'://'.$_SERVER['SERVER_NAME'].$app_port.APP_BASE);
+        @define('APP_URL', '//'.$_SERVER['SERVER_NAME'].$app_port.APP_BASE);
     }
 
     /**
