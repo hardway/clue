@@ -59,23 +59,41 @@
 
 
     /**
-     * 编译Asset资源文件
-     * Usage: file1 file2 ... saveas
+     * 编译Asset资源文件（根据config.php）
+     *
+     * @param $delete 是否删除目标文件
      */
-    function clue_compress(){
-        $files=func_get_args();
-        $output=array_pop($files);
-        $input=empty($files) ? array($output) : $files;
+    function clue_compile($delete=false){
+        $config=_current_config();
 
-        // TODO: 将glob file合并至Clue\Asset
-        // TODO: 允许不带参数时按照config.asset自动压缩
-        panic("TODO");
+        $site_path=defined('SITE') ? APP_ROOT.'/'.SITE : APP_ROOT;
+        \Clue\add_site_path($site_path);
 
-        $builder=new \Clue\Asset($input);
-        $origin_content=$builder->compile();
-        $compress_content=$builder->compress($origin_content, $builder->type);
+        $assets=[];
+        foreach($config['asset'] as $output=>$files){
+            $output=$site_path.'/asset/'.$output;
+            $assets[$output]=$files;
+        }
 
-        file_put_contents($output, strlen($origin_content) > strlen($compress_content) ? $compress_content : $origin_content);
+        foreach($assets as $output=>$inputs){
+            if($delete){
+                printf("Removing: %s\n", $output);
+                unlink($output);
+
+                continue;
+            }
+
+            printf("Compiling: %s\n", $output);
+
+            $builder=new \Clue\Asset($inputs);
+            $content=$builder->compile();
+
+            // TODO: 支持压缩选项
+            // TODO: 支持删除编译文件
+            // $content=$builder->compress($content, $builder->type);
+
+            file_put_contents($output, $content);
+        }
     }
 
     /**
