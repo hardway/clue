@@ -1,0 +1,6 @@
+<phpunit backupGlobals="false">
+    <php>
+        <env name="http_proxy" value=""/>
+        <server name="http_proxy" value=""/>
+    </php>
+</phpunit>
