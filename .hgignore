@@ -1,5 +1,6 @@
 syntax: glob
 
+*.local.php
 Thumbs.db
 *.orig
 tests\data
