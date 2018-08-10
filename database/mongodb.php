@@ -142,12 +142,11 @@ namespace Clue\Database{
             $cmd=[
                 'aggregate'=>$collection,
                 'pipeline'=>array_slice(func_get_args(), 1),
+                'cursor'=>['batchSize'=>1000]
             ];
 
             $rs=$this->conn->executeReadCommand($this->db, new \MongoDB\Driver\Command($cmd));
-            $r=$rs->toArray()[0];
-
-            return json_decode(json_encode($r->result), true);
+            return json_decode(json_encode($rs->toArray()), true);
         }
 
         function get_var($path, $query=[]){
