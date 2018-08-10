@@ -1,5 +1,5 @@
 <?php
-	include "tool.php";
+    require_once dirname(__DIR__).'/stub.php';
 	use Clue\Tool as Tool;
 
 	class ToolTest extends PHPUnit_Framework_TestCase{
