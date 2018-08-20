@@ -62,8 +62,9 @@
      * 编译Asset资源文件（根据config.php）
      *
      * @param $delete 是否删除目标文件
+     * @param $compress 是否压缩（需要apt-get install node-uglify）
      */
-    function clue_compile($delete=false){
+    function clue_compile($delete=false, $compress=false){
         $config=_current_config();
 
         $site_path=defined('SITE') ? APP_ROOT.'/'.SITE : APP_ROOT;
@@ -91,8 +92,15 @@
             // TODO: 支持压缩选项
             // TODO: 支持删除编译文件
             // $content=$builder->compress($content, $builder->type);
-
-            file_put_contents($output, $content);
+            if($compress && preg_match('/\.js$/', $output)){
+                $tmp_file="/tmp/".md5($output);
+                file_put_contents($tmp_file, $content);
+                $cmd=sprintf("uglifyjs \"%s\" -o \"$output\"", $tmp_file, $output);
+                exec($cmd);
+            }
+            else{
+                file_put_contents($output, $content);
+            }
         }
     }
 
