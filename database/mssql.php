@@ -10,6 +10,9 @@ namespace Clue\Database{
      * sudo pecl install sqlsrv
      * echo "extension=sqlsrv.so" | sudo tee /etc/php/7.0/mods-available/sqlsrv.ini
      * sudo phpenmod sqlsrv
+     *
+     * 另外需要微软官方驱动
+     * https://docs.microsoft.com/en-us/sql/connect/odbc/linux-mac/installing-the-microsoft-odbc-driver-for-sql-server?view=sql-server-2017
      */
     class MSSql extends \Clue\Database{
         protected $_stmt;
