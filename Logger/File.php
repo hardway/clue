@@ -16,11 +16,7 @@ class File extends Syslog{
             mkdir($dir, 0775, true);
             umask($umask);
         }
-
-        $this->file=fopen($path, 'a');
-        if(!$this->file){
-            error_log("Can't open log file: $path");
-        }
+        $this->filename=$path;
     }
 
     function __destruct(){
@@ -32,12 +28,16 @@ class File extends Syslog{
     }
 
     public function format($data){
-        $text_format="%-22s | %-9s | %s";
-        $text_format_detail="%25s %-9s | %s";
+        $text_format="%-22s | %-7s | %s";
+        $text_format_detail="%25s %-7s | %s";
 
-        $subject=sprintf("%s %s %s",
+        if(is_string($data)){
+            $data=['timestamp'=>date("c"), 'message'=>$data];
+        }
+
+        $subject=sprintf($text_format,
             $data['timestamp'],
-            $data['level'] ? "| {$data['level']} |" : "",
+            $data['level'] ? "| {$data['level']} |" : "DEBUG",
             $data['message']
             // substr($data['message'], 0, 160)
         );
@@ -57,6 +57,13 @@ class File extends Syslog{
     }
 
     function write($data){
+        if(!$this->file){
+            $this->file=fopen($this->filename, 'a');
+            if(!$this->file){
+                error_log("Can't open log file: $this->filename");
+            }
+        }
+
         if(!$this->file) return parent::write($data);
 
         fputs($this->file, $this->format($data));
