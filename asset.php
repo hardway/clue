@@ -2,11 +2,12 @@
 namespace Clue{
     class Asset{
         public $type;
-        public $files;
-        public $last_modified;
+        public $files=[];
+        public $last_modified=null;
+        public $total_size=0;
 
         function __construct($files=null){
-            $this->files=array();
+            $files=is_array($files) ? $files : [$files];
 
             // 支持的路径写法
             // foo.js ==> SITE/asset/foo.js
@@ -39,6 +40,7 @@ namespace Clue{
                 if(!in_array($f, $this->files)){
                     $this->files[]=$f;
                     $this->last_modified=max($this->last_modified, filemtime($f));
+                    $this->total_size+=filesize($f);
                 }
             }
         }
@@ -129,7 +131,7 @@ namespace Clue{
         }
 
         function dump(){
-            \Clue\Tool::http_auto_cache($this->last_modified, md5(implode(",", $this->files)));
+            \Clue\Tool::http_auto_cache($this->last_modified, md5($this->last_modified.'.'.$this->total_size));
 
             $content=$this->compile();
 
