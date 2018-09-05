@@ -294,14 +294,16 @@ namespace Clue{
                     $params=[];
 
                     // 匹配的命名变量
-                    for($i=0; $i<count($c['names']); $i++){
-                        $params[$c['names'][$i]]=$m[$i];
-                    }
-                    // 查询条件中的变量
-                    foreach($query as $k=>$v) $params[$k]=$v;
-                    // 剩余的参数（若有）
-                    for(; $i<count($m); $i++){
-                        $params[]=$m[$i];
+                    if(!empty($c['names'])){
+                        for($i=0; $i<count($c['names']); $i++){
+                            $params[$c['names'][$i]]=$m[$i];
+                        }
+                        // 查询条件中的变量
+                        foreach($query as $k=>$v) $params[$k]=$v;
+                        // 剩余的参数（若有）
+                        for(; $i<count($m); $i++){
+                            $params[]=$m[$i];
+                        }
                     }
 
                     return [
