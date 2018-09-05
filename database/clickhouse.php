@@ -121,6 +121,8 @@ class ClickHouse extends \Clue\Database{
         $rs=$this->query($sql);
         $cols=array_shift($rs);
 
+        if(empty($rs)) return null;
+
         switch($mode){
             case OBJECT:
                 return \Clue\ary2obj(array_combine($cols, $rs[0]));
