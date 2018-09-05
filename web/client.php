@@ -349,7 +349,9 @@ namespace Clue\Web{
                 ]);
 
                 curl_exec($this->curl);
-                // TODO: check curl_errno
+
+                $this->errno=curl_errno($this->curl);
+                $this->error=curl_error($this->curl);
 
                 fclose($file);
             }
