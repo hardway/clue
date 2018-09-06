@@ -17,6 +17,7 @@ class File extends Syslog{
             umask($umask);
         }
         $this->filename=$path;
+        $this->file=null;
     }
 
     function __destruct(){
