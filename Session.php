@@ -142,7 +142,7 @@ class FileSession implements \SessionHandlerInterface{
 
         $json['data']=$session_data;
 
-        return file_put_contents("$this->folder/$session_id", json_encode($json));
+        return !!file_put_contents("$this->folder/$session_id", json_encode($json));
     }
 
     public function destroy($session_id){
