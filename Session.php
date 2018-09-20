@@ -77,8 +77,9 @@ class DBSession implements \SessionHandlerInterface{
 
 class FileSession implements \SessionHandlerInterface{
     public function __construct(array $options=[]){
-        $this->folder=$options['folder'];
+        assert(isset($options['folder']), "options.folder is required");
 
+        $this->folder=$options['folder'];
         $this->ttl=@$options['ttl'] ?: 1440;
     }
 
@@ -130,7 +131,7 @@ class FileSession implements \SessionHandlerInterface{
 
         if(!file_exists($path)){
             $json=[
-                'ipaddr'=>$_SERVER['REMOTE_ADDR'],
+                'ipaddr'=>@$_SERVER['REMOTE_ADDR'],
                 'useragent'=>@$_SERVER['HTTP_USER_AGENT'],
                 'created'=>time(),
             ];
@@ -171,8 +172,12 @@ class Session{
     static function init($app, $options){
         $session=null;
 
-        ini_set('session.cookie_lifetime', $options['ttl']);
-        ini_set('session.gc_maxlifetime', $options['ttl']);
+        assert(isset($options['ttl']), "options.ttl field is required");
+
+        if(!headers_sent()){
+            session_set_cookie_params($options['ttl']);
+            ini_set('session.gc_maxlifetime', $options['ttl']);
+        }
 
         switch(@$options['storage']){
             // 指定Session存储
@@ -186,7 +191,7 @@ class Session{
                 // 使用PHP系统自带
         }
 
-        if($session){
+        if($session && !headers_sent()){
             session_set_save_handler($session, true);
         }
 
