@@ -34,7 +34,8 @@
             'encoding'=>"UTF8"
         ),
         'asset'=>[
-            'all.css'=>'asset/css/*.js',
+            'app.css'=>'asset/css/*.css',
+            'app.js'=>'asset/js/*.js',
         ],
         'profiler'=>APP_PROFILER,
         'guard'=>[
