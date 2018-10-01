@@ -133,8 +133,10 @@ namespace Clue\Web{
 
             // Cookie存取
             if($this->cookie_file){
-                curl_setopt($this->curl, CURLOPT_COOKIEJAR, $this->cookie_file);    // write
                 curl_setopt($this->curl, CURLOPT_COOKIEFILE, $this->cookie_file);   // read
+                if(!$this->cookie_readonly){
+                    curl_setopt($this->curl, CURLOPT_COOKIEJAR, $this->cookie_file);    // write
+                }
             }
             if($this->cookie){
                 $pair=array();
@@ -170,7 +172,11 @@ namespace Clue\Web{
             }
         }
 
-        function enable_cookie($cookie_file){ $this->cookie_file=$cookie_file; }
+        function enable_cookie($cookie_file, $readonly=false){
+            $this->cookie_file=$cookie_file;
+            $this->cookie_readonly=$readonly;
+        }
+
         function disable_cookie($cookie_file){ $this->cookie_file=null; }
         function set_cookie($cookies=array()){ $this->cookie=array_merge($this->cookie, $cookies); }
         function get_cookie(){
