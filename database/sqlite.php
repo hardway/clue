@@ -14,6 +14,13 @@ namespace Clue\Database{
 			if(!$this->dbh){
 				$this->setError(array('error'=>SQLite3::lastErrorMsg()));
 			}
+
+            $this->dbh->createFunction('regexp', function($pattern, $string) {
+                if(preg_match('/'.$pattern.'/i', $string)) {
+                    return true;
+                }
+                return false;
+            }, 2);
 		}
 
 		function __destruct(){
@@ -30,6 +37,15 @@ namespace Clue\Database{
 			}
 			$this->_result=null;
 		}
+
+        // TODO: 使用statement和bind
+        function quote($data){
+            return "'".$this->escape($data)."'";
+        }
+
+        function escape($data){
+            return \SQLite3::escapeString($data);
+        }
 
 		function insert_id(){
 			return $this->dbh->lastInsertRowID();
@@ -72,7 +88,7 @@ namespace Clue\Database{
 
 	        $this->_result=$stmt->execute();
 
-            return true;
+            return $this->dbh->changes();
         }
 
 		function has_table($table){
