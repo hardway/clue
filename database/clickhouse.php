@@ -199,6 +199,11 @@ class ClickHouse extends \Clue\Database{
         return $this->_api("query", ['database'=>$this->db, 'query'=>$sql]);
     }
 
+    function has_table($table){
+        $tables=$this->get_col("show tables");
+        return in_array($table, $tables);
+    }
+
     /**
      * 创建表
      */
