@@ -433,7 +433,6 @@ END;
                     }
 
                     $matches=$this->_best_match_option($help['options'], $k);
-
                     if(count($matches)==0){
                         // 不存在的option作为definition
                         @define(strtoupper(trim($k, '-')), $v);
@@ -457,6 +456,13 @@ END;
                     $waiting_option=null;
                 }else{
                     array_push($params, $a);
+                }
+            }
+
+            // 填充缺少的Option为默认值
+            foreach($help['options'] as $n=>$o){
+                if(!isset($options[$n]) && $o['default']){
+                    $options[$n]=$o['default'];
                 }
             }
 
