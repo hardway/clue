@@ -49,14 +49,17 @@
      * Build Clue.phar
      *
      * @param $dest Output phar file
+     * @param $compress Using gzip compression
      */
-    function clue_build($dest=null){
+    function clue_build($dest=null, $compress=false){
         if(empty($dest)) $dest=getcwd().'/clue.phar';
-        $minifier=new Clue\Tool\Constructor(dirname(__DIR__));
+
+        $minifier=new Clue\Tool\Constructor(dirname(__DIR__), [
+            'compress'=>$compress,
+        ]);
         $minifier->build($dest);
         //file_put_contents($dest, $minifier);
     }
-
 
     /**
      * 编译Asset资源文件（根据config.php）

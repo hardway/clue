@@ -7,15 +7,17 @@ namespace Clue\Tool{
         protected $root;
 
         protected $build_exclude=array(
-            '/ui\/(clue|mooeditor|mootools)\//',
-            '/\.hg\//'
+            '/\/\./',   // 不要包含所有隐藏文件
+            '/\/doc/',  // 不包含文档
+            '/\/test/', // 不包含测试用例
         );
         protected $strip_exclude=array(
             "/tool\/skeleton\/.*/"
         );
 
-        function __construct($root){
+        function __construct($root, $options=[]){
             $this->root=$root;
+            $this->options=$options;
         }
 
         function build($dest){
@@ -55,6 +57,11 @@ namespace Clue\Tool{
                 else{
                     $phar->addFromString(substr($file, strlen ($this->root) + 1), file_get_contents($file));
                 }
+            }
+
+            // 压缩
+            if(@$this->options['compress']){
+                $phar->compressFiles(\Phar::GZ);
             }
 
             # Add stub to bootstrap
