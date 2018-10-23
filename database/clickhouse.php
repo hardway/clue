@@ -87,7 +87,7 @@ class ClickHouse extends \Clue\Database{
                 $table=[];
                 foreach(explode("\n", $raw) as $line){
                     if(empty($line)) break;
-                    $table[]=explode("\t", $line);
+                    $table[]=array_map(function($field){return str_replace("\\\\", "\\", $field);}, str_getcsv($line, "\t"));
                 }
                 return $table;
 
@@ -176,6 +176,9 @@ class ClickHouse extends \Clue\Database{
         $rows=is_array(@$row[0]) ? $row : [$row];
         $data="";
         foreach($rows as $row){
+            $row=array_map(function($r){return str_replace(["\\", "\n", "\r", "\t"], ["\\\\", "\\n", "\\r", "\\t"], $r);}, $row);
+
+            // NOTE, Clickhouse不能随便加quote双引号，否则导致解析失败
             $data.=implode("\t", $row)."\n";
         }
 
@@ -185,11 +188,51 @@ class ClickHouse extends \Clue\Database{
     }
 
     function exec($sql){
-        return $this->_api('write', ['database'=>$this->db, 'query'=>$sql]);
+        $param=['database'=>$this->db, 'query'=>$sql];
+
+        if(preg_match('/^(create|drop)\s+database/i', $sql)) unset($param['database']);
+
+        return $this->_api('write', $param);
     }
 
     function query($sql){
         return $this->_api("query", ['database'=>$this->db, 'query'=>$sql]);
+    }
+
+    /**
+     * 创建表
+     */
+    function create_table($table, array $fields, $extra=[]){
+        $extra_default=['engine'=>'MergeTree Order By id'];
+        $extra+=$extra_default;
+
+        $field_mapping=[];
+        foreach($fields as $name=>$type){
+            if(preg_match('/int/i', $type)){
+                $type='UInt64';
+            }
+            elseif(preg_match('/varchar/', $type)){
+                $type='String';
+            }
+            elseif(preg_match('/datetime/i', $type)){
+                $type='DateTime';
+            }
+            elseif(preg_match('/date/i', $type)){
+                $type='Date';
+            }
+
+            $cols[]="`$name` $type";
+        }
+
+        $sql="CREATE TABLE `$table`(\n".implode(",\n", $cols)."\n)";
+        foreach($extra as $name=>$value){
+            $name=strtolower($name);
+            if($name=='engine') {
+                $sql.="ENGINE=$value";
+            }
+        }
+
+        $this->exec($sql);
     }
 }
 }
