@@ -110,7 +110,8 @@
     function clue_db_diagnose(){
         $db=_current_db();
 
-        $current_version=$db->get_var("select value from config where name='DB_VERSION'");
+        $current_version=$db->get_version();
+
         if($current_version===null) throw new \Exception("Can't detect current version through config table (name=DB_VERSION)");
 
         echo "Database: ".$db->get_var("select database()")."\n";
@@ -143,7 +144,7 @@
     function clue_db_upgrade($version='all'){
         $db=_current_db();
 
-        $current_version=intval($db->get_var("select value from config where name='DB_VERSION'"));
+        $current_version=$db->get_version();
 
         $versions=[];
         foreach(\Clue\site_file_glob("script/upgrade/*.php") as $file){
@@ -151,6 +152,8 @@
                 $versions[intval($m[1])]=$file;
             }
         }
+
+        if(empty($versions)) return true;   // 没有升级脚本
 
         $target_version=$version=='all' ? max(array_keys($versions)) : intval($version);
 
@@ -162,7 +165,7 @@
             $ok=include $versions[$ver];
             if(!$ok) panic("Upgrade failed: $ver");
 
-            $db->exec("update config set value=%d where name='DB_VERSION'", $ver);
+            $db->set_version($ver);
             echo "Upgraded to $ver\n";
         }
     }
@@ -174,7 +177,7 @@
     function clue_db_downgrade($version='prev'){
         $db=_current_db();
 
-        $current_version=intval($db->get_var("select value from config where name='DB_VERSION'"));
+        $current_version=$db->get_version();
         $target_version=$version=='prev' ? $current_version-1 : intval($version);
 
         $versions=[];
@@ -192,7 +195,7 @@
             $ok=include $versions[$ver];
             if(!$ok) panic("Downgrade failed: $ver");
 
-            $db->exec("update config set value=%d where name='DB_VERSION'", $ver);
+            $db->set_version($ver);
             echo "Downgraded to $ver\n";
         }
     }
@@ -211,7 +214,7 @@
             $schema[]=$sql;
         }
 
-        $db_version=intval($db->get_var("select value from config where name='DB_VERSION'"));
+        $db_version=$db->get_version();
         $schema[]="insert into config(name, value) values('DB_VERSION', $db_version);";
 
         echo implode(";\n\n", $schema);
@@ -444,25 +447,11 @@ END
 
         if($cfg){
             // 首先从config.php中获取数据库配置
+
             $db=\Clue\Database::create($cfg);
             if(!$db) panic(sprintf(
                 "Can't connect to database %s:\"%s\"@%s/%s", $cfg['username'], $cfg['password'], $cfg['host'], $cfg['db']
             ));
-
-            // 如果没有Config表，自动创建
-            if(!$db->has_table('config')){
-                $db->exec("
-                    CREATE TABLE `config` (
-                      `name` varchar(128) NOT NULL,
-                      `value` text,
-                      `category` varchar(32) DEFAULT NULL,
-                      `title` varchar(64) DEFAULT NULL,
-                      `description` varchar(1024) DEFAULT NULL,
-                      PRIMARY KEY (`name`)
-                    ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
-                ");
-                $db->insert('config', ['name'=>'DB_VERSION', 'value'=>0]);
-            }
 
             return $db;
         }

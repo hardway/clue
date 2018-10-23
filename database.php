@@ -251,6 +251,47 @@ namespace Clue{
         }
 
         function has_table($table){return false;}
+
+        /**
+         * 创建表
+         * @param $fields 支持类型 int, varchar, datetime, date
+         */
+        function create_table($table, array $fields, $extra=[]){
+            panic("TODO: create_table()");
+        }
+
+        function drop_table($table){
+            return $this->exec("drop table `$table`");
+        }
+
+        /*
+         * 当前数据库版本
+         */
+        function get_version(){
+            if(!$this->has_table('config')) return 0;
+            return intval($this->get_var("select value from config where name='DB_VERSION'"));
+        }
+
+        /*
+         * 数据库升级后更新版本
+         */
+        function set_version($version){
+            // 如果没有Config表，自动创建
+            if(!$this->has_table('config')){
+                $this->exec("
+                    CREATE TABLE `config` (
+                      `name` varchar(128) NOT NULL,
+                      `value` text,
+                      `category` varchar(32) DEFAULT NULL,
+                      `title` varchar(64) DEFAULT NULL,
+                      `description` varchar(1024) DEFAULT NULL,
+                      PRIMARY KEY (`name`)
+                    ) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+                ");
+            }
+
+            $this->replace('config', ['name'=>'DB_VERSION', 'value'=>$version]);
+        }
     }
 }
 ?>
