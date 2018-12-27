@@ -129,8 +129,8 @@ namespace Clue\Database{
 			if(!$this->exec($sql)) return false;
 
 			$result=array();
-			while($r=sqlite_fetch_single($this->_result)){
-				$result[]=$r;
+			while($r=$this->_result->fetchArray(SQLITE3_NUM)){
+				$result[]=$r[0];
 			}
 
 			$this->free_result();
