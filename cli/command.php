@@ -462,7 +462,8 @@ END;
             // 填充缺少的Option为默认值
             foreach($help['options'] as $n=>$o){
                 if(!isset($options[$n]) && $o['default']){
-                    $options[$n]=$o['default'];
+                    $v=isset($params[$o['idx']]) ? $params[$o['idx']] : $o['default'];
+                    $options[$n]=$v;
                 }
             }
 
