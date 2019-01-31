@@ -75,10 +75,14 @@ class Parser{
     }
 
     function __construct($html, $type='html', $encoding=null){
-        $this->html=$html;
-        // Prepare the raw html, convert to utf-8 encoding.
+        $this->dom=new \DOMDocument();
+        $this->dom->strictErrorChecking=false;
+        $this->dom->substituteEntities=false;
+        $this->dom->formatOutput=false;
 
-        // Detect encoding
+        $this->html=$html;
+
+        // 检测编码，并转换
         if($encoding==null){
             if(preg_match('/meta[^>]+charset\=[\"\']?([0-9a-zA-Z\-]+)/i', $html, $match)){
                 $encoding=$match[1];
@@ -89,15 +93,6 @@ class Parser{
                 $encoding='utf-8';
         }
 
-        // Need to insert meta tag at first in case some of the webpage didn't have that.
-        $html='<meta http-equiv="Content-Type" content="text/html; charset=utf-8">'.$html;
-        if(strtolower($encoding)!='utf-8') $html=@mb_convert_encoding($html, 'utf-8', $encoding);
-
-        $this->dom=new \DOMDocument();
-        $this->dom->strictErrorChecking=false;
-        $this->dom->substituteEntities=false;
-        $this->dom->formatOutput=false;
-
         /* TODO: investigate tidy side effects
         $tidy = new \tidy;
         $html=$tidy->repairString($html);
@@ -106,6 +101,10 @@ class Parser{
 
         # TODO: 如何纠错，发现错误如何记录日志
         if($type=='html'){
+            // 按需添加META头部
+            $html='<meta http-equiv="Content-Type" content="text/html; charset=utf-8">'.$html;
+            if(strtolower($encoding)!='utf-8') $html=@mb_convert_encoding($html, 'utf-8', $encoding);
+
             @$this->dom->loadHTML($this->_filter_content($html));
         }
         else if($type='xml'){
@@ -373,6 +372,50 @@ class Element implements \ArrayAccess{
         $html.="</$n->tagName>";
 
         return $html;
+    }
+
+    /**
+     * 以数组形式返回
+     */
+    function get_array($n){
+        $ary=[];
+
+        // 属性用@作为前缀
+        if($n->attributes->length>0) foreach($n->attributes as $attr){
+            $ary["@".$attr->name]=$attr->value;
+        }
+
+        if($n->childNodes) foreach($n->childNodes as $c){
+            if($c->nodeType==XML_TEXT_NODE){
+                // 文本
+                $ary['@text']=$c->nodeValue;
+            }
+            elseif($c->nodeType==XML_ELEMENT_NODE){
+                $tag=$c->tagName;
+
+                $val=$this->get_array($c);
+
+                if(!isset($ary[$tag])){
+                    // 单个元素
+                    $ary[$tag]=$val;
+                }
+                elseif(isset($ary[$tag][0])){
+                    // 多个元素
+                    $ary[$tag][]=$val;
+                }
+                else{
+                    // 发现多个元素
+                    $ary[$tag]=[$ary[$tag], $val];
+                }
+            }
+        }
+
+        // 如果只有@text属性，则自动简化数组
+        if(array_keys($ary)==['@text']){
+            $ary=$ary['@text'];
+        }
+
+        return $ary;
     }
 
     function get_table(){

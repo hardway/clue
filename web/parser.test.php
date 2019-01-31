@@ -46,5 +46,51 @@
 				$this->assertEquals(Parser::css2xpath($css), $xpath);
 			}
 		}
+
+        function test_xml(){
+            $xml='<?xml version="1.0" encoding="UTF-8"?>
+<AmazonEnvelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="amzn-envelope.xsd">
+    <Header>
+        <DocumentVersion>1.02</DocumentVersion>
+        <MerchantIdentifier>A1ZGY3RE5LH1AU</MerchantIdentifier>
+    </Header>
+    <MessageType>ProcessingReport</MessageType>
+    <Message>
+        <MessageID>1</MessageID>
+        <ProcessingReport>
+            <DocumentTransactionID>567090017927</DocumentTransactionID>
+            <StatusCode>Complete</StatusCode>
+            <ProcessingSummary>
+                <MessagesProcessed>3</MessagesProcessed>
+                <MessagesSuccessful>0</MessagesSuccessful>
+                <MessagesWithError>2</MessagesWithError>
+                <MessagesWithWarning>0</MessagesWithWarning>
+            </ProcessingSummary>
+            <Result>
+                <MessageID>0</MessageID>
+                <ResultCode>Error</ResultCode>
+                <ResultMessageCode>5000</ResultMessageCode>
+                <ResultDescription>XML Parsing Error at Line 22, Column 28</ResultDescription>
+            </Result>
+            <Result>
+                <MessageID>1</MessageID>
+                <ResultCode>Error</ResultCode>
+                <ResultMessageCode>5002</ResultMessageCode>
+                <ResultDescription>XML Parsing Error at Line 23, Column 9</ResultDescription>
+            </Result>
+        </ProcessingReport>
+    </Message>
+</AmazonEnvelope>
+';
+            $dom=new Parser($xml, 'xml');
+            $this->assertEquals("3", $dom->getElement('MessagesProcessed')->text);
+
+            $summary=$dom->getElement("ProcessingSummary")->array;
+            $this->assertEquals(3, $summary['MessagesProcessed']);
+            $this->assertEquals(0, $summary['MessagesSuccessful']);
+
+            $results=$dom->getElement("ProcessingReport")->array;
+            $this->assertEquals(1, $results['Result'][1]['MessageID']);
+        }
 	}
 ?>
