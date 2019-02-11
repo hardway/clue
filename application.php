@@ -102,7 +102,7 @@ namespace Clue{
             }
         }
 
-        function start_session($timeout=null, array $options=[]){
+        function start_session($timeout=1800, array $options=[]){
             $this['session']=Session::init($this, $options+[
                 'ttl'=>$timeout,
                 'folder'=>"/tmp/session/".APP_NAME,         // FileSession默认路径
