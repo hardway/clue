@@ -416,8 +416,8 @@ END
      * @param $client 用户
      * @param $token 密钥
      */
-    function clue_rpc($endpoint, $function, $params="[]", $client=null, $token=null){
-        $c=new Clue\RPC\Client($endpoint, array('debug'=>true, 'client'=>$client, 'token'=>$token));
+    function clue_rpc($endpoint, $function, $params="[]", $client=null, $token=null, $secret=null){
+        $c=new Clue\RPC\Client($endpoint, array('debug'=>true, 'client'=>$client, 'token'=>$token, 'secret'=>$secret));
         $c->enable_log();
 
         if(is_string($params) && file_exists($params)){
