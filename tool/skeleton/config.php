@@ -19,25 +19,32 @@
     @define("ERROR_LOG_LEVEL", 'ERROR');
     @define("ERROR_MAIL_LEVEL", 'ERROR');
     @define("ERROR_DISPLAY_LEVEL", 'ERROR');
-    @define("ERROR_MAIL_TO", 'hou.danwu@gmail.com');
+    @define("ERROR_MAIL_TO", null);
 
     // 自定义Profiler
     @define('APP_PROFILER', false);
 
     $config=[
-        'database'=>array(
-            'type'=>'mysql',
-            'host'=>DB_HOST,
-            'db'=>DB_NAME,
-            'username'=>DB_USER,
-            'password'=>DB_PASS,
-            'encoding'=>"UTF8"
-        ),
+        // 数据库配置（取消注释以启用）
+        // 'database'=>array(
+        //     'type'=>'mysql',
+        //     'host'=>DB_HOST,
+        //     'db'=>DB_NAME,
+        //     'username'=>DB_USER,
+        //     'password'=>DB_PASS,
+        //     'encoding'=>"UTF8"
+        // ),
+
+        // 资源文件
         'asset'=>[
             'app.css'=>'asset/css/*.css',
             'app.js'=>'asset/js/*.js',
         ],
+
+        // 性能优化
         'profiler'=>APP_PROFILER,
+
+        // 错误报告
         'guard'=>[
             'mail_to'=>ERROR_MAIL_TO,
             'log_level'=>ERROR_LOG_LEVEL,

@@ -8,7 +8,7 @@ namespace Clue\Tool{
 
         protected $build_exclude=array(
             '/\/\./',   // 不要包含所有隐藏文件
-            '/\/doc/',  // 不包含文档
+            // '/\/doc/',  // 不包含文档
             '/\/test/', // 不包含测试用例
         );
         protected $strip_exclude=array(
