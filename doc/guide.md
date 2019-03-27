@@ -1,7 +1,7 @@
 ## 快速了解
 
-CLUE会被打包为clue.phar发布，可以直接在项目中引用(`include clue.phar`)，相关的类会自动加载<br/>
-也可以作为命令行中使用`php clue.phar`，用于创建应用，controller, model等
+CLUE会被打包为clue.phar发布，可以直接在项目中引用(`include clue.phar`)，相关的类会自动加载（代码命名空间为Clue）。
+也可以作为可执行PHP脚本使用`php clue.phar`，用于创建应用，controller, model等
 
 ### 创建应用
 
@@ -116,7 +116,7 @@ MVC不是简单的扁平结构，可以支持层级目录。
     $router->alias('/^.*-c-(\d+)$/i', '/category/view/$1');
 </pre>
 
-### Database
+### Database 数据库连接
 
 支持多种数据库（Microsoft SQLServer, MySQL, Oracle, Sqlite）
 
@@ -146,15 +146,26 @@ MVC不是简单的扁平结构，可以支持层级目录。
 
     $db->delete("table", "id=2");
 
-    $all_rows=$db->get_results("select * from table");      # 返回结果集
-    $one_row=$db->get_row("select * from table");           # 仅返回第一行
-    $one_col=$db->get_col("select name from table");        # 仅返回第一列，形式为数组
-    $cell=$db->get_var("select name from table");           # 仅返回第一个值（第一行，第一列）
-    $hash=$db->get_hash("select name, value from table");   # 以hash形式返回，例如array('a'=>'1', 'b'=>'2')
-    $hash=$db->get_hash("select name, id, value from table"); # 如果有多个值，返回形式为array(
-                                                                    'a'=>array('id'=>46, 'value'=>'1'),
-                                                                    'b'=>array('id'=>89, 'value'=>'2')
-                                                              # )
+    # 返回结果集
+    $all_rows=$db->get_results("select * from table");
+    
+    # 仅返回第一行
+    $one_row=$db->get_row("select * from table");
+
+    # 仅返回第一列，形式为数组
+    $one_col=$db->get_col("select name from table");
+
+    # 仅返回第一个值（第一行，第一列）
+    $cell=$db->get_var("select name from table");
+
+    # 以hash形式返回，例如array('a'=>'1', 'b'=>'2')
+    $hash=$db->get_hash("select name, value from table");
+
+    # 如果有多个值，返回形式为array(
+    #    'a'=>array('id'=>46, 'value'=>'1'),
+    #    'b'=>array('id'=>89, 'value'=>'2')
+    # )
+    $hash=$db->get_hash("select name, id, value from table"); 
 
     # 分别获取三种类型的数据库结果
     # ARRAY_A 哈希数组，列名作为键，数据作为值
@@ -173,7 +184,7 @@ MVC不是简单的扁平结构，可以支持层级目录。
     # $r->value='bar';
 </pre>
 
-### ActiveRecord
+### ActiveRecord 模式
 
 参考Martin Fowler的[Active Record Pattern](http://www.martinfowler.com/eaaCatalog/activeRecord.html)
 
@@ -215,17 +226,17 @@ class Article extends Clue\ActiveRecord{
     # $a->content='b';
 </pre>
 
-### Asset
+### Asset 资源文件管理
 
 asset()全局函数可以直接返回/asset目录下的资源文件
 
 Clue\Asset类用于将多个asset组合（未来将提供压缩选项）为单个文件输出
 
-### CLI
+### CLI 命令行模式
 
 提供ANSI控制，输入获取等功能，方便编写控制台脚本
 
-### Web\Client
+### Web\Client HTTP客户端
 
 Clue\Web\Client用于抓取（下载）URL资源，支持CACHE，支持COOKIE和HTTP REFERER和HTTP POST
 Clue\Web\Parser用于解析HTML文件，支持常用css selector
