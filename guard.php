@@ -1,6 +1,8 @@
 <?php
 namespace Clue;
 
+@define('CLUE_GUARD_MAX_PARAM', 1024);
+
 class Guard{
     use Traits\Events;
 
@@ -324,7 +326,12 @@ class Guard{
         // 过滤大型参数
         foreach($errtrace as &$et){
             if(!is_array($et['args'])) continue;
-            $et['args']=array_map(function($a){return strlen(json_encode($a)) > 1024 ? "ARGUMENT_TOO_LARGE_TO_SHOW" : $a;}, $et['args']);
+            $et['args']=array_map(function($a){
+                if(CLUE_GUARD_MAX_PARAM>0 && strlen(json_encode($a)) > CLUE_GUARD_MAX_PARAM){
+                    return  "ARGUMENT_TOO_LARGE_TO_SHOW";
+                }
+                return $a;
+            }, $et['args']);
         }; unset($et);
 
         $this->errors[]=array(
