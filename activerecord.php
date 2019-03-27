@@ -113,7 +113,7 @@
             $model=self::model();
             $pkey=$model['columns'][$model['pkey']]['name'];
 
-            $row=self::db()->get_row("select * from {$model['table_ref']} where `$pkey`='".self::db()->escape($id)."'", ARRAY_A);
+            $row=self::db()->get_row("select * from {$model['table_ref']} where `$pkey`=".(is_int($id) ? $id : self::db()->quote($id)), ARRAY_A);
             if($row){
                 $class=get_called_class();
                 $r=new $class($row);
