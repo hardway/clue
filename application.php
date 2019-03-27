@@ -262,6 +262,14 @@ namespace Clue{
             return $actual_host && $expect_host && $actual_host!=$expect_host;
         }
 
+        // 是否现存的静态资源文件
+        public function is_static(){
+            $path=$_SERVER['DOCUMENT_ROOT'].'/'.$_SERVER['REQUEST_URI'];
+            $path=preg_replace('/\?.+/', '', $path);
+
+            return is_file($path);
+        }
+
         function run(){
             if(isset($_SERVER['PATH_INFO']))
                 $path=$_SERVER['PATH_INFO'];

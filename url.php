@@ -1,6 +1,8 @@
 <?php
     # URL路径
-    if(!CLI && !defined('APP_BASE')) define('APP_BASE', '/'.trim(dirname($_SERVER['SCRIPT_NAME']), '/'));
+    if(!CLI && !defined('APP_BASE')){
+        define('APP_BASE', '/'.trim(dirname(str_replace($_SERVER['DOCUMENT_ROOT'], '', $_SERVER['SCRIPT_FILENAME'])), '/.'));
+    }
     if(!CLI && !defined('APP_URL')){
         // 不使用常规端口的情况
         $server_port=intval($_SERVER['SERVER_PORT']);
@@ -73,6 +75,7 @@
         }
 
         if(isset($u['host'])) $url.=$u['host'];
+        if(isset($u['port'])) $url.=":".$u['port'];
         if(isset($u['path'])) $url.=path_normalize($u['path']);
         if(isset($u['query'])) $url.="?".$u['query'];
         if(isset($u['fragment'])) $url.="#".$u['fragment'];
