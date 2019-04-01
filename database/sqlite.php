@@ -3,13 +3,17 @@ namespace Clue\Database{
 	class Sqlite extends \Clue\Database{
 		protected $_result;
 
+        /**
+         * @param $param
+         *          readonly 是否只读打开，不会锁死数据
+         */
 		function __construct(array $param){
 			// Make sure mysqli extension is enabled
 			if(!extension_loaded('sqlite3'))
 				throw new \Exception(__CLASS__.": extension sqlite3 is missing!");
 
 			// Check Parameter, TODO: access mode
-			$this->dbh=new \SQLite3($param['db'], SQLITE3_OPEN_READWRITE | SQLITE3_OPEN_CREATE);
+			$this->dbh=new \SQLite3($param['db'], @$param['readonly'] ? SQLITE3_OPEN_READONLY : SQLITE3_OPEN_READWRITE | SQLITE3_OPEN_CREATE);
 
 			if(!$this->dbh){
 				$this->setError(array('error'=>SQLite3::lastErrorMsg()));
