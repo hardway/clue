@@ -548,4 +548,27 @@ namespace{
             return $ary;
         }
     }
+
+    /**
+     * 日期格式化
+     */
+    if(!function_exists('format_datetime')){
+        function format_datetime($datetime, $format){
+            if($datetime=='now') $datetime=time();
+            if(empty($datetime)) return null;
+
+            if(is_numeric($datetime))
+                return date($format, $datetime);
+            else
+                return date($format, strtotime($datetime));
+        }
+    }
+
+    if(!function_exists('ansi_date')){
+        function ansi_date($date='now'){ return format_datetime($date, "Y-m-d"); }
+    }
+
+    if(!function_exists('ansi_datetime')){
+        function ansi_datetime($datetime='now'){ return format_datetime($datetime, "Y-m-d H:i:s"); }
+    }
 }
