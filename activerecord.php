@@ -306,6 +306,23 @@
             return self::find($condition, 'one');
         }
 
+        static function iterate($condition=[]){
+            $model=self::model();
+
+            $sql="select * from {$model["table_ref"]} ";
+            $sql.=self::_get_where_clause($condition);
+
+            $iter=self::db()->iterate_results($sql, ARRAY_A);
+            $class=get_called_class();
+
+            foreach($iter as $r){
+                $r=new $class($r);
+                $r->_snap_shot();
+                $r->after_retrieve();
+                yield $r;
+            }
+        }
+
         static function count($condition=array()){
             $model=self::model();
             $sql="select count(*) from {$model["table_ref"]} ".self::_get_where_clause($condition);
