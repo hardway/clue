@@ -26,7 +26,8 @@ namespace Clue\Web{
             $default_config=array(
                 'proxy'=>getenv("http_proxy"),
                 'connect_timeout'=>15,
-                'timeout'=>60
+                'timeout'=>60,
+                'debug'=>false,
             );
 
             $this->config=array_merge($default_config, $config);
@@ -49,12 +50,14 @@ namespace Clue\Web{
             $this->curl=curl_init();
 
             // DEBUG
-            curl_setopt($this->curl, CURLINFO_HEADER_OUT, true);
+            if($this->config['debug']){
+                curl_setopt($this->curl, CURLINFO_HEADER_OUT, true);
 
-            // CURLOPT_VERBOSE不能和CURLINFO_HEADER_OUT同时使用
-            // if(@$this->config['verbose']){
-            //  curl_setopt($this->curl, CURLOPT_VERBOSE, true);
-            // }
+                // CURLOPT_VERBOSE不能和CURLINFO_HEADER_OUT同时使用
+                // if(@$this->config['verbose']){
+                //  curl_setopt($this->curl, CURLOPT_VERBOSE, true);
+                // }
+            }
 
             // 目标地址
             curl_setopt($this->curl, CURLOPT_URL, $url);
@@ -355,11 +358,14 @@ namespace Clue\Web{
                 ]);
 
                 curl_exec($this->curl);
+                fclose($file);
 
                 $this->errno=curl_errno($this->curl);
                 $this->error=curl_error($this->curl);
 
-                fclose($file);
+                if($this->errno){
+                    unlink($dest);
+                }
             }
         }
 
@@ -399,8 +405,15 @@ namespace Clue\Web{
 
             $this->request=curl_getinfo($this->curl, CURLINFO_HEADER_OUT);
 
-            while(preg_match('/^HTTP\/(\d+\.\d+)\s+(\d+).+?\r\n\r\n/ms', $response, $header)){
+            while(preg_match('/^HTTP\/(\d+\.\d+)\s+(\d+)\s*(.+?)\r\n.+?\r\n\r\n/ms', $response, $header)){
                 $this->status=$header[2];
+
+                // 识别HTTP错误代码
+                if(in_array($this->status[0], ['4','5'])){
+                    $this->error="HTTP $this->status ".trim($header[3]);
+                    $this->errno=intval($this->status);
+                }
+
                 foreach(explode("\n", $header[0]) as $row){
                     if(preg_match('/^([a-z0-9-]+):(.+)$/i', $row, $m)){
                         $this->header[trim($m[1])]=trim($m[2]);
