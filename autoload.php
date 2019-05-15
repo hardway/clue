@@ -114,7 +114,7 @@ namespace Clue{
             // 枚举各种大小写组合，以及用"_"和"\"分隔多个目录
             foreach([$class, strtolower($class), str_replace('_', '/', $class), str_replace('_', '/', strtolower($class))] as $cls){
                 $searches=[];
-                if(stripos($cls, $ns)===0){
+                if(stripos($cls, (string)$ns)===0){
                     $searches[]=sprintf("%s/%s.php", $path, str_ireplace($ns, '', $cls), '.php');
                 }
                 $searches[]=sprintf("%s/%s.php", $path, $cls, '.php');
@@ -139,6 +139,11 @@ namespace Clue{
 		$path=trim($path, '/ ');
 
 		$candidates=array_map(function($d) use($path){return $d.'/'.$path;}, get_site_path());
+
+        if(defined("CLUE_DEBUG") && CLUE_DEBUG>1){
+            error_log("[CLUE_DEBUG] looking for site_file: $path");
+            array_map(function($f){error_log("[CLUE_DEBUG]     candidate: $f");}, $candidates);
+        }
 
 		foreach($candidates as $f){
 			if(file_exists($f)) return $f;
