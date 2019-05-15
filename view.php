@@ -33,7 +33,10 @@ namespace Clue{
                 }
             }
 
-            // var_dump($candidates);
+            if(defined("CLUE_DEBUG") && CLUE_DEBUG>1){
+                error_log("[CLUE_DEBUG] looking for view file: $view");
+                array_map(function($f){error_log("[CLUE_DEBUG]     candidate: $f");}, $candidates);
+            }
 
             foreach($candidates as $path){
             	if(file_exists($path)){
