@@ -213,7 +213,7 @@
         $schema[]="use ".$db->config['db'];
 
         foreach($db->get_col("show tables") as $table){
-            list($_, $sql)=$db->get_row("show create table $table", ARRAY_N);
+            list($_, $sql)=$db->get_row("show create table `$table`", ARRAY_N);
             $schema[]=$sql;
         }
 
@@ -410,6 +410,7 @@ END
 
     /**
      * RPC测试
+     *
      * @param $endpoint 服务端
      * @param $function 调用函数
      * @param $params 参数（如果是文件名，则加载其中的JSON数据）
@@ -427,6 +428,27 @@ END
         $ret=call_user_func_array(array($c, $function), json_decode($params, true));
 
         print_r($ret);
+    }
+
+
+    /**
+     * HTTP RESTFUL CLIENT测试
+     *
+     * @param $method GET | POST | OPTIONS
+     * @param $url 服务端
+     * @param $params 参数（如果是文件名，则加载其中的JSON数据）
+     * @param $header 自定义头部，格式: a=1&b=2
+     */
+    function clue_http($method, $url, $params="[]", $header=""){
+        $c=new Clue\Web\Client(['debug'=>true]);
+
+        parse_str($header, $c->custom_header);
+
+        $r=$c->$method($url, $params);
+
+        print_r($c->request);
+        print_r($c->response);
+        print_r($r);
     }
 
     /**
