@@ -1,6 +1,7 @@
 <?php
 /**
  * REF: http://www.termsys.demon.co.uk/vtansi.htm
+ * REF: https://en.wikipedia.org/wiki/ANSI_escape_code#Colors_and_Styles
  */
 namespace Clue{
     // 避免cgi模式下STDERR缺少定义
@@ -32,6 +33,21 @@ namespace Clue{
             if(empty($confirmation)) $confirmation=$default;
 
             return $confirmation=='Y' || $confirmation=='y';
+        }
+
+        /**
+         * 提示用户输入密码
+         */
+        static function password($prompt='Password: '){
+            printf("%s ", $prompt);
+
+            system("stty -echo");
+            $pwd=trim(fgets(STDIN));
+            system("stty echo");
+
+            printf("\n");
+
+            return $pwd;
         }
 
         static function flush(){
