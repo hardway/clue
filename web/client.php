@@ -119,11 +119,46 @@ namespace Clue\Web{
 
             // HTTP认证
             if(isset($this->config['http_user']) && isset($this->config['http_pass'])){
-                curl_setopt($this->curl, CURLOPT_HTTPAUTH, CURLAUTH_ANY);
-                curl_setopt($this->curl, CURLOPT_USERPWD, "{$this->config['http_user']}:{$this->config['http_pass']}");
+                if(isset($this->config['http_auth'])) switch(strtoupper($this->config['http_auth'])){
+                    case 'BASIC':
+                        curl_setopt($this->curl, CURLOPT_HTTPAUTH, CURLAUTH_BASIC);
+                        break;
+                    case 'DIGEST':
+                        curl_setopt($this->curl, CURLOPT_HTTPAUTH, CURLAUTH_DIGEST);
+                        break;
+                    case 'NTLM':
+                        curl_setopt($this->curl, CURLOPT_HTTPAUTH, CURLAUTH_NTLM);
+                        break;
+                    case 'GSS':
+                        curl_setopt($this->curl, CURLOPT_HTTPAUTH, CURLAUTH_GSSNEGOTIATE);
+                        break;
+                    default:
+                        break;
+                }
 
-                curl_setopt($this->curl, CURLOPT_PROXYAUTH, CURLAUTH_ANY);
-                curl_setopt($this->curl, CURLOPT_PROXYUSERPWD, "{$this->config['http_user']}:{$this->config['http_pass']}");
+                curl_setopt($this->curl, CURLOPT_USERPWD, "{$this->config['http_user']}:{$this->config['http_pass']}");
+            }
+
+            if(isset($this->config['proxy_user']) && isset($this->config['proxy_pass'])){
+                if(isset($this->config['proxy_auth'])) switch(strtoupper($this->config['proxy_auth'])){
+                    case 'BASIC':
+                        curl_setopt($this->curl, CURLOPT_PROXYAUTH, CURLAUTH_BASIC);
+                        break;
+                    case 'NTLM':
+                        curl_setopt($this->curl, CURLOPT_PROXYAUTH, CURLAUTH_NTLM);
+                        break;
+                    // DIGEST和GSS可能无法支持
+                    case 'DIGEST':
+                        curl_setopt($this->curl, CURLOPT_PROXYAUTH, CURLAUTH_DIGEST);
+                        break;
+                    case 'GSS':
+                        curl_setopt($this->curl, CURLOPT_PROXYAUTH, CURLAUTH_GSSNEGOTIATE);
+                        break;
+                    default:
+                        break;
+                }
+
+                curl_setopt($this->curl, CURLOPT_PROXYUSERPWD, "{$this->config['proxy_user']}:{$this->config['proxy_pass']}");
             }
 
             // HTTP Referer
