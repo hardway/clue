@@ -71,7 +71,7 @@ class ClickHouse extends \Clue\Database{
             $error=$raw;
 
             if($this->http_status==0 && empty($raw)){
-                $error="Timeout";
+                $error=curl_error($this->curl) ?: "Unknown network error";
             }
 
             throw new \Exception($error, $this->http_status);
