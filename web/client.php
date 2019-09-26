@@ -440,7 +440,7 @@ namespace Clue\Web{
 
             $this->request=curl_getinfo($this->curl, CURLINFO_HEADER_OUT);
 
-            while(preg_match('/^HTTP\/(\d+\.\d+)\s+(\d+)\s*(.+?)\r\n.+?\r\n\r\n/ms', $response, $header)){
+            while(preg_match('/^HTTP\/([0-9.]+)\s+(\d+)\s*(.+?)\r\n.+?\r\n\r\n/ms', $response, $header)){
                 $this->status=$header[2];
 
                 // 识别HTTP错误代码
