@@ -11,7 +11,7 @@
         protected function setUp(){
             $config=[
                 'type'=>'clickhouse',
-                'host' => 'db.dev',
+                'host' => '127.0.0.1',
                 'user' => 'default',
                 'pass' => '',
                 'db'=>'test',
@@ -39,23 +39,9 @@
         function test_insert_datetime(){
             $this->db->create_table('dummy', ['id'=>'int', 'last_update'=>'datetime'], ['engine'=>'Memory']);
             $this->db->insert("dummy", [123, date("Y-m-d H:i:s")], ['id', 'last_update']);
+            $this->assertNotNull($this->db->get_var("select last_update from dummy where id=%d", 123));
+            $this->assertEquals(1, $this->db->get_var("select count(*) from dummy"));
+            $this->db->insert("dummy", ['id'=>234, 'last_update'=>date("Y-m-d H:i:s")]);
+            $this->assertEquals(2, $this->db->get_var("select count(*) from dummy"));
         }
     }
-
-
-// $ok=$db->exec("CREATE TABLE test (a UInt8, b String) ENGINE = Memory");
-// printf("Create Table : %s\n", $ok);
-
-// $ok=$db->query("desc test");
-// printf("DESC Table   : %s\n", json_encode($ok));
-// printf("Show Tables  : %s\n", implode(", ", $db->get_col("show tables")));
-
-// $db->insert('test', [[1,'a'], [2,'b']]);
-// printf("Get Var      : %s\n", $db->get_var("select * from test"));
-// printf("Get Column   : %s\n", implode(", ", $db->get_col("select a from test")));
-// printf("Get Row      : %s\n", json_encode($db->get_row("select * from test where a=2")));
-// printf("Get Results  : %s\n", json_encode($db->get_results("select * from test")));
-
-// $ok=$db->exec("drop table test");
-// printf("Drop Table   : %s\n", $ok);
-// printf("Show Tables  : %s\n", implode(", ", $db->get_col("show tables")));

@@ -5,9 +5,15 @@ namespace Clue\Database{
  * ClickHouse
  *
  * 类似MySQL的接口，但是不支持Update
+ * TODO: 增加binary协议
+ * TODO: 与mysql保持兼容
  */
 class ClickHouse extends \Clue\Database{
     private $endpoint;
+
+    static function escape_tab_data($string){
+        return str_replace(["\\", "\n", "\r", "\t"], ["\\\\", "\\n", "\\r", "\\t"], $string);
+    }
 
     function __construct(array $options=[]){
         $default_options=[
@@ -104,24 +110,33 @@ class ClickHouse extends \Clue\Database{
     }
 
     function get_var($sql){
-        $rs=$this->query($sql);
-        $cols=array_shift($rs);
+        $sql=call_user_func_array(array($this, "format"), func_get_args());
+
+        $rs=$this->_api("query", ['database'=>$this->db, 'query'=>$sql]);
+        $columns=array_shift($rs);
 
         return @$rs[0][0];
     }
 
     function get_col($sql){
-        $rs=$this->query($sql);
-        $cols=array_shift($rs);
+        $sql=call_user_func_array(array($this, "format"), func_get_args());
+        $rs=$this->_api("query", ['database'=>$this->db, 'query'=>$sql]);
+        $columns=array_shift($rs);
 
         return array_map(function($r){return $r[0];}, $rs);
     }
 
     function get_row($sql, $mode=OBJECT){
-        $rs=$this->query($sql);
+        $sql=call_user_func_array(array($this, "format"), func_get_args());
+        $rs=$this->_api("query", ['database'=>$this->db, 'query'=>$sql]);
         $cols=array_shift($rs);
 
         if(empty($rs)) return null;
+
+        $mode=func_get_arg(func_num_args()-1);
+        if($mode!=OBJECT && $mode!=ARRAY_A && $mode!=ARRAY_N){
+            $mode=OBJECT;
+        }
 
         switch($mode){
             case OBJECT:
@@ -136,7 +151,9 @@ class ClickHouse extends \Clue\Database{
     }
 
     function get_results($sql, $mode=OBJECT){
-        $rs=$this->query($sql);
+        $sql=call_user_func_array(array($this, "format"), func_get_args());
+        $rs=$this->_api("query", ['database'=>$this->db, 'query'=>$sql]);
+
         $cols=array_shift($rs);
 
         $ret=[];
@@ -161,12 +178,21 @@ class ClickHouse extends \Clue\Database{
 
     /**
      * 插入数据
+     */
+    function insert($table, $row, array $columns=[]){
+        if(empty($columns) && !isset($row[0])) return $this->insert_row($table, $row);
+
+        return $this->insert_batch($table, $row, $columns);
+    }
+
+    /**
+     * 插入数据
      * @param $table 表名
      * @param $row 单行（也可以是多行数据）
      *          [1, 'a', ...] 或 [[1,'a'], [2, 'b'], ...]
      * @param $columns 列名(默认为表格的列顺序)
      */
-    function insert($table, $row, array $columns=[]){
+    function insert_batch($table, $row, array $columns=[]){
         $processed=0;
 
         $query="insert into $table";
@@ -176,7 +202,7 @@ class ClickHouse extends \Clue\Database{
         $rows=is_array(@$row[0]) ? $row : [$row];
         $data="";
         foreach($rows as $row){
-            $row=array_map(function($r){return str_replace(["\\", "\n", "\r", "\t"], ["\\\\", "\\n", "\\r", "\\t"], $r);}, $row);
+            $row=array_map([$this, 'escape_tab_data'], $row);
 
             // NOTE, Clickhouse不能随便加quote双引号，否则导致解析失败
             $data.=implode("\t", $row)."\n";
@@ -185,6 +211,18 @@ class ClickHouse extends \Clue\Database{
         $this->_api('write', ['database'=>$this->db, 'query'=>$query], $data);
 
         return $processed;
+    }
+
+    /**
+     * 插入单行记录
+     */
+    function insert_row($table, $row){
+        $query="insert into $table (".implode(',', array_keys($row)).") FORMAT TabSeparated";
+
+        $row=array_map([$this, 'escape_tab_data'], $row);
+
+        $ok=$this->_api('write', ['database'=>$this->db, 'query'=>$query], implode("\t", $row)."\n");
+        return $ok;
     }
 
     function exec($sql){
@@ -196,6 +234,7 @@ class ClickHouse extends \Clue\Database{
     }
 
     function query($sql){
+        $sql=call_user_func_array(array($this, "format"), func_get_args());
         return $this->_api("query", ['database'=>$this->db, 'query'=>$sql]);
     }
 
