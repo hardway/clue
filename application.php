@@ -160,7 +160,7 @@ namespace Clue{
          * 典型场景：限制页面跳转到登录页面，成功后返回原页面
          */
         function redirect_return($default_url=null){
-            $this->redirect($this['return_url'] ?: $default_url ?: $this['referer_url']);
+            $this->redirect($default_url ?: $this['return_url'] ?: $this['referer_url']);
         }
 
         /**

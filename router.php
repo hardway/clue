@@ -269,7 +269,7 @@ namespace Clue{
 
             // Strip base directory, eg, the application is located at http://localhost/portal/app
             $base=preg_replace('|[\\\/]+|', '/', APP_BASE);
-            if($base!='/' && strpos($url, $base)===0){
+            if($base && $base!='/' && strpos($url, $base)===0){
                 $url=substr($url, strlen($base));
             }
 
