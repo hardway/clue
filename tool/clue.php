@@ -146,7 +146,6 @@
      */
     function clue_db_upgrade($version='all'){
         $db=_current_db();
-
         $current_version=$db->get_version();
 
         $versions=[];
@@ -452,6 +451,44 @@ END
     }
 
     /**
+     * 部署配置文件
+     * @param $target 目标文件
+     * @param $template 源模板文件（变量形如 {{FOO}} ）
+     * @param $vars 替换变量
+     */
+    function clue_setup_file($target, $template, $vars=[]){
+        if(is_string($vars)) parse_str($vars, $vars);
+        $vars+=['APP_ROOT'=>APP_ROOT];
+
+        Clue\CLI::text("[FILE] creating file: $target ...\n", 'yellow');
+
+        $content=file_get_contents($template);
+
+        foreach($vars as $k=>$v){
+            $content=str_replace('{{'.$k.'}}', $v, $content);
+        }
+
+        file_put_contents($target, $content);
+    }
+
+    /**
+     * 部署Cron
+     * 配置文件从install/cron目录读取
+     */
+    function clue_setup_cron(){
+        $folder=APP_ROOT.'/install/cron';
+
+        if(!is_dir($folder)) panic("Cron folder not exists: $folder");
+        foreach(scandir($folder) as $f){
+            if($f[0]=='.') continue;
+            if(!is_file("$folder/$f")) continue;
+
+            $target='/etc/cron.d/'.pathinfo($f, PATHINFO_FILENAME);
+            clue_setup_file($target, "$folder/$f");
+        }
+    }
+
+    /**
      * 当前项目的配置内容
      */
     function _current_config(){
@@ -482,7 +519,8 @@ END
         }
         else{
             // 尝试加载stub.php
-            include \Clue\site_file("stub.php");
+            global $app;    // HACK, REFACTOR, 确保$app必须是全局变量
+            $app=require_once \Clue\site_file("stub.php");
             return $app['db'] ?: $app['mysql'];
         }
     }

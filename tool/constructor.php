@@ -12,7 +12,8 @@ namespace Clue\Tool{
             '/\/test/', // 不包含测试用例
         );
         protected $strip_exclude=array(
-            "/tool\/skeleton\/.*/"
+            "/tool\/skeleton\/.*/", # 模板不要压缩
+            "/tool\/clue.php/",     # 命令行文件不要压缩，否则帮助信息没有了
         );
 
         function __construct($root, $options=[]){
