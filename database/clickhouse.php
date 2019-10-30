@@ -31,6 +31,8 @@ class ClickHouse extends \Clue\Database{
         $this->endpoint="http://{$this->options['host']}:{$this->options['port']}";
         $this->db=@$this->options['db']; // 当前数据库
 
+        $this->curl=curl_init();
+
         // 尝试连接
         if(!$this->ping()){
             throw new \Exception("Can't connect to server: $this->endpoint");
@@ -38,8 +40,6 @@ class ClickHouse extends \Clue\Database{
     }
 
     function _curl_init($url){
-        $this->curl=curl_init();
-
         curl_reset($this->curl);
 
         curl_setopt($this->curl, CURLOPT_HTTPAUTH, CURLAUTH_BASIC ) ;
@@ -202,7 +202,7 @@ class ClickHouse extends \Clue\Database{
         foreach($rs as $r){
             switch($mode){
                 case OBJECT:
-                    $ret[]=\Clue\ary2obj(array_combine($cols, $r));
+                    $ret[]=(object)array_combine($cols, $r);
                     break;
 
                 case ARRAY_A:
