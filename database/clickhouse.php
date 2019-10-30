@@ -19,6 +19,8 @@ class ClickHouse extends \Clue\Database{
         $default_options=[
             'host'=>'127.0.0.1',
             'port'=>8123,
+            'username'=>'default',
+            'password'=>null,
             'connection_timeout'=>5,
             'timeout'=>30,
             'debug'=>false,
@@ -29,27 +31,36 @@ class ClickHouse extends \Clue\Database{
         $this->endpoint="http://{$this->options['host']}:{$this->options['port']}";
         $this->db=@$this->options['db']; // 当前数据库
 
-        $this->curl=curl_init();
-
         // 尝试连接
         if(!$this->ping()){
             throw new \Exception("Can't connect to server: $this->endpoint");
         }
     }
 
+    function _curl_init($url){
+        $this->curl=curl_init();
+
+        curl_reset($this->curl);
+
+        curl_setopt($this->curl, CURLOPT_HTTPAUTH, CURLAUTH_BASIC ) ;
+        curl_setopt($this->curl, CURLOPT_USERPWD, $this->options['username'].($this->options['password'] ? ":".$this->options['password']: ""));
+        curl_setopt($this->curl, CURLOPT_CONNECTTIMEOUT, $this->options['connection_timeout']);
+        curl_setopt($this->curl, CURLOPT_TIMEOUT, $this->options['timeout']);
+        curl_setopt($this->curl, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($this->curl, CURLOPT_URL, $url);
+    }
+
     function _api($type, $param=[], $content=null){
         $url="$this->endpoint";
         if(isset($param['query'])){
             $this->last_query=$param['query'];
+
             if($type=='query') $param['query'].=" FORMAT TSVWithNames";
         }
 
         if($param) $url.="?".http_build_query($param);
 
-        curl_reset($this->curl);
-        curl_setopt($this->curl, CURLOPT_CONNECTTIMEOUT, $this->options['connection_timeout']);
-        curl_setopt($this->curl, CURLOPT_TIMEOUT, $this->options['timeout']);
-        curl_setopt($this->curl, CURLOPT_RETURNTRANSFER, true);
+        $this->_curl_init($url);
 
         $type=strtolower($type);
         switch($type){
@@ -66,8 +77,6 @@ class ClickHouse extends \Clue\Database{
                 throw new \Exception("No API defined for $type");
         }
 
-
-        curl_setopt($this->curl, CURLOPT_URL, $url);
         $raw=curl_exec($this->curl);
 
 
@@ -101,6 +110,39 @@ class ClickHouse extends \Clue\Database{
         }
 
         return $raw;
+    }
+
+    function _api_iterate(array $param){
+        $url="$this->endpoint";
+
+        assert(isset($param['query']));
+
+        $this->last_query=$param['query'];
+        $param['query'].=" FORMAT JSONEachRow";
+
+        $url.="?".http_build_query($param);
+
+        $this->_curl_init($url);
+
+        $raw=curl_exec($this->curl);
+
+        $this->http_status=intval(curl_getinfo($this->curl, CURLINFO_HTTP_CODE));
+
+        if(!in_array($this->http_status, [200, 204])){
+            $error=$raw;
+
+            if($this->http_status==0 && empty($raw)){
+                $error=curl_error($this->curl) ?: "Unknown network error";
+            }
+
+            throw new \Exception($error, $this->http_status);
+        }
+
+        foreach(explode("\n", $raw) as $line){
+            if(empty($line)) break;
+            yield json_decode($line, true);
+        }
+        return;
     }
 
     function ping(){
@@ -177,6 +219,33 @@ class ClickHouse extends \Clue\Database{
     }
 
     /**
+     * Result generator
+     *
+     * @param string $sql     SQL Statement
+     * @param string $mode    Row data type
+     *
+     * @return int Row count
+     */
+    function iterate_results($sql, $mode=OBJECT){
+        $sql=call_user_func_array(array($this, "format"), func_get_args());
+
+        $rs=$this->_api_iterate(['database'=>$this->db, 'query'=>$sql]);
+        $ret=[];
+        foreach($rs as $r){
+            switch($mode){
+                case OBJECT:
+                    yield \Clue\ary2obj($r);
+                    break;
+
+                case ARRAY_A:
+                default:
+                    yield $r;
+                    break;
+            }
+        }
+    }
+
+    /**
      * 插入数据
      */
     function insert($table, $row, array $columns=[]){
@@ -225,6 +294,20 @@ class ClickHouse extends \Clue\Database{
         return $ok;
     }
 
+    function update($table, $fields, $where){
+        $updates=array();
+
+        foreach ($fields as $c=>$v) {
+            $updates[]="`$c`=".$this->quote($v);
+        }
+        $sql="
+            ALTER TABLE `$table` UPDATE ".implode(', ', $updates)."
+            WHERE $where
+        ";
+
+        return $this->exec($sql);
+    }
+
     function exec($sql){
         $param=['database'=>$this->db, 'query'=>$sql];
 
@@ -240,6 +323,7 @@ class ClickHouse extends \Clue\Database{
 
     function has_table($table){
         $tables=$this->get_col("show tables");
+
         return in_array($table, $tables);
     }
 
