@@ -286,11 +286,19 @@ class ClickHouse extends \Clue\Database{
      * 插入单行记录
      */
     function insert_row($table, $row){
-        $query="insert into $table (".implode(',', array_keys($row)).") FORMAT TabSeparated";
+        $query="insert into $table FORMAT JSONEachRow";
 
-        $row=array_map([$this, 'escape_tab_data'], $row);
+        $ok=$this->_api('write', ['database'=>$this->db, 'query'=>$query], json_encode($row)."\n");
+        return $ok;
+    }
 
-        $ok=$this->_api('write', ['database'=>$this->db, 'query'=>$query], implode("\t", $row)."\n");
+    /**
+     * 插入单行记录
+     */
+    function insert_rows($table, $rows){
+        $query="insert into $table FORMAT JSONEachRow";
+
+        $ok=$this->_api('write', ['database'=>$this->db, 'query'=>$query], implode("\n", array_map('json_encode', $rows)));
         return $ok;
     }
 
