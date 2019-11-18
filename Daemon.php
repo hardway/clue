@@ -27,7 +27,7 @@ class Daemon{
 
         $memory_limit=1000000000;
         $code_version=self::code_version();
-        if($code_version <=0 || memory_get_usage() > $memory_limit){
+        if(empty($code_version) || memory_get_usage() > $memory_limit){
             exit("Out of memory, restart.");
         }
 
@@ -57,7 +57,12 @@ class Daemon{
      * 代码版本，通过mercurial获得
      */
     static function code_version(){
-        $revision=exec("hg --cwd ".APP_ROOT." parent --template {rev} 2>/dev/null");
+        if(is_dir(APP_ROOT.'/.hg')){
+            $revision=exec("hg --cwd ".APP_ROOT." parent --template {rev} 2>/dev/null");
+        }
+        elseif(is_dir(APP_ROOT.'/.git')){
+            $revision=exec('git -C '.APP_ROOT.' rev-parse --short HEAD');
+        }
 
         return $revision;
     }
