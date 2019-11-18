@@ -15,21 +15,29 @@ namespace Clue\Text{
 			'col_index'=>false,	// 使用column name作为下标，而不是数字列名
 		);
 
+        /**
+         * @param $filename 文件路径（也可以是file handle）
+         */
 		function __construct($filename, $options=array()){
-			// 自动识别TSV和CSV
-			$ext=@pathinfo($filename)['extension'];
-			if($ext=='tsv'){
-				self::$DEFAULT_OPTIONS['delimiter']="\t";
-			}
+            if(is_resource($filename)){
+                $this->_fh=$filename;
+            }
+            else{
+    			// 自动识别TSV和CSV
+    			$ext=@pathinfo($filename)['extension'];
+    			if($ext=='tsv'){
+    				self::$DEFAULT_OPTIONS['delimiter']="\t";
+    			}
 
-			$this->options=array_merge(self::$DEFAULT_OPTIONS, $options);
-			$this->columns=array();
-			$this->rows=array();
+    			$this->options=array_merge(self::$DEFAULT_OPTIONS, $options);
+    			$this->columns=array();
+    			$this->rows=array();
 
-			$this->filename=$filename;
+    			$this->filename=$filename;
 
-			$this->_fh=fopen($this->filename, "r");
-			if(!$this->_fh) throw new \Exception("Can't open CSV file: $this->filename");
+    			$this->_fh=fopen($this->filename, "r");
+    			if(!$this->_fh) throw new \Exception("Can't open CSV file: $this->filename");
+            }
 
 			if($this->options['header']){
 				// 读取首行，标题
