@@ -28,7 +28,7 @@ class Sender{
         $this->dns_server='8.8.8.8';
 
         // 确定本机HOST NAME
-        $this->hostname=defined('APP_HOST') ? APP_HOST : @$_SERVER['SERVER_NAME'] ?: gethostname() ?: "localhost";
+        $this->hostname=(defined('APP_HOST') ? APP_HOST : @$_SERVER['SERVER_NAME']) ?: (gethostname() ?: "localhost");
 
         $this->sender=new Address($from ?: $this->username ?: get_current_user());
         $this->recipients=[
