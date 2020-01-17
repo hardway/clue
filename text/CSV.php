@@ -1,117 +1,146 @@
 <?php
 namespace Clue\Text{
-	class CSV{
-		public $filename;
+    class CSV{
+        public $filename;
 
-		public $columns;
-		public $rows;
+        public $columns;
+        public $rows;
 
-		static $DEFAULT_OPTIONS=array(
-			'header'=>true,
-			'length'=>4096,
-			'delimiter'=>",",
-			'enclosure'=>'"',
-			'escape'=>'\\',
-			'col_index'=>false,	// 使用column name作为下标，而不是数字列名
-		);
+        static $DEFAULT_OPTIONS=array(
+            'header'=>true,
+            'length'=>4096,
+            'delimiter'=>",",
+            'enclosure'=>'"',
+            'escape'=>'\\',
+            'col_index'=>false, // 使用column name作为下标，而不是数字列名
+        );
 
         /**
          * @param $filename 文件路径（也可以是file handle）
+         * @param $options
+         *          header  是否读取首行作为列名
+         *          columns 也可以人工指定列名
          */
-		function __construct($filename, $options=array()){
+        function __construct($filename, $options=array()){
             if(is_resource($filename)){
                 $this->_fh=$filename;
             }
             else{
-    			// 自动识别TSV和CSV
-    			$ext=@pathinfo($filename)['extension'];
-    			if($ext=='tsv'){
-    				self::$DEFAULT_OPTIONS['delimiter']="\t";
-    			}
+                // 自动识别TSV和CSV
+                $ext=@pathinfo($filename)['extension'];
+                if($ext=='tsv'){
+                    self::$DEFAULT_OPTIONS['delimiter']="\t";
+                }
 
-    			$this->options=array_merge(self::$DEFAULT_OPTIONS, $options);
-    			$this->columns=array();
-    			$this->rows=array();
+                $this->options=array_merge(self::$DEFAULT_OPTIONS, $options);
+                $this->columns=array();
+                $this->rows=array();
 
-    			$this->filename=$filename;
+                $this->filename=$filename;
 
-    			$this->_fh=fopen($this->filename, "r");
-    			if(!$this->_fh) throw new \Exception("Can't open CSV file: $this->filename");
+                $this->_fh=fopen($this->filename, "r");
+                if(!$this->_fh) throw new \Exception("Can't open CSV file: $this->filename");
             }
 
-			if($this->options['header']){
-				// 读取首行，标题
-				$this->columns=$this->parse_row();
-			}
-		}
+            $this->ln=1;    // 当前行数
 
-		function __destruct(){
-			// 正确关闭文件
-			if($this->_fh){
-				fclose($this->_fh);
-				$this->_fh=null;
-			}
+            if($this->options['header']){
+                // 读取首行，标题
+                $this->columns=$this->parse_row();
+            }
 
-			return true;
-		}
+            // 强制使用指定的列名
+            if(isset($this->options['columns'])){
+                $this->columns=$this->options['columns'];
+            }
+        }
 
-		function parse_row($fh=null){
-			return fgetcsv($fh ?: $this->_fh, $this->options['length'], $this->options['delimiter'], $this->options['enclosure'], $this->options['escape']);
-		}
+        function __destruct(){
+            // 正确关闭文件
+            if($this->_fh){
+                fclose($this->_fh);
+                $this->_fh=null;
+            }
 
-		function col($name){
-			// Search for exact match
-			foreach($this->columns as $i=>$col){
-				if(strtolower($col)==strtolower($name)){
-					return $i;
-				}
-			}
+            return true;
+        }
 
-			// Search for rough match
-			foreach($this->columns as $i=>$col){
-				if(strpos(strtolower($col), strtolower($name))!==false){
-					return $i;
-				}
-			}
+        /**
+         * 返回列名对应的行数据
+         */
+        function name_row($row){
+            $obj=[];
+            foreach($row as $k=>$v){
+                $k=@$this->columns[$k] ?: $k;
+                $obj[$k]=$v;
+            }
 
-			return $name;
-		}
+            return $obj;
+        }
 
-		function read($batch=false){
-			while(!feof($this->_fh)){
-				$r=$this->parse_row();
-				if(!is_array($r)) continue;
-				if($r==[null]) continue;
+        function parse_row($fh=null){
+            $row=fgetcsv($fh ?: $this->_fh, $this->options['length'], $this->options['delimiter'], $this->options['enclosure'], $this->options['escape']);
+            $this->ln++;
+            return $row;
+        }
 
-				if($this->options['col_index']){
-					$nr=[];
-					foreach($this->columns as $idx=>$col){
-						$nr[$col]=@$r[$idx];
-					}
-					$r=$nr;
-				}
+        function col($name){
+            // Search for exact match
+            foreach($this->columns as $i=>$col){
+                if(strtolower($col)==strtolower($name)){
+                    return $i;
+                }
+            }
 
-				if($batch){
-					$this->rows[]=$r;
-				}
-				else{
-					yield $r;
-				}
-			}
-		}
+            // Search for rough match
+            foreach($this->columns as $i=>$col){
+                if(strpos(strtolower($col), strtolower($name))!==false){
+                    return $i;
+                }
+            }
 
-		function write($table){
-			$f=fopen($this->filename, "w");
+            return $name;
+        }
 
-			try{
-				foreach($table as $row){
-					fputcsv($f, $row, $this->options['delimiter'], $this->options['enclosure'], $this->options['escape']);
-				}
-			}
-			finally{
-				fclose($f);
-			}
-		}
-	}
+        function eof(){
+            return feof($this->_fh);
+        }
+
+        function read($batch=false){
+            while(!feof($this->_fh)){
+                $r=$this->parse_row();
+                if(!is_array($r)) continue;
+                if($r==[null]) continue;
+
+                if($this->options['col_index']){
+                    $nr=[];
+                    foreach($this->columns as $idx=>$col){
+                        $nr[$col]=@$r[$idx];
+                    }
+                    $r=$nr;
+                }
+
+                if($batch){
+                    $this->rows[]=$r;
+                }
+                else{
+                    yield $r;
+                }
+            }
+        }
+
+        function write($table){
+            $f=fopen($this->filename, "w");
+
+            try{
+                foreach($table as $row){
+                    fputcsv($f, $row, $this->options['delimiter'], $this->options['enclosure'], $this->options['escape']);
+                }
+            }
+            finally{
+                fclose($f);
+            }
+        }
+    }
 }
 ?>
