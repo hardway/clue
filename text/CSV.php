@@ -42,6 +42,8 @@ namespace Clue\Text{
                 if(!$this->_fh) throw new \Exception("Can't open CSV file: $this->filename");
             }
 
+            $this->skip_bom();
+
             $this->ln=1;    // 当前行数
 
             if($this->options['header']){
@@ -63,6 +65,20 @@ namespace Clue\Text{
             }
 
             return true;
+        }
+
+        /**
+         * 跳过BOM
+         * REF: https://en.wikipedia.org/wiki/Byte_order_mark
+         */
+        function skip_bom(){
+            $bom=array_map('ord', str_split(fread($this->_fh, 3)));
+            if($bom==[0xEF, 0xBB, 0xBF]){
+                // UTF8
+            }
+            else{
+                fseek($this->_fh, 0);
+            }
         }
 
         /**
