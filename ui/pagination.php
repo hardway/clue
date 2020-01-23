@@ -54,7 +54,7 @@ namespace Clue\UI{
 			return $this->pageSize;
 		}
 
-		protected function page_url($page, $url_option){
+		public function page_url($page, $url_option=['url_param'=>'p']){
 			if(isset($url_option['url_pattern'])){
 				return str_replace('{page}', $page, $url_option['url_pattern']);
 			}
@@ -89,7 +89,10 @@ namespace Clue\UI{
 			}
 
             $view=new \Clue\View("clue/pagination");
-            $view->render(compact("prevLink", 'nextLink', 'links', 'currentPage', 'totalPages'));
+            $data=compact("prevLink", 'nextLink', 'links', 'currentPage', 'totalPages');
+            $data['this']=$this;
+
+            $view->render($data);
 		}
 	}
 }
