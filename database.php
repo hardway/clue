@@ -5,6 +5,8 @@ namespace Clue{
     if(!defined('ARRAY_A')) define('ARRAY_A', 'ARRAY_A');
     if(!defined('ARRAY_N')) define('ARRAY_N', 'ARRAY_N');
 
+    @define('CLUE_DB_CONFIG_TABLE', 'config');
+
     abstract class Database{
         use \Clue\Traits\Logger;
 
@@ -268,8 +270,8 @@ namespace Clue{
          * 当前数据库版本
          */
         function get_version(){
-            if(!$this->has_table('config')) return 0;
-            return intval($this->get_var("select value from config where name='DB_VERSION'"));
+            if(!$this->has_table(CLUE_DB_CONFIG_TABLE)) return 0;
+            return intval($this->get_var("select value from ".CLUE_DB_CONFIG_TABLE." where name='DB_VERSION'"));
         }
 
         /*
@@ -277,9 +279,9 @@ namespace Clue{
          */
         function set_version($version){
             // 如果没有Config表，自动创建
-            if(!$this->has_table('config')){
+            if(!$this->has_table(CLUE_DB_CONFIG_TABLE)){
                 $this->exec("
-                    CREATE TABLE `config` (
+                    CREATE TABLE `".CLUE_DB_CONFIG_TABLE."` (
                       `name` varchar(128) NOT NULL,
                       `value` text,
                       `category` varchar(32) DEFAULT NULL,
@@ -290,7 +292,7 @@ namespace Clue{
                 ");
             }
 
-            $this->replace('config', ['name'=>'DB_VERSION', 'value'=>$version]);
+            $this->replace(CLUE_DB_CONFIG_TABLE, ['name'=>'DB_VERSION', 'value'=>$version]);
         }
     }
 }
