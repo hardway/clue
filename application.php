@@ -102,9 +102,9 @@ namespace Clue{
             }
         }
 
-        function start_session($timeout=1800, array $options=[]){
+        function start_session($lifetime=1800, array $options=[]){
             $this['session']=Session::init($this, $options+[
-                'ttl'=>$timeout,
+                'ttl'=>$lifetime,
                 'folder'=>"/tmp/session/".APP_NAME,         // FileSession默认路径
                 'db'=>$this['db']['default']                // DBSession默认数据库
             ]);
@@ -113,10 +113,13 @@ namespace Clue{
             if(isset($options['name'])) session_name($options['name']);
 
             session_start();
+            setcookie(session_name(),session_id(),time()+$lifetime, '/');
 
 		    if (!isset($_SESSION['security_token'])) {
 		        $_SESSION['security_token'] = md5(uniqid(rand(), true));
 		    }
+
+            // TODO: 尽早关闭session，最好在session start之后最快完成需要的SESSION修改，然后保存
         }
 
         /**
@@ -133,6 +136,7 @@ namespace Clue{
         }
 
         function redirect($url){
+            // TODO: 尽早关闭session，最好在session start之后最快完成需要的SESSION修改，然后保存
         	session_write_close();
 
             // 默认限制站外跳转

@@ -181,6 +181,8 @@ class Session{
         if(!headers_sent()){
             session_set_cookie_params($options['ttl']);
             ini_set('session.gc_maxlifetime', $options['ttl']);
+            // TODO: 因为gc_maxlifetime是在php.ini级别设置，使用系统session管理的话还是会被清理
+            // 保持Session仍然需要通过cookie中的sessionid和数据库中的sessionid进行匹配与恢复
         }
 
         switch(@$options['storage']){
