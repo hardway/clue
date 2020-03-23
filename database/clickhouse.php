@@ -317,6 +317,7 @@ class ClickHouse extends \Clue\Database{
     }
 
     function exec($sql){
+        $sql=call_user_func_array(array($this, "format"), func_get_args());
         $param=['database'=>$this->db, 'query'=>$sql];
 
         if(preg_match('/^(create|drop)\s+database/i', $sql)) unset($param['database']);
