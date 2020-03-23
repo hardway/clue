@@ -1,5 +1,5 @@
 <?php
-include __DIR__."/stub.php";
+include dirname(__DIR__)."/stub.php";
 
 use Clue\CLI as CLI;
 
