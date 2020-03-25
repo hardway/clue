@@ -5,9 +5,6 @@
     @define("FATAL_ERROR_LOG", '/tmp/clue-fatal-error.log');
 
     class Test_Guard extends PHPUnit_Framework_TestCase{
-        protected $backupGlobals = FALSE;
-        protected $backupGlobalsBlacklist = array('mysql');
-
         protected function setUp(){
             $this->app=new Clue\Application(['config'=>null]);
         }

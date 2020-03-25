@@ -232,6 +232,17 @@ asset()全局函数可以直接返回/asset目录下的资源文件
 
 Clue\Asset类用于将多个asset组合（未来将提供压缩选项）为单个文件输出
 
+### 日志(Log)
+
+符合PSR-3日志接口规范，借鉴Monolog的优点。
+
+区别在于：
+* format功能内置于Logger\Handler，因为与输出方式强相关
+* processor内置于Logger\LoggerTrait，因为Processor是有限的，不需要很多扩展，可以减少代码层次。通过传入的context数组来触发
+
+示例见 `tests/logger.manual.php`
+
+
 ### CLI 命令行模式
 
 提供ANSI控制，输入获取等功能，方便编写控制台脚本
