@@ -1,7 +1,7 @@
 <?php
 namespace Clue\Logger;
 
-class HipChat extends Syslog{
+class HipChatHandler extends SyslogHandler{
     static $COLOR_CODES = array(
         'emergency'=>'red',
         'alert'=>'red',
