@@ -78,12 +78,10 @@ class ClickHouse extends \Clue\Database{
         }
 
         $raw=curl_exec($this->curl);
-
-
         $this->http_status=intval(curl_getinfo($this->curl, CURLINFO_HTTP_CODE));
 
         if(!in_array($this->http_status, [200, 204])){
-            $error=$raw;
+            $error=$raw ?: "HTTP $this->http_status";
 
             if($this->http_status==0 && empty($raw)){
                 $error=curl_error($this->curl) ?: "Unknown network error";
