@@ -256,16 +256,17 @@ class Element implements \ArrayAccess{
     }
 
     function offsetExists($key){
-
+        return $this->el->hasAttribute($key);
     }
     function offsetGet($key){
         return $this->el->getAttribute($key);
     }
     function offsetSet($key, $value){
-
+        $this->el->setAttribute($key, $value);
+        return $value;
     }
     function offsetUnset($key){
-
+        $this->el->removeAttribute($key);
     }
 
     function __get($att){
