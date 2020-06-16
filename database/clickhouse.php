@@ -48,13 +48,13 @@ class ClickHouse extends \Clue\Database{
         curl_setopt($this->curl, CURLOPT_TIMEOUT, $this->options['timeout']);
         curl_setopt($this->curl, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($this->curl, CURLOPT_URL, $url);
+        curl_setopt($this->curl, CURLOPT_PROXY, false); // 禁止使用Proxy，以免环境变量影响连接
     }
 
     function _api($type, $param=[], $content=null){
         $url="$this->endpoint";
         if(isset($param['query'])){
             $this->last_query=$param['query'];
-
             if($type=='query') $param['query'].=" FORMAT TSVWithNames";
         }
 
