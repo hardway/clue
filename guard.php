@@ -49,13 +49,15 @@ class Guard{
         ];
 
         if($config['mail_to']){
-            $this->mail_logger=new EmailHandler($config['mail_to'], new \Clue\Mail\Sender(
+            $mailer=new \Clue\Mail\Sender(
                 $config['mail_host'],
                 $config['mail_port'],
                 $config['mail_username'],
                 $config['mail_password'],
                 $config['mail_from'] ?: null
-            ));
+            );
+
+            $this->mail_logger=new Logger(null, new EmailHandler($config['mail_to'], $mailer));
 
             $this->channels['email']=[
                 'logger'=>$this->mail_logger,
