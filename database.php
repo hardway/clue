@@ -8,7 +8,7 @@ namespace Clue{
     @define('CLUE_DB_CONFIG_TABLE', 'config');
 
     abstract class Database{
-        use \Clue\Traits\Logger;
+        use \Clue\Logger\LoggerTrait;
 
         protected static $_cons=array();
 
@@ -72,6 +72,10 @@ namespace Clue{
         protected function setError($err){
             $this->last_error=$err;
             $this->errors[]=$err;
+
+            error_log("SQL ERROR: {$err['code']} {$err['error']}");
+            error_log($this->last_query);
+            error_log($this->err['location']);
 
             throw new \Exception("SQL ERROR: {$err['code']} {$err['error']} [$this->last_query]");
             //trigger_error("SQL ERROR: {$err['code']} {$err['error']} [$this->last_query]", E_USER_ERROR);
