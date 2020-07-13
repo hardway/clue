@@ -1,7 +1,0 @@
-syntax: glob
-
-*.local*
-Thumbs.db
-*.orig
-tests\data
-.DS_Store
