@@ -54,6 +54,14 @@
 			$this->assertEquals('http://test/a/b/c', url_path(APP_ROOT.'/a/b/c', 'http://test'));
 		}
 
+        function test_url_follow(){
+            $this->assertEquals('http://abc.com/test.htm', url_follow('/test.htm', 'http://abc.com/'));
+            $this->assertEquals('http://abc.com/test.htm', url_follow('../test.htm', 'http://abc.com/no'));
+
+            $this->assertEquals('http://abc.com/test.htm', url_follow('//abc.com/test.htm', 'http://def.net'));
+            $this->assertEquals('https://abc.com/test.htm', url_follow('//abc.com/test.htm', 'https://def.net'));
+        }
+
 		function test_asset(){
 			/**
 			 * 目录结构
