@@ -3,6 +3,9 @@
 CLUE会被打包为clue.phar发布，可以直接在项目中引用(`include clue.phar`)，相关的类会自动加载（代码命名空间为Clue）。
 也可以作为可执行PHP脚本使用`php clue.phar`，用于创建应用，controller, model等
 
+* [文档与Markdown语法](clue/markdown)
+* [移动Web实践](clue/mobile)
+
 ### 创建应用
 
 执行`php clue.phar init [directory]`后会在directory目录（默认为当前目录）创建如下格式的应用结构
@@ -231,6 +234,14 @@ class Article extends Clue\ActiveRecord{
 asset()全局函数可以直接返回/asset目录下的资源文件
 
 Clue\Asset类用于将多个asset组合（未来将提供压缩选项）为单个文件输出
+
+TODO: asset打包（config中配置）
+TODO: asset支持less文件
+
+Less语法参考： 
+
+- https://juejin.im/post/5a2bc28f6fb9a044fe464b19
+- https://less.bootcss.com/
 
 ### 日志(Log)
 
