@@ -108,6 +108,19 @@
     }
 
     /**
+     * 转换Cookie格式
+     * 将 JSON 格式 (从Chrome插件editthiscookie导出) 转为 Netscape 格式
+     *
+     * @param $json_file 输入文件
+     */
+    function clue_cookie_json2netscape($json_file){
+        $json=file_get_contents($json_file);
+        $text=Clue\cookie_json_to_netscape($json);
+        echo $text;
+        echo "\n";
+    }
+
+    /**
      * Show Database Diagnose Info
      */
     function clue_db_diagnose(){
@@ -217,7 +230,7 @@
         }
 
         $db_version=$db->get_version();
-        $schema[]="insert into config(name, value) values('DB_VERSION', $db_version);";
+        $schema[]="insert into ".CLUE_DB_CONFIG_TABLE."(name, value) values('DB_VERSION', $db_version);";
 
         echo implode(";\n\n", $schema);
     }
@@ -505,22 +518,21 @@ END
      * 当前项目的数据库
      */
     function _current_db(){
-        $cfg=_current_config()['database'];
+        // 尝试加载stub.php
+        global $app;
+        // HACK, REFACTOR, 确保$app必须是全局变量
+        $app=include_once \Clue\site_file("stub.php");
 
-        if($cfg){
-            // 首先从config.php中获取数据库配置
+        $db=@$app['db'] ?: @$app['mysql'];
+        if(!$db){
+            $cfg=_current_config()['database'];
+            // 从config.php中获取数据库配置
 
             $db=\Clue\Database::create($cfg);
             if(!$db) panic(sprintf(
                 "Can't connect to database %s:\"%s\"@%s/%s", $cfg['username'], $cfg['password'], $cfg['host'], $cfg['db']
             ));
+        }
 
-            return $db;
-        }
-        else{
-            // 尝试加载stub.php
-            global $app;    // HACK, REFACTOR, 确保$app必须是全局变量
-            $app=require_once \Clue\site_file("stub.php");
-            return $app['db'] ?: $app['mysql'];
-        }
+        return $db;
     }
