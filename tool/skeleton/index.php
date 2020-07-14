@@ -6,6 +6,7 @@
     if(php_sapi_name()=='cli-server' && $app->is_static()) return false;
 
     try{
+        // $app->start_session(3600, ['name'=>"SESSION"]);
         $app->run();
     }
     catch(Exception $e){

@@ -9,7 +9,15 @@ $cmd=new Clue\CLI\Command(APP_NAME);
 $cmd->add_global('verbose', 'Verbose');
 $cmd->add_global('debug', 'Debug');
 $cmd->add_global('dry', 'Dry Run');
-$cmd->handle($argv);
+
+try{
+    $cmd->handle($argv);
+}
+catch(Exception $e){
+    Clue\CLI::banner($e->getMessage(), 'red');
+    error_log($e->getTraceAsString());
+}
+
 
 /**
  * 测试邮件发送功能
