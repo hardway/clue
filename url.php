@@ -138,6 +138,22 @@
     }
 
     /**
+     * 根据parts重新组合url
+     * parts的规格来自于parse_url()的结果
+     */
+    function url_build($parts){
+        $result=array();
+        $result[]=$parts['scheme'].'://';
+        $result[]=$parts['host'];
+        $result[]=isset($parts['port']) ? $parts['port'] : "";
+        $result[]=$parts['path'];
+        $result[]=isset($parts['query']) ? '?'.$parts['query'] : "";
+        $result[]=isset($parts['fragment']) ? '#'.$parts['fragment'] : '';
+
+        return implode("", $result);
+    }
+
+    /**
      * URL跳转链接
      */
     function url_follow($url, $current){
@@ -147,8 +163,7 @@
         $parts=parse_url(trim($url));
 
         // Another host
-        if(isset($parts['host'])) return $url;
-        if(isset($parts['scheme'])) return $url;
+        if(isset($parts['host']) && isset($parts['scheme'])) return $url;
 
         $current=parse_url($current);
 
@@ -174,17 +189,10 @@
                 }
             }
         }
+        $parts['path']=implode("/", $path);
 
         // Build url
-        $result=array();
-        $result[]=$current['scheme'].'://';
-        $result[]=$current['host'];
-        $result[]=isset($current['port']) ? $current['port'] : "";
-        $result[]=implode("/", $path);
-        $result[]=isset($parts['query']) ? '?'.$parts['query'] : "";
-        $result[]=isset($parts['fragment']) ? '#'.$parts['fragment'] : '';
-
-        return implode("", $result);
+        return url_build(array_merge($current, $parts));
     }
 
     /**
@@ -206,7 +214,6 @@
             $base=$cdns[array_rand($cdns)];
         }
 
-        $mapping=\Clue\get_site_path_mapping();
         foreach(\Clue\get_site_path() as $c){
             $filepath=$c.'/'.$path;
             if(file_exists($filepath)){
