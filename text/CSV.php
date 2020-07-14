@@ -44,7 +44,7 @@ namespace Clue\Text{
 
             $this->skip_bom();
 
-            $this->ln=1;    // 当前行数
+            $this->ln=0;    // 当前行数
 
             if($this->options['header']){
                 // 读取首行，标题
