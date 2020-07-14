@@ -1,15 +1,6 @@
 <?php
 // REF https://github.com/kujirahand/JSON5-PHP
 
-// 增加unitest
-/**
-{
-  disableAddToCart  : !true,
-  auctionImages    : ["//gd3.alicdn.com/imgextra/i4/649328782/TB2TBTueFXXXXXwXXXXXXXXXXXX_!!649328782.jpg"],
-  descUrl          : location.protocol==='http:' ? 'aaa' : 'bbb',
-  counterApi       : '//count.taobao.com/counter3?inc=ICVT'
-}
-*/
 namespace Clue{
 
 function json5_decode($json5, $assoc = false) {
@@ -36,6 +27,12 @@ function json5_value(&$json5, $assoc) {
   if ($c == '"' || $c == "'") {
     return json5_string($json5);
   }
+  // Opposite
+  if($c=='!'){
+    $json5 = substr($json5, 1);
+    return !json5_value($json5, $assoc);
+  }
+  // TODO: Ful Expression with eval?
   // null / true / false / Infinity
   if (strncasecmp($json5, "null", 4) == 0) {
     $json5 = substr($json5, 4);
