@@ -369,10 +369,13 @@ namespace Clue{
                 // 将GET/POST一并加入参数中
                 $mapping['params']=array_map(function($v){if(is_string($v)) return rawurldecode($v); else return $v;}, array_merge($params, $_GET ?: [], $_POST ?: []));
 
-                return $mapping;
+                break;
             }
 
             // 没有找到最合适的，返回最后匹配的一个
+            // 将末尾的url作为param_raw保存
+            $mapping['params_raw']=str_replace("/$controller/$action/", '', $url);
+
             return $mapping;
         }
     }
