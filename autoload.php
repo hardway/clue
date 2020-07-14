@@ -146,7 +146,7 @@ namespace Clue{
         }
 
 		foreach($candidates as $f){
-			if(file_exists($f)) return $f;
+			if(file_exists($f) && !is_dir($f)) return $f;
 		}
 
 		return null;
