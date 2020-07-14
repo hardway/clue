@@ -7,7 +7,7 @@ include_once __DIR__."/common.php";
  * )
  */
 class Server{
-	use \Clue\Traits\Logger;
+	use \Clue\Logger\LoggerTrait;
 	use \Clue\Traits\Bookkeeper;
 
 	static $record;	// 用于临时记录bookkeep

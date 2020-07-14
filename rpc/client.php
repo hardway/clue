@@ -25,7 +25,7 @@ include_once __DIR__."/common.php";
  *
  */
 class Client{
-	use \Clue\Traits\Logger;
+	use \Clue\Logger\LoggerTrait;
 	use \Clue\Traits\Bookkeeper;
 
 	/**
