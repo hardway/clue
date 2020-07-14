@@ -441,7 +441,7 @@
             $old_data=$this->_snap;
             $dirty_data=[];
             foreach($model['columns'] as $c=>$m){
-                if(isset($m['readonly']) || $this->_snap[$c]===$this->$c) continue;
+                if(isset($m['readonly']) || @$this->_snap[$c]===$this->$c) continue;
 
                 $dirty_data[$c]=$this->$c;
             }
@@ -456,7 +456,7 @@
                 $vlist=array();
 
                 foreach($model['columns'] as $c=>$m){
-                    if(isset($m['readonly']) || $this->_snap[$c]===$this->$c) continue;
+                    if(isset($m['readonly']) || @$this->_snap[$c]===$this->$c) continue;
                     if($c==$pkfield && empty($this->$c)) continue;      // bypass empty primary key
 
                     $clist[]="`".$m['name']."`";
