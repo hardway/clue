@@ -30,18 +30,22 @@ namespace Clue{
             $this['return_url']=urldecode(POST('return_url') ?: GET('return_url') ?: $this['referer_url']);
 
             if(@$this['config']['database']){
-            	// TODO: 按需加载，不再需要设置default
-            	$default_db=Database::create($this['config']['database']);
-                $this['db']=array('default'=>$default_db);
+            	// 按需加载，不再需要设置default
+                $self=$this;
+                $this['db']=$this->share(function() use($self) {
+                    $db=Database::create($self['config']['database']);
 
-                // 加载config表中的设定
-                $config_table=$this['override_definition_table'];
-                if($default_db && $default_db->has_table($config_table)){
-                    $defines=$default_db->get_hash("select name, value from %t", $config_table);
-                	foreach($defines as $name=>$value){
-                		if(!defined($name)) define($name, $value);
-                	}
-                }
+                    // 加载config表中的设定
+                    $config_table=$self['override_definition_table'];
+                    if($db && $db->has_table($config_table)){
+                        $defines=$db->get_hash("select name, value from %t", $config_table);
+                    	foreach($defines as $name=>$value){
+                    		if(!defined($name)) define($name, $value);
+                    	}
+                    }
+
+                    return $db;
+                });
             }
 
             // 集成guard
@@ -106,7 +110,7 @@ namespace Clue{
             $this['session']=Session::init($this, $options+[
                 'ttl'=>$lifetime,
                 'folder'=>"/tmp/session/".APP_NAME,         // FileSession默认路径
-                'db'=>$this['db']['default']                // DBSession默认数据库
+                'db'=>$this['db']                           // DBSession默认数据库
             ]);
 
             // 指定Session名称
@@ -291,6 +295,7 @@ namespace Clue{
             $this->controller=isset($map['controller']) ? $map['controller'] : null;
             $this->action=isset($map['action']) ? $map['action'] : null;
             $this->params=$map['params'];
+            $this->params_raw=$map['params_raw'];
 
             // TODO: deprecate this callback, since we can always use event listener to archive
             if(isset($this['authenticator']) && is_callable($this['authenticator'])){
