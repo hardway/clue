@@ -300,11 +300,12 @@ namespace Clue\Web{
 
             // 尝试从cache获取
             if($this->cache){
-                list($this->content, $meta)=$this->cache->get($url);
-                $this->status=$meta['status'];
-                $this->header=$meta['header'];
-
-                if($this->content) $this->cache_hit=true;
+                $this->cache_hit=$this->cache->get($url);
+                if($this->cache_hit){
+                    list($this->content, $meta)=$this->cache_hit;
+                    $this->status=$meta['status'];
+                    $this->header=$meta['header'];
+                }
             }
 
             if(!$this->content){
