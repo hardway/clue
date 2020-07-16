@@ -272,6 +272,7 @@ class ClickHouse extends \Clue\Database{
             $row=array_map([$this, 'escape_tab_data'], $row);
 
             // NOTE, Clickhouse不能随便加quote双引号，否则导致解析失败
+            // TODO: 用fputcsv和php://memory
             $data.=implode("\t", $row)."\n";
         }
 
