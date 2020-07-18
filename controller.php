@@ -71,7 +71,14 @@ namespace Clue{
             	include $meta.".meta";
             }
 
+            // 如果Layout找不到，使用默认的
+            if(!View::find_view("/layout/$this->layout")){
+                error_log("[CLUE] Layout '$this->layout' missing, using default");
+                $this->layout="default";
+            }
+
             $layout=new View("/layout/$this->layout");
+
             if($layout){
                 $layout->bind(@$this->layout_vars ?: []);
                 $layout->render(array('content'=>$content));
