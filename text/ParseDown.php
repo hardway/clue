@@ -1,5 +1,6 @@
 <?php
 namespace Clue\Text{
+    include_once dirname(__DIR__).'/vendor/parsedown.php';
     class ParseDown extends \ParseDown{
         static function format($text){
             static $instance=null;

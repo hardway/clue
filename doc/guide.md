@@ -1,10 +1,11 @@
+---
+title:快速了解CLUE
+---
+
 ## 快速了解
 
 CLUE会被打包为clue.phar发布，可以直接在项目中引用(`include clue.phar`)，相关的类会自动加载（代码命名空间为Clue）。
 也可以作为可执行PHP脚本使用`php clue.phar`，用于创建应用，controller, model等
-
-* [文档与Markdown语法](clue/markdown)
-* [移动Web实践](clue/mobile)
 
 ### 创建应用
 

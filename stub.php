@@ -6,6 +6,8 @@
 	 * 	APP_ROOT	    folder of the application code
 	 */
 
+    define("CLUE_ROOT", __DIR__);
+
     // Common Definations
     if(!defined('CLI')) define('CLI', php_sapi_name()=="cli");
     if(!defined('DS'))  define("DS", DIRECTORY_SEPARATOR);  // directory separator

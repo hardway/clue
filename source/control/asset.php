@@ -2,6 +2,15 @@
 namespace Clue\Source\Control;
 
 class Asset extends \Clue\Controller{
+    function clue(){
+        if($this->layout=='css'){
+            // TODO: 更好的实现
+            $asset=new \Clue\Asset();
+            $asset->add(CLUE_ROOT.'/tool/skeleton/asset/css/clue.less');
+            $asset->dump();
+        }
+    }
+
 	function __catch_params(){
         $name=implode("/", func_get_args());
 

@@ -39,7 +39,7 @@
             </tr>
 
             <tr><td colspan='2' align='right'>
-                <a href='<?=url_for('index', 'doc')?>' class='button button-link'>developer doc</a>
+                <a href='doc/' class='button button-link'>developer doc</a>
             </td></tr>
         </table>
     </div>

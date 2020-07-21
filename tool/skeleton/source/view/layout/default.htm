@@ -3,12 +3,16 @@
     <meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
-	<title>CLUE SKELETON</title>
+	<title><?=defined("META_TITLE") ? META_TITLE : "CLUE SKELETON"?></title>
+
+    <link rel="stylesheet" type="text/css" href="<?=asset('clue.css')?>">
     <link rel="stylesheet" type="text/css" href="<?=asset('app.css')?>">
     <script type="text/javascript" src='<?=asset('app.js')?>' defer></script>
 </head>
 <body>
-<?=$this->incl();?>
+    <div class='container'>
+        <?=$this->incl();?>
+    </div>
 </body>
 </html>
 
