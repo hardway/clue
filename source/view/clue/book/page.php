@@ -13,11 +13,9 @@
 ?>
 
 <div class='clue-book'>
-    <?php if(!$sidebar): ?>
         <div class='clue-book-search'>
             <a class='btn btn-sm btn-link' style='font-size:1.5em' href='./'>^</a>
         </div>
-    <?php endif; ?>
 
     <?php if($search): ?>
     <form class='clue-book-search' action='<?=$search?>'>
