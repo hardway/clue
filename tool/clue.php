@@ -5,8 +5,13 @@
 
     // 获取版本信息
     if(!defined("CLUE_VERSION")){
-        $version=exec("hg parent -R ".dirname(__DIR__)." --template {latesttag}.{latesttagdistance} 2>&1", $_, $err);
-        define('CLUE_VERSION', $err==0 ? $version : "unknown");
+        // $version=exec("hg parent -R ".dirname(__DIR__)." --template {latesttag}.{latesttagdistance} 2>&1", $_, $err);
+
+        $tag=exec("git -C ".dirname(__DIR__)." tag | tail -1", $_, $err);
+        $revision=trim(exec("git -C ".dirname(__DIR__)." rev-list HEAD | wc -l", $_, $err));
+        $version=$tag && $revision ? "$tag.$revision" : "unknown";
+
+        define('CLUE_VERSION', $version);
     }
 
     // 指定当前SITE
