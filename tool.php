@@ -515,6 +515,21 @@ namespace{
     }
 
     /**
+     * 敏感数据掩码
+     *
+     * @param $string 敏感数据
+     * @param $format 前后保留的字符和中间的掩码字符，例如0#4, 3*3
+    */
+    function clue_mask($string, $format="3*3"){
+        preg_match("/^(\d+)(.)(\d+)$/", $format, $fmt) ?: panic("Invalid mask format: $format");
+        $left=substr($string, 0, $fmt[1]);
+        $right=substr($string, 0 - intval($fmt[3]));
+        $masked=str_repeat($fmt[2], strlen($string) - strlen($left) - strlen($right));
+
+        return $left.$masked.$right;
+    }
+
+    /**
      * 强制转换对象类型
      */
     function cast($class, $obj){
