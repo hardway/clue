@@ -7,7 +7,6 @@ include_once __DIR__."/common.php";
  * )
  */
 class Server{
-	use \Clue\Logger\LoggerTrait;
 	use \Clue\Traits\Bookkeeper;
 
 	static $record;	// 用于临时记录bookkeep
@@ -35,8 +34,8 @@ class Server{
 	}
 
 	static function bind($svc, $options=array()){
-		self::info("[RPC] Endpoint: ".@$_SERVER['REQUEST_URI']);
-		self::info("[RPC] Connected from: ".@$_SERVER['REMOTE_ADDR']);
+		error_log("[RPC] Endpoint: ".@$_SERVER['REQUEST_URI']);
+		error_log("[RPC] Connected from: ".@$_SERVER['REMOTE_ADDR']);
 
 		$payload=file_get_contents("php://input");
 
@@ -71,8 +70,8 @@ class Server{
 
 		try{
 			if(method_exists($svc, "auth")){
-				self::info("[RPC] Client ID: ".$payload['client']);
-				self::info("[RPC] Client Token: ".$payload['token']);
+				error_log("[RPC] Client ID: ".$payload['client']);
+				error_log("[RPC] Client Token: ".clue_mask($payload['token']));
 
 				$pass=$svc->auth($payload['client'], $payload['token']);
 				if(!$pass) self::error_acl("Invalid combination of CLIENT and TOKEN");
