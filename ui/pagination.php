@@ -90,7 +90,6 @@ namespace Clue\UI{
 
             $view=new \Clue\View("clue/pagination");
             $data=compact("prevLink", 'nextLink', 'links', 'currentPage', 'totalPages');
-            $data['this']=$this;
 
             $view->render($data);
 		}
