@@ -130,17 +130,16 @@ class Parser{
     }
 
     private function _filter_content($html){
-        $stripped="";
 
         foreach(['script', 'SCRIPT', 'Script'] as $tag){
             $pos=0; $len=strlen($html);
 
+            $stripped="";
             while($pos < $len){
                 $begin=strpos($html, "<$tag", $pos);
                 if(!$begin) break;
                 $end=strpos($html, "</$tag>", $begin);
                 if(!$end) break;
-
                 $stripped.=substr($html, $pos, $begin - $pos);
                 $pos=$end + 9;
             }
