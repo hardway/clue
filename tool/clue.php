@@ -455,17 +455,26 @@ END
      * @param $url 服务端
      * @param $params 参数（如果是文件名，则加载其中的JSON数据）
      * @param $header 自定义头部，格式: a=1&b=2
+     * @param $ignorecert 是否忽略服务器证书
      */
-    function clue_http($method, $url, $params="[]", $header=""){
-        $c=new Clue\Web\Client(['debug'=>true]);
+    function clue_http($method, $url, $params="[]", $header="", $ignorecert=true){
+        $c=new Clue\Web\Client([
+            'debug'=>true, 'ignore_certificate'=>$ignorecert
+        ]);
 
         parse_str($header, $c->custom_header);
+
+        if(is_file($params)){
+            $params=json_decode(file_get_contents($params), true);
+        }
+        else{
+            parse_str($params, $params);
+        }
 
         $r=$c->$method($url, $params);
 
         print_r($c->request);
         print_r($c->response);
-        print_r($r);
     }
 
     /**
