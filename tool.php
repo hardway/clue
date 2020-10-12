@@ -313,11 +313,19 @@ namespace Clue{
 
 	    # user PHP_OS or php_uname() to get operation system name
 
-		static function http_auto_cache($timestamp, $etag=null){
+        /**
+         * 自动加上HTTP缓存标头
+         * @param $timestamp 文件最后修改日期
+         * @param $etag 文件hash
+         * @param $expires 缓存时间（默认30天）
+         */
+		static function http_auto_cache($timestamp, $etag=null, $expires=30){
 			$etag = ($etag ? "$etag-" : ''). $timestamp;
+            $expires=is_int($expires) ? time()+86400*$expires : strtotime($expires);
 
 			header("Cache-Control: public");
 		    header("Last-Modified: ".gmdate('D, d M Y H:i:s ', $timestamp) . 'GMT');
+            header("Expires: ".date("r", $expires));
 		    header("ETag: $etag");
 
 			$if_modified_since = isset($_SERVER['HTTP_IF_MODIFIED_SINCE']) ? strtotime($_SERVER['HTTP_IF_MODIFIED_SINCE']) : false;
@@ -456,6 +464,65 @@ namespace Clue{
         $uuid = implode("", [$time_part, $custom_part, $random_part]);
 
         return $uuid;
+    }
+
+    // 安全类方法
+    // TODO: REFACTOR 单独放到security或者sanitize文件
+    // TODO: 默认要求所有的GET / POST 等方法指明具体的sanitizer否则报错或警告
+    // TODO: controller / action (params) 也需要规范（通过heredoc进行？）
+
+    /**
+     * 确保传入的id_array都是整数，防止SQL注入
+     * @param $id_array 字符串或者数组（形如 "1,2,3" 或者 [1, 2, 3]）
+     */
+    function sanitize_id_array($id_array){
+        if(is_string($id_array)){
+            $id_array=implode(",", array_filter(array_map('intval', explode(",", $id_array))));
+        }
+        elseif(is_array($id_array)){
+            $id_array=array_filter(array_map("intval", $id_array));
+        }
+
+        return $id_array;
+    }
+
+    /**
+     * 文本
+     * 特殊字符被转码
+     */
+    function sanitize_string($input, $length=null){
+        $str=filter_var(trim($input), FILTER_SANITIZE_STRING);
+        if($length!==null) $str=mb_substr($str, 0, $length);
+
+        return $str;
+    }
+
+    /**
+     * 人名、地名
+     * 不允许特殊字符
+     * 注意，不应反复编码，否则会产生多余字符
+     */
+    function sanitize_name($input){
+        $input=filter_var(trim($input), FILTER_SANITIZE_SPECIAL_CHARS);
+        return $input;
+    }
+
+    function sanitize_url($input){
+        return filter_var(trim($input), FILTER_SANITIZE_URL);
+    }
+
+    function sanitize_email($input){
+        return filter_var(trim($input), FILTER_SANITIZE_EMAIL);
+    }
+
+    function sanitize_telephone($input){
+        $phone=preg_replace("/[^0-9\-]/", '', $input);
+        return $phone;
+    }
+
+    function sanitize_number($input){
+        $num=preg_replace("/[^0-9\.+-]/", '', $input);
+        return $num;
     }
 }
 
