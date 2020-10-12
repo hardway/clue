@@ -263,11 +263,13 @@ namespace Clue{
 
         // 是否跨域POST请求
         // TODO: 支持CORS
+        // TODO: 默认强制所有的POST响应都要检查这个，并给出警告
         public function is_csrf(){
-            $actual_host=@$_SERVER['SERVER_NAME'];
+            $actual_host=@parse_url(@$_SERVER['HTTP_REFERER'])['host'];
             $expect_host=@parse_url(APP_URL)['host'];
 
-            return $actual_host && $expect_host && $actual_host!=$expect_host;
+            // 没有referer也同样视作CSRF
+            return $actual_host!=$expect_host;
         }
 
         // 是否现存的静态资源文件
