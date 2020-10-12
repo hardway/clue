@@ -114,6 +114,8 @@ namespace Clue\Database{
         }
 
         function count($collection, $query=[]){
+            if(empty($query)) $query=null;
+
             $cmd=new \MongoDB\Driver\Command([
                 'count'=>$collection,
                 'query'=>$query
@@ -132,6 +134,17 @@ namespace Clue\Database{
             $r=$rs->toArray()[0];
 
             return $r;
+        }
+
+        function distinct($collection, $field, $query=null){
+            $cmd=[
+                'distinct'=>$collection,
+                'key'=>$field,
+                'query'=>$query
+            ];
+
+            $rs=$this->conn->executeCommand($this->db, new \MongoDB\Driver\Command($cmd));
+            return $rs->toArray()[0]->values;
         }
 
         /**

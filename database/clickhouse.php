@@ -245,6 +245,7 @@ class ClickHouse extends \Clue\Database{
 
     /**
      * 插入数据
+     * @deprecated 准备淘汰insert_row，单个插入性能低
      */
     function insert($table, $row, array $columns=[]){
         if(empty($columns) && !isset($row[0])) return $this->insert_row($table, $row);
@@ -283,6 +284,7 @@ class ClickHouse extends \Clue\Database{
 
     /**
      * 插入单行记录
+     * @deprecated 慎用，单个插入性能低
      */
     function insert_row($table, $row){
         $query="insert into $table FORMAT JSONEachRow";
@@ -292,7 +294,7 @@ class ClickHouse extends \Clue\Database{
     }
 
     /**
-     * 插入单行记录
+     * 插入多行记录
      */
     function insert_rows($table, $rows){
         $query="insert into $table FORMAT JSONEachRow";
