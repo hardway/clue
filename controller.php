@@ -59,6 +59,15 @@ namespace Clue{
 			return $view;
 		}
 
+        /**
+         * 输出JSON数据
+         */
+        function render_json($obj){
+            header("Content-Type: text/json");
+            echo json_encode($obj);
+            exit();
+        }
+
 		/**
 		 * 绝对路径  /product/options    => {VIEWS}/product/options
 		 * 相对路进  options 				=> {VIEWS}/{CONTROLLER}/options
