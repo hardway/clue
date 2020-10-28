@@ -6,10 +6,10 @@ require_once 'clue/stub.php';
 if(!isset($_SERVER['PHPCLICKHOUSE'])){
     error_log("Folder of phpClickHouse need to be defined in PHPCLICKHOUSE=xxx");
     error_log("phpClickHouse could be downloaded from https://github.com/smi2/phpClickHouse");
+    error_log("Set PHPCLICKHOUSE= to skip.");
     exit();
 }
-
-require_once($_SERVER['PHPCLICKHOUSE'].'/include.php');
+define('PHPCLICKHOUSE', $_SERVER['PHPCLICKHOUSE']);
 
 # 安装SeasClick
 if(!class_exists("SeasClick")){
@@ -17,8 +17,21 @@ if(!class_exists("SeasClick")){
     error_log("It could also be compiled manually from https://github.com/SeasX/SeasClick");
     exit();
 }
+define("SEASCLICK", true);
 
 define("CH_HOST", '127.0.0.1');
+define("SQL_CREATE_TABLE", "
+    CREATE TABLE IF NOT EXISTS test.benchmark_test (
+        event_date Date DEFAULT toDate(event_time),
+        event_time DateTime,
+        site_id Int32,
+        site_key String,
+        views Int32,
+        v_00 Int32,
+        v_55 Int32
+    )
+    ENGINE = SummingMergeTree(event_date, (site_id, site_key, event_time, event_date), 8192)
+");
 
 // $dataCount, $seletCount, $limit
 // edit this array
@@ -34,23 +47,37 @@ foreach ($testDataSet as $key => $value) {
     echo "\n##### dataCount: {$dataCount}, seletCount: {$seletCount}, limit: {$limit} #####\n";
     $t0 = $t = start_test();
 
+    testClueBatch($insertData, $seletCount, $limit);
+    $t = end_test($t, "Clue Batch");
 
-    testClue($insertData, $seletCount, $limit);
-    $t = end_test($t, "Clue");
+    testMySQL($insertData, $seletCount, $limit);
+    $t = end_test($t, "MySQL Interface");
 
-    // TODO: might cuase DB::Exception: Memory limit (total) exceeded
-    // testPhpClickhouse($insertData, $seletCount, $limit);
-    // $t = end_test($t, "PhpClickhouse");
+    if(PHPCLICKHOUSE){
+        require_once(PHPCLICKHOUSE.'/include.php');
 
-    testSeasClickNonCompression($insertData, $seletCount, $limit);
-    $t = end_test($t, "SeasClickNonCompression");
+        // TODO: might cuase DB::Exception: Memory limit (total) exceeded
+        testPhpClickhouse($insertData, $seletCount, $limit);
+        $t = end_test($t, "PhpClickhouse");
+    }
 
-    testSeasClickCompression($insertData, $seletCount, $limit);
-    $t = end_test($t, "SeasClickCompression");
+    if(SEASCLICK){
+        testSeasClickNonCompression($insertData, $seletCount, $limit);
+        $t = end_test($t, "SeasClickNonCompression");
 
-
+        testSeasClickCompression($insertData, $seletCount, $limit);
+        $t = end_test($t, "SeasClickCompression");
+    }
 
     total($t0, "Total");
+}
+
+function initData($num = 100){
+    $insertData = [];
+    while ($num--) {
+        $insertData[] = [time()-$num, 'HASH2', random_int(1000, 10000), $num, random_int(1, 100),  random_int(1, 9)];
+    }
+    return $insertData;
 }
 
 function start_test(){
@@ -87,28 +114,17 @@ function testSeasClickNonCompression($insertData, $num, $limit){
 
     $db = new SeasClick($config);
     $db->execute("CREATE DATABASE IF NOT EXISTS test");
-    $db->execute('
-        CREATE TABLE IF NOT EXISTS test.summing_url_views (
-            event_date Date DEFAULT toDate(event_time),
-            event_time DateTime,
-            site_id Int32,
-            site_key String,
-            views Int32,
-            v_00 Int32,
-            v_55 Int32
-        )
-        ENGINE = SummingMergeTree(event_date, (site_id, site_key, event_time, event_date), 8192)
-    ');
-    $db->insert("test.summing_url_views",
+    $db->execute(SQL_CREATE_TABLE);
+    $db->insert("test.benchmark_test",
         ['event_time', 'site_key', 'site_id', 'views', 'v_00', 'v_55'],
         $insertData
     );
     $a = $num;
     while ($a--) {
-        $db->select('SELECT * FROM test.summing_url_views LIMIT 100');
+        $db->select('SELECT * FROM test.benchmark_test LIMIT 100');
     }
     $db->execute("DROP TABLE {table}", [
-        'table' => 'test.summing_url_views'
+        'table' => 'test.benchmark_test'
     ]);
 }
 
@@ -121,28 +137,17 @@ function testSeasClickCompression($insertData, $num, $limit){
 
     $db = new SeasClick($config);
     $db->execute("CREATE DATABASE IF NOT EXISTS test");
-    $db->execute('
-        CREATE TABLE IF NOT EXISTS test.summing_url_views (
-            event_date Date DEFAULT toDate(event_time),
-            event_time DateTime,
-            site_id Int32,
-            site_key String,
-            views Int32,
-            v_00 Int32,
-            v_55 Int32
-        )
-        ENGINE = SummingMergeTree(event_date, (site_id, site_key, event_time, event_date), 8192)
-    ');
-    $db->insert("test.summing_url_views",
+    $db->execute(SQL_CREATE_TABLE);
+    $db->insert("test.benchmark_test",
         ['event_time', 'site_key', 'site_id', 'views', 'v_00', 'v_55'],
         $insertData
     );
     $a = $num;
     while ($a--) {
-        $db->select('SELECT * FROM test.summing_url_views LIMIT 100');
+        $db->select('SELECT * FROM test.benchmark_test LIMIT 100');
     }
     $db->execute("DROP TABLE {table}", [
-        'table' => 'test.summing_url_views'
+        'table' => 'test.benchmark_test'
     ]);
 }
 
@@ -160,31 +165,20 @@ function testPhpClickhouse($insertData, $num, $limit){
     $db->setTimeout(10);       // 10 seconds
     $db->setConnectTimeOut(5); // 5 seconds
 
-    $db->write('
-        CREATE TABLE IF NOT EXISTS summing_url_views (
-            event_date Date DEFAULT toDate(event_time),
-            event_time DateTime,
-            site_id Int32,
-            site_key String,
-            views Int32,
-            v_00 Int32,
-            v_55 Int32
-        )
-        ENGINE = SummingMergeTree(event_date, (site_id, site_key, event_time, event_date), 8192)
-    ');
-    $db->insert("summing_url_views",
+    $db->write(SQL_CREATE_TABLE);
+    $db->insert("benchmark_test",
         $insertData,
         ['event_time', 'site_key', 'site_id', 'views', 'v_00', 'v_55']
     );
     $a = $num;
     while ($a--) {
-        $json=$db->select('SELECT * FROM summing_url_views LIMIT 100')->rows();
+        $json=$db->select('SELECT * FROM benchmark_test LIMIT 100')->rows();
         // $json=json_encode($json);error_log(strlen($json));
     }
-    $db->write('DROP TABLE IF EXISTS summing_url_views');
+    $db->write('DROP TABLE IF EXISTS benchmark_test');
 }
 
-function testClue($insertData, $num, $limit){
+function testClueBatch($insertData, $num, $limit){
     $config = [
         'type'=>'clickhouse',
         'host' => CH_HOST,
@@ -195,35 +189,44 @@ function testClue($insertData, $num, $limit){
     $db = Clue\Database::create($config);
     $db->exec("CREATE DATABASE IF NOT EXISTS test");
 
-    $db->exec('
-        CREATE TABLE IF NOT EXISTS summing_url_views (
-            event_date Date DEFAULT toDate(event_time),
-            event_time DateTime,
-            site_id Int32,
-            site_key String,
-            views Int32,
-            v_00 Int32,
-            v_55 Int32
-        )
-        ENGINE = SummingMergeTree(event_date, (site_id, site_key, event_time, event_date), 8192)
-    ');
+    $db->exec(SQL_CREATE_TABLE);
 
-    $db->insert("summing_url_views",
+    $db->insert("benchmark_test",
         $insertData,
         ['event_time', 'site_key', 'site_id', 'views', 'v_00', 'v_55']
     );
+
     $a = $num;
     while ($a--) {
-        $json=$db->get_results('SELECT * FROM summing_url_views LIMIT 100');
+        $json=$db->get_results('SELECT * FROM benchmark_test LIMIT 100');
         // $json=json_encode($json);error_log(strlen($json));
     }
-    $db->exec('DROP TABLE IF EXISTS summing_url_views');
+    $db->exec('DROP TABLE IF EXISTS benchmark_test');
 }
 
-function initData($num = 100){
-    $insertData = [];
-    while ($num--) {
-        $insertData[] = [time(), 'HASH2', 2345, 12, 9,  3];
+function testMySQL($insertData, $num, $limit){
+    $config = [
+        'type'=>'mysql',
+        'host' => CH_HOST,
+        'port'=>3307,
+        'db'=>'test',
+        'username' => 'default',
+        'password' => ''
+    ];
+    $db = Clue\Database::create($config);
+    $db->exec("CREATE DATABASE IF NOT EXISTS test");
+
+    $db->exec(SQL_CREATE_TABLE);
+
+    foreach($insertData as $r){
+        $r=array_combine(['event_time', 'site_key', 'site_id', 'views', 'v_00', 'v_55'], $r);
+        $db->insert("benchmark_test", $r);
     }
-    return $insertData;
+
+    $a = $num;
+    while ($a--) {
+        $json=$db->get_results('SELECT * FROM benchmark_test LIMIT 100');
+        // $json=json_encode($json);error_log(strlen($json));
+    }
+    $db->exec('DROP TABLE IF EXISTS benchmark_test');
 }
