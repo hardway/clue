@@ -163,7 +163,7 @@ class Sender{
         $socket=&$this->socket;
         $socket=fsockopen(($scheme ? 'ssl://' : '').$server, $port);
         if(!$socket){
-            user_error("Connection $this->server:$this->port failed");
+            trigger_error("Connection $this->server:$this->port failed", E_USER_ERROR);
             return false;
         }
 
