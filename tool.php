@@ -669,6 +669,10 @@ namespace{
         function ansi_date($date='now'){ return format_datetime($date, "Y-m-d"); }
     }
 
+    if(!function_exists('ansi_time')){
+        function ansi_time($date='now'){ return format_datetime($date, "H:i:s"); }
+    }
+
     if(!function_exists('ansi_datetime')){
         function ansi_datetime($datetime='now'){ return format_datetime($datetime, "Y-m-d H:i:s"); }
     }
