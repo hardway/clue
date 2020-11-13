@@ -159,6 +159,28 @@ class Sender{
         }
     }
 
+    /**
+     * 检查服务器特性
+     * @param $reply 邮件服务器返回的内容
+     * @return [...] 数组
+     */
+    function _parse_capability($reply){
+        $cap=[];
+        $lines=array_map(function($line){
+            $line=preg_replace('/^250-?/', '', $line);
+            return $line;
+        }, explode("\n", $reply));
+
+        foreach(@$lines as $line){
+            @list($k, $v)=explode(" ", trim($line), 2);
+            if(empty($k)) continue;
+
+            $cap[$k]=$v ?: true;
+        }
+
+        return $cap;
+    }
+
     function send_smtp($server, $port, $scheme, $header, $data, $recipients){
         $socket=&$this->socket;
         $socket=fsockopen(($scheme ? 'ssl://' : '').$server, $port);
@@ -176,16 +198,7 @@ class Sender{
         $reply=$this->dialog('EHLO '.$this->hostname);
 
         // 检查服务器特性
-        $cap=[];
-        $lines=array_map(function($line){
-            $line=preg_replace('/^250-?/', '', $line);
-            return $line;
-        }, explode("\n", $reply));
-
-        foreach(@$lines as $line){
-            @list($k, $v)=explode(" ", trim($line), 2);
-            $cap[$k]=$v ?: true;
-        }
+        $cap=$this->_parse_capability($reply);
 
         // 如果服务器支持TLS
         if (strtolower($scheme)=='tls' || @$cap['STARTTLS']) {
@@ -200,6 +213,8 @@ class Sender{
             if(!stream_socket_enable_crypto($socket,TRUE,STREAM_CRYPTO_METHOD_TLS_CLIENT)) throw new \Exception("Create TLS connection failed.");
 
             $reply=$this->dialog('EHLO '.$this->hostname);
+            $cap=$this->_parse_capability($reply);
+
             if (isset($cap['8BITMIME']))
                 $headers['Content-Transfer-Encoding']='8bit';
             else {
