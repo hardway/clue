@@ -258,7 +258,12 @@ namespace Clue{
 
         // 是否AJAX请求
         public function is_ajax(){
+            // TODO: 判断是否accept里面有aplication/json
             return isset($_SERVER['HTTP_X_REQUESTED_WITH']) && strtolower($_SERVER['HTTP_X_REQUESTED_WITH']) == 'xmlhttprequest';
+        }
+
+        public function is_json(){
+            return strpos($_SERVER['HTTP_ACCEPT'], '/json')>0;
         }
 
         // 是否跨域POST请求
@@ -281,6 +286,7 @@ namespace Clue{
         }
 
         function run(){
+            // 获得原始URI
             if(isset($_SERVER['PATH_INFO']))
                 $path=$_SERVER['PATH_INFO'];
             else{
@@ -290,20 +296,15 @@ namespace Clue{
 
                 if($path==$_SERVER['PHP_SELF']) $path='/';
             }
+            $this->uri=$path;
 
+            // 通过Router分析controller / action 和 params
             $map=$this['router']->resolve($path);
-
-            // Controller / Action在认证资源的时候需要用到
             $this->controller=isset($map['controller']) ? $map['controller'] : null;
             $this->action=isset($map['action']) ? $map['action'] : null;
             $this->params=$map['params'];
-            $this->params_raw=$map['params_raw'];
 
-            // TODO: deprecate this callback, since we can always use event listener to archive
-            if(isset($this['authenticator']) && is_callable($this['authenticator'])){
-                call_user_func_array($this['authenticator'], $this);
-            }
-
+            // EVENT: 执行路由转发之前
             $this->fire_event("before_route");
 
             if($this->is_ajax() && $this['guard'] instanceof Guard){
@@ -322,6 +323,7 @@ namespace Clue{
 	            $ret=$this['router']->route($this->controller, $this->action, $this->params);
 	        }
 
+            // EVENT: 完成路由转发之后
             $this->fire_event("after_route", $ret);
 
             return $ret;
