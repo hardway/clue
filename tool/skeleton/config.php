@@ -41,6 +41,12 @@
             'app.js'=>'asset/js/*.js',
         ],
 
+        'route'=>[
+            '/^\/.*-p-(\d+)$/i'=>'/product/view/$1',
+            '/^\/.*-c-(\d+)$/i'=>'/category/view/$1',
+            '/^\/terms-of-service$/i'=>'/index/terms',
+        ],
+
         // 性能优化
         'profiler'=>APP_PROFILER,
 

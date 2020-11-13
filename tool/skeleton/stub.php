@@ -11,4 +11,4 @@
 	// Start Engine
 	$config=include Clue\site_file("config.php");
 	$app=new Clue\Application(array('config'=>$config));
-	$db=$app['db']['default'];
+	$db=$app['db'];

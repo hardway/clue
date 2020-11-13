@@ -13,6 +13,18 @@
     <div class='container'>
         <?=$this->incl();?>
     </div>
+
+    <?php if(APP_PROFILER && $app['profiler']): ?>
+    <div id='profiler' style='z-index:100; position: fixed; right: 0; bottom: 0; padding: 0 5px; background: #333; color:#FFF;'>
+        <?php
+            $app['profiler']->stop_native();
+            $p=$app['profiler']->summary();
+        ?>
+        T: <?=number_format($p['time'], 4);?>s,
+        MEM: <?=Clue\readable_bytes($p['memory']);?>,
+        SQL: <?=$db->query_count?>
+    </div>
+    <?php endif; ?>
 </body>
 </html>
 
