@@ -100,6 +100,20 @@ class Controller extends Clue\Controller{
 默认的render()方法将使用default布局（即view/layout/default.htm，这个文件也是一个View），如果需要使用到其他布局（例如view/layout/popup.htm），<br/>
 可以使用`$this->render_popup('hello', $data)`
 
+**默认CatchAll Action**
+
+如果Controller中定义了 __catch_params() 方法，则当该controller无法匹配action时，一律会转到这里进行处理。
+
+例如用户访问 /test/a/b/c 
+<pre>
+class TestController extends Clue\Controller{
+    function __catch_params(){
+        var_dump(func_get_args());  // 应该是传入a, b, c三个参数
+    }
+}
+</pre>
+
+
 ### HMVC（层次MVC）
 
 MVC不是简单的扁平结构，可以支持层级目录。
