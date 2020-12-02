@@ -120,25 +120,6 @@ namespace Clue{
     }
 
     /**
-     * 转换Cookie格式（EditThisCookie插件导出的原始json内容）为标准格式
-     */
-    function cookie_json_to_netscape($json){
-        $cookie_in=json_decode($json);
-
-        // 转换
-        $cookie=array_map(function($c){
-            if(!isset($c->expirationDate)) return "";
-
-            $exp=explode('.', $c->expirationDate);
-            return sprintf("%s\tTRUE\t/\tFALSE\t%s\t%s\t%s", $c->domain, $exp[0], $c->name, trim($c->value, '"'));
-        }, $cookie_in);
-        $cookie=implode("\n", $cookie);
-
-        return $cookie;
-    }
-
-
-    /**
      * Download remote image
      *
      * @access public

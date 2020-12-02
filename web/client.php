@@ -53,6 +53,7 @@ namespace Clue\Web{
             if($this->config['debug']){
                 curl_setopt($this->curl, CURLINFO_HEADER_OUT, true);
 
+                $this->post_data=@$options[CURLOPT_POSTFIELDS];
                 // CURLOPT_VERBOSE不能和CURLINFO_HEADER_OUT同时使用
                 // if(@$this->config['verbose']){
                 //  curl_setopt($this->curl, CURLOPT_VERBOSE, true);
@@ -228,6 +229,34 @@ namespace Clue\Web{
             }
 
             return array_merge($cookies, $this->cookie);
+        }
+
+        /**
+         * 转换Cookie格式（EditThisCookie插件导出的原始json内容）为标准格式
+         *
+         * @param $json JSON内容或者文件名
+         */
+        function load_json_cookie($json){
+            if(is_file($json)){
+                $json=file_get_contents($json);
+            }
+
+            $cookie_in=json_decode($json);
+
+            // 设置目前的Cookie
+            foreach($cookie_in as $c){
+                $this->cookie[$c->name]=$c->value;
+            }
+
+            // 转换为Netscape格式
+            $cookie=array_map(function($c){
+                if(!isset($c->expirationDate)) return "";
+
+                $exp=explode('.', $c->expirationDate);
+                return sprintf("%s\tTRUE\t/\tFALSE\t%s\t%s\t%s", $c->domain, $exp[0], $c->name, trim($c->value, '"'));
+            }, $cookie_in);
+            $cookie=implode("\n", $cookie);
+            return $cookie;
         }
 
         function set_agent($agent){ $this->agent=$agent; }

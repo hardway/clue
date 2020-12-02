@@ -113,19 +113,6 @@
     }
 
     /**
-     * 转换Cookie格式
-     * 将 JSON 格式 (从Chrome插件editthiscookie导出) 转为 Netscape 格式
-     *
-     * @param $json_file 输入文件
-     */
-    function clue_cookie_json2netscape($json_file){
-        $json=file_get_contents($json_file);
-        $text=Clue\cookie_json_to_netscape($json);
-        echo $text;
-        echo "\n";
-    }
-
-    /**
      * Show Database Diagnose Info
      */
     function clue_db_diagnose(){
