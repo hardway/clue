@@ -7,7 +7,7 @@ trait LoggerTrait{
 
     // Logger Awareness
     function enable_log($handler=null, $level_limit=\Clue\Logger::ANY){
-        if($handler===null){
+        if(empty($handler)){
             $handler=new \Clue\Logger\SyslogHandler;
         }
         // 字符串，代表使用文件
