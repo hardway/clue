@@ -9,6 +9,9 @@ class Asset extends \Clue\Controller{
             $asset->add(CLUE_ROOT.'/tool/skeleton/asset/css/clue.less');
             $asset->dump();
         }
+        else{
+            $this->__catch_params($this->view);
+        }
     }
 
 	function __catch_params(){
