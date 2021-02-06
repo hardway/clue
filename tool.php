@@ -193,7 +193,7 @@ namespace Clue{
         static function compress_zip($folder, $filename){
             $zip = new \ZipArchive();
 
-            if ($zip->open($filename, \ZipArchive::CREATE)!==TRUE) {
+            if ($zip->open($filename, \ZipArchive::CREATE | \ZipArchive::OVERWRITE)!==TRUE) {
                 exit("cannot open <$filename>\n");
             }
 
