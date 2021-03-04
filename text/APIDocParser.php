@@ -75,7 +75,7 @@ namespace Clue\Text{
 							$state='detect';
 						}
 						elseif(empty($line)){
-							continue;
+							continue 2;
 						}
 						else{
 							list($option, $desc)=explode(":", $line, 2);
@@ -88,7 +88,7 @@ namespace Clue\Text{
 							$state='detect';
 						}
 						elseif(preg_match('/(Parameters|\-+)/', $line) || empty($line)){
-							continue;
+							continue 2;
 						}
 						else{
 							list($fields, $desc)=explode(":", $line, 2);
