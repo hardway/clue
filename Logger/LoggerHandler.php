@@ -141,11 +141,10 @@ abstract class LoggerHandler{
         if(is_array($var) || is_object($var)){
             if($ttl==0) return "...";
 
-            $width=max(array_map('strlen', array_keys($var)));
 
             $text="";
             foreach($var as $k=>$v){
-                $text.=sprintf("%-{$width}s = ",$k);
+                $text.=sprintf("%s = ",$k);
                 $text.=$this->format_var($v, $ttl-1);
                 $text.="\n";
             }
