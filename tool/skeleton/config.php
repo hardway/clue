@@ -32,7 +32,7 @@
         //     'db'=>DB_NAME,
         //     'username'=>DB_USER,
         //     'password'=>DB_PASS,
-        //     'encoding'=>"UTF8"
+        //     'encoding'=>"UTF8MB4"
         // ),
 
         // 资源文件
