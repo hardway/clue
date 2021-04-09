@@ -15,9 +15,10 @@ class Asset extends \Clue\Controller{
     }
 
 	function __catch_params(){
-        $name=implode("/", func_get_args());
+        $name=implode("/", array_filter(func_get_args()));
 
-        $files=@$this->app['config']['asset'][$name] ?: [];
+        // 使用映射的文件集合，或者直接使用该文件
+        $files=@$this->app['config']['asset'][$name] ?: $name;
         if(is_string($files)) $files=[$files];
 
 		$asset=new \Clue\Asset($files);
