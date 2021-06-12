@@ -23,6 +23,7 @@ namespace Clue\Database{
 
         function insert($collection, $doc){
             if(isset($doc['id']) && !isset($doc['_id'])) $doc['_id']=$doc['id'];
+            if(isset($doc['_id']['$oid'])) $doc['_oid']=new \MongoDB\BSON\ObjectId($doc['_id']['$oid']);
 
             $cmd=new \MongoDB\Driver\Command([
                 'insert'=>$collection,
@@ -36,11 +37,12 @@ namespace Clue\Database{
                 $this->setError(['code'=>$e->code, 'error'=>$e->errmsg]);
             }
 
-            return $r->ok ? $doc['_id'] : false;
+            return $r->ok ? @$doc['_id'] : false;
         }
 
         function replace($collection, $doc){
             if(isset($doc['id']) && !isset($doc['_id'])) $doc['_id']=$doc['id'];
+            if(isset($doc['_id']['$oid'])) $doc['_id']=new \MongoDB\BSON\ObjectId($doc['_id']['$oid']);
 
             $cmd=new \MongoDB\Driver\Command([
                 'update'=>$collection,
