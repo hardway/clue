@@ -67,6 +67,8 @@ namespace Clue\Tool{
 
             # Add stub to bootstrap
             $phar->setStub('<?php
+                if(defined("CLUE_VERSION")) return;
+                
                 define("CLUE_VERSION", "'.CLUE_VERSION.'");
 
                 Phar::interceptFileFuncs();
