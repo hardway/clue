@@ -65,6 +65,10 @@ class MongoRecord extends ActiveRecord{
         // 验证业务逻辑是否允许保存
         if(!$this->validate()) return false;
 
+        // 确保自动生成一个ID
+        if($this->id==null){
+            $this->id=\Clue\uuid();
+        }
         // $old_data=$this->_snap;
         // $dirty_data=[];
         // foreach($model['columns'] as $c=>$m){
