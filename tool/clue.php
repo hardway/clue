@@ -208,6 +208,18 @@
     }
 
     /**
+     * Database version skipping
+     * @param $version Desired version number
+     */
+    function clue_db_skip($version){
+        $db=_current_db();
+        $ver=intval($version);
+
+        $db->set_version($ver);
+        echo "Skipped version to $ver";
+    }
+
+    /**
      * Generate Database schema sql
      */
     function clue_db_schema(){
@@ -528,7 +540,7 @@ END
         if(!$db){
             $cfg=_current_config()['database'];
             // 从config.php中获取数据库配置
-
+            
             $db=\Clue\Database::create($cfg);
             if(!$db) panic(sprintf(
                 "Can't connect to database %s:\"%s\"@%s/%s", $cfg['username'], $cfg['password'], $cfg['host'], $cfg['db']
