@@ -71,7 +71,7 @@ class Server{
 		try{
 			if(method_exists($svc, "auth")){
 				error_log("[RPC] Client ID: ".$payload['client']);
-				error_log("[RPC] Client Token: ".clue_mask($payload['token']));
+				error_log("[RPC] Client Token: ".\Clue\mask_string($payload['token']));
 
 				$pass=$svc->auth($payload['client'], $payload['token']);
 				if(!$pass) self::error_acl("Invalid combination of CLIENT and TOKEN");
@@ -80,7 +80,7 @@ class Server{
 			$r=call_user_func_array(array($svc, $method), $params);
 		}
 		catch(\Exception $e){
-			self::error_app(sprintf("%d %s", $e->getCode(), $e->getMessage()));
+			self::error_app(sprintf("[RPC] Server Error: %d %s", $e->getCode(), $e->getMessage()));
 		}
 
 		$r=json_encode($r);
