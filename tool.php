@@ -3,6 +3,40 @@
  *	琐碎的工具函数和类
  */
 namespace Clue{
+    // 将XML无损转换为数组(json)
+    function xml2ary(\SimpleXMLElement $xml){
+        $parser = function (\SimpleXMLElement $xml, array $collection = []) use (&$parser) {
+            $nodes = $xml->children();
+            $attributes = $xml->attributes();
+
+            if (0 !== count($attributes)) {
+                foreach ($attributes as $attrName => $attrValue) {
+                    $collection['@attr'][$attrName] = strval($attrValue);
+                }
+            }
+
+            if (0 === $nodes->count()) {
+                $collection['@text'] = strval($xml);
+                return $collection;
+            }
+
+            foreach ($nodes as $nodeName => $nodeValue) {
+                if (count($nodeValue->xpath('../' . $nodeName)) < 2) {
+                    $collection[$nodeName] = $parser($nodeValue);
+                    continue;
+                }
+
+                $collection[$nodeName][] = $parser($nodeValue);
+            }
+
+            return $collection;
+        };
+
+        return [
+            $xml->getName() => $parser($xml)
+        ];
+    }
+
 	# 将array转换为object
     function ary2obj($array) {
         if(!is_array($array)) {
@@ -97,6 +131,21 @@ namespace Clue{
             $pos++;
         }
         return round($size, 2).' '.$format[$pos];
+    }
+
+    function readable_seconds($time, $precision=0){
+        $formats = array('hours', 'days');
+        $carries=[3600, 24];
+
+        $format='seconds';
+
+        while(!empty($carries)){
+            $c=array_shift($carries);
+            if($time < $c) break;
+            $time /= $c;
+            $format=array_shift($formats);
+        }
+        return round($time, $precision).' '.$format;
     }
 
     # 检测浏览器cookie支持
@@ -452,6 +501,7 @@ namespace Clue{
     // TODO: 默认要求所有的GET / POST 等方法指明具体的sanitizer否则报错或警告
     // TODO: controller / action (params) 也需要规范（通过heredoc进行？）
 
+    
     /**
      * 确保传入的id_array都是整数，防止SQL注入
      * @param $id_array 字符串或者数组（形如 "1,2,3" 或者 [1, 2, 3]）
@@ -505,6 +555,22 @@ namespace Clue{
         $num=preg_replace("/[^0-9\.+-]/", '', $input);
         return $num;
     }
+
+    /**
+     * 敏感数据掩码
+     *
+     * @param $string 敏感数据
+     * @param $format 前后保留的字符和中间的掩码字符，例如0#4, 3*3
+    */
+    function mask_string($string, $format="3*3"){
+        preg_match("/^(\d+)(.)(\d+)$/", $format, $fmt) ?: panic("Invalid mask format: $format");
+        $left=substr($string, 0, $fmt[1]);
+        $right=substr($string, 0 - intval($fmt[3]));
+        $masked=str_repeat($fmt[2], strlen($string) - strlen($left) - strlen($right));
+
+        return $left.$masked.$right;
+    }
+
 }
 
 namespace{
@@ -560,21 +626,6 @@ namespace{
 
     function collect($items){
         return new Clue\Collection($items);
-    }
-
-    /**
-     * 敏感数据掩码
-     *
-     * @param $string 敏感数据
-     * @param $format 前后保留的字符和中间的掩码字符，例如0#4, 3*3
-    */
-    function clue_mask($string, $format="3*3"){
-        preg_match("/^(\d+)(.)(\d+)$/", $format, $fmt) ?: panic("Invalid mask format: $format");
-        $left=substr($string, 0, $fmt[1]);
-        $right=substr($string, 0 - intval($fmt[3]));
-        $masked=str_repeat($fmt[2], strlen($string) - strlen($left) - strlen($right));
-
-        return $left.$masked.$right;
     }
 
     /**
