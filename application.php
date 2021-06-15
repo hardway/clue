@@ -22,7 +22,7 @@ namespace Clue{
             $this->_values=$values;
 
             $this['router']=new Router($this);
-            if(is_array(@$this['config']['route'])) foreach($this['config']['route'] as $pattern=>$route){
+            if(is_array($this['config']['route'] ?? null)) foreach($this['config']['route'] as $pattern=>$route){
                 $this['router']->alias($pattern, $route);
             }
 
@@ -49,11 +49,11 @@ namespace Clue{
             }
 
             // 集成guard
-            if(@$this['config']['guard']){
+            if($this['config']['guard'] ?? false){
                 $this['guard']=new Guard($this['config']['guard']);
             }
 
-            if(@$this['config']['profiler']){
+            if($this['config']['profiler'] ?? false){
                 $profiler=new Profiler;
                 $profiler->start();
                 $this['profiler']=$profiler;
@@ -212,6 +212,7 @@ namespace Clue{
             exit();
         }
 
+        // TODO: 简化notification通知功能
         // 一般信息
         function alert($messages, $context='website', $level='alert'){
             if(!is_array($messages)) $messages=array($messages);

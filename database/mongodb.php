@@ -9,7 +9,7 @@ namespace Clue\Database{
         function __construct(array $param){
             if(!extension_loaded('mongodb')) throw new \Exception(__CLASS__.": extension mongodb is missing!");
 
-            $conn_str=sprintf("mongodb://%s:%s", @$param['host']?:'localhost', @$param['port']?:27017);
+            $conn_str=sprintf("mongodb://%s:%s", $param['host']??'localhost', $param['port']??27017);
             $this->conn=new \MongoDB\Driver\Manager($conn_str);
 
             $this->db=$param['db'];
