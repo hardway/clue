@@ -204,6 +204,7 @@ class Guard{
         E_USER_ERROR=>'ERROR',          # 256
         E_RECOVERABLE_ERROR=>'ERROR'    # 4096
     );
+
     /**
      * 将PHP错误归一化为5日志级别
      */
@@ -220,7 +221,7 @@ class Guard{
         if($_COOKIE) $context['_COOKIE']=$_COOKIE;
         if($_SERVER) $context['_SERVER']=$_SERVER;
         if($_FILES) $context['_FILES']=$_FILES;
-        if($_SESSION) $context['_SESSION']=$_SESSION;
+        if(isset($_SESSION)) $context['_SESSION']=$_SESSION;
         // unset($context['GLOBALS']);
 
         return $context;
@@ -240,7 +241,7 @@ class Guard{
      */
     function handle_error($errno, $errstr, $errfile=null, $errline=null, array $errcontext=null, array $errtrace=array()){
         // if error has been supressed with an @
-        if ((error_reporting() & $errno) == 0) return;
+        if (!(error_reporting() & $errno)) return false;
 
         $type=$this->php_level($errno);
         $level=$this->log_level($type);

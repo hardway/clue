@@ -327,7 +327,7 @@ END;
                     throw new \Exception("Missing global option: --$k ".$o['summary']);
                 }
 
-                if(!defined($k)) define($k, @$o['value']);
+                if(!defined($k)) define($k, $o['value'] ?? null);
             }
         }
 
