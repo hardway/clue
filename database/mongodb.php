@@ -198,13 +198,14 @@ namespace Clue\Database{
             return $result;
         }
 
-        function get_row($collection, $query=[], $fields=[]){
+        function get_row($collection, $query=[], $fields=[], $options=[]){
             $cmd=[
                 'find'=>$collection,
                 'limit'=>1
             ];
             if($query) $cmd['filter']=$query;
             if($fields) $cmd['projection']=$fields;
+            if(isset($options['sort'])) $cmd['sort']=$options['sort'];
 
             $rs=$this->conn->executeReadCommand($this->db, new \MongoDB\Driver\Command($cmd));
             $r=@$rs->toArray()[0] ?: null;
