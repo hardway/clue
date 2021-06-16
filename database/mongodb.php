@@ -164,6 +164,22 @@ namespace Clue\Database{
             return json_decode(json_encode($rs->toArray()), true);
         }
 
+        function group_count($collection, $group_field){
+            $rs=$this->aggregate($collection, [
+                '$group'=>[
+                    '_id'=>'$'.$group_field,
+                    'val'=>['$sum'=>1]
+                ]
+            ]);
+
+            $cnt=[];
+            foreach($rs as $r){
+                $cnt[$r['_id']]=$r['val'];
+            }
+
+            return $cnt;
+        }
+
         function get_var($path, $query=[]){
             // Path必须是"Collection.Fields"格式
             list($collection, $field)=explode(".", $path, 2);
