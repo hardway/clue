@@ -279,7 +279,7 @@ class Guard{
             $syslog=new Logger();
             $syslog->emergency(
                 sprintf("EMERGENCY STOP: %s %s", $this->php_level($errno), $errstr),
-                ['backtrace'=>$errtrace]
+                ['backtrace'=>1]
             );
             exit();
         }
