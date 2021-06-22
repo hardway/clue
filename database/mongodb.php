@@ -25,13 +25,12 @@ namespace Clue\Database{
             if(isset($doc['id']) && !isset($doc['_id'])) $doc['_id']=$doc['id'];
             if(isset($doc['_id']['$oid'])) $doc['_oid']=new \MongoDB\BSON\ObjectId($doc['_id']['$oid']);
 
-            $cmd=new \MongoDB\Driver\Command([
+            $cmd=[
                 'insert'=>$collection,
                 'documents'=>[$doc]
-            ]);
+            ];
 
-            $rs=$this->conn->executeWriteCommand($this->db, $cmd);
-            $r=$rs->toArray()[0];
+            $r=$this->command($cmd, 'write', 'row');
 
             if(@$r->writeErrors) foreach($r->writeErrors as $e){
                 $this->setError(['code'=>$e->code, 'error'=>$e->errmsg]);
@@ -44,7 +43,7 @@ namespace Clue\Database{
             if(isset($doc['id']) && !isset($doc['_id'])) $doc['_id']=$doc['id'];
             if(isset($doc['_id']['$oid'])) $doc['_id']=new \MongoDB\BSON\ObjectId($doc['_id']['$oid']);
 
-            $cmd=new \MongoDB\Driver\Command([
+            $cmd=[
                 'update'=>$collection,
                 'updates'=>[
                     [
@@ -53,10 +52,9 @@ namespace Clue\Database{
                         'upsert'=>true
                     ]
                 ]
-            ]);
+            ];
 
-            $rs=$this->conn->executeWriteCommand($this->db, $cmd);
-            $r=$rs->toArray()[0];
+            $r=$this->command($cmd, 'write', 'row');
 
             return $r->ok ? $doc['_id'] : false;
         }
@@ -95,8 +93,7 @@ namespace Clue\Database{
                 ]
             ];
 
-            $rs=$this->conn->executeWriteCommand($this->db, new \MongoDB\Driver\Command($cmd));
-            $r=$rs->toArray()[0];
+            $r=$this->command($cmd, 'write', 'row');
 
             return $r->ok;
         }
@@ -109,8 +106,7 @@ namespace Clue\Database{
                 ]
             ];
 
-            $rs=$this->conn->executeWriteCommand($this->db, new \MongoDB\Driver\Command($cmd));
-            $r=$rs->toArray()[0];
+            $r=$this->command($cmd, 'write', 'row');
 
             return $r->ok;
         }
@@ -118,24 +114,60 @@ namespace Clue\Database{
         function count($collection, $query=[]){
             if(empty($query)) $query=null;
 
-            $cmd=new \MongoDB\Driver\Command([
+            $cmd=[
                 'count'=>$collection,
                 'query'=>$query
-            ]);
+            ];
 
-            $rs=$this->conn->executeReadCommand($this->db, $cmd);
-            $r=$rs->toArray()[0];
+            $r=$this->command($cmd, 'read', 'row');
 
             return $r->n;
         }
 
+        /**
+         * 执行服务端查询/修改命令
+         * @param $func 执行方式: default | read | write
+         * @param $return 返回风格: row | result | iterator
+         */
+        function command($cmd, $func="executeCommand", $return="row"){
+            if(!$cmd instanceof \MongoDB\Driver\Command){
+                $sql=json_encode($cmd);
+                $cmd=new \MongoDB\Driver\Command($cmd);
+            }
+            else{
+                $sql="Compiled MongoDB Command";
+            }
+
+            $funcMap=[
+                'default'=>'executeCommand',
+                'read'=>'executeReadCommand',
+                'write'=>'executeWriteCommand',
+            ];
+            $func=$funcMap[$func];
+
+            $t_begin=microtime(true);
+            $rs=$this->conn->$func($this->db, $cmd);
+            $t_end=microtime(true);
+
+            $this->audit($sql, $t_end - $t_begin, "TODO: LOCATION");
+
+            switch($return){
+                case 'row':
+                    return $rs->toArray()[0] ?? null;
+                    break;
+
+                case 'result':
+                    return $rs->toArray();
+                    break;
+
+                case 'iterator':
+                default:
+                    return $rs;
+            }
+        }
+
         function exec($cmd){
-            $cmd=new \MongoDB\Driver\Command($cmd);
-
-            $rs=$this->conn->executeCommand($this->db, $cmd);
-            $r=$rs->toArray()[0];
-
-            return $r;
+            return $this->command($cmd, 'default', 'row');
         }
 
         function distinct($collection, $field, $query=null){
@@ -145,8 +177,8 @@ namespace Clue\Database{
                 'query'=>$query
             ];
 
-            $rs=$this->conn->executeCommand($this->db, new \MongoDB\Driver\Command($cmd));
-            return $rs->toArray()[0]->values;
+            $r=$this->command($cmd, 'default', 'row');
+            return $r->values;
         }
 
         /**
@@ -160,8 +192,8 @@ namespace Clue\Database{
                 'cursor'=>['batchSize'=>1000]
             ];
 
-            $rs=$this->conn->executeReadCommand($this->db, new \MongoDB\Driver\Command($cmd));
-            return json_decode(json_encode($rs->toArray()), true);
+            $rs=$this->command($cmd, 'read');
+            return json_decode(json_encode($rs), true);
         }
 
         function group_count($collection, $group_field){
@@ -223,8 +255,7 @@ namespace Clue\Database{
             if($fields) $cmd['projection']=$fields;
             if(isset($options['sort'])) $cmd['sort']=$options['sort'];
 
-            $rs=$this->conn->executeReadCommand($this->db, new \MongoDB\Driver\Command($cmd));
-            $r=@$rs->toArray()[0] ?: null;
+            $r=$this->command($cmd, 'read', 'row');
 
             return json_decode(json_encode($r), true);
         }
@@ -250,7 +281,7 @@ namespace Clue\Database{
             if(isset($options['skip'])) $cmd['skip']=$options['skip'];
             if(isset($options['sort'])) $cmd['sort']=$options['sort'];
 
-            $rs=$this->conn->executeReadCommand($this->db, new \MongoDB\Driver\Command($cmd));
+            $rs=$this->command($cmd, 'read', 'iterator');
             foreach($rs as $r){
                 yield json_decode(json_encode($r), true);
             }

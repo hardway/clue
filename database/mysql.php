@@ -252,17 +252,7 @@ namespace Clue\Database{
             $this->_result=mysqli_query($this->dbh, $sql, $this->result_mode);
             $query_end=microtime(true);
 
-            // Backtrace调用位置
-            $location=null;
-            $bt=debug_backtrace();
-            for ($i=0; $i<count($bt); $i++) {
-                if (isset($bt[$i]['file']) && $bt[$i]['file']!=__FILE__) {
-                    $location=$bt[$i]['file'] .':'.$bt[$i]['line'];
-                    break;
-                }
-            }
-
-            $this->audit($sql, $query_end - $query_begin, $location);
+            $this->audit($sql, $query_end - $query_begin);
 
             if (!$this->_result) {
                 $this->setError(

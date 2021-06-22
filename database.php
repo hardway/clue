@@ -64,9 +64,10 @@ namespace Clue{
         public $last_error=null;
         public $errors=null;
 
-        public function enable_slow_query_log($logfile='', $time_limit=10){
+        public function enable_slow_query_log($logfile='', $time_limit=1, $backtrace=false){
             $this->enable_log($logfile);
             $this->slow_query_time_limit=$time_limit;
+            $this->slow_query_backtrace=!!$backtrace;
         }
 
         protected function setError($err){
@@ -140,7 +141,11 @@ namespace Clue{
 
         function audit($sql, $time=0){
             if($this->slow_query_time_limit>0 && $time>$this->slow_query_time_limit){
-                $this->debug("[SLOW QUERY ".number_format($time, 4)."] $sql", ['memory'=>false]);
+                $this->debug("[SLOW QUERY ".number_format($time, 4)."] $sql", [
+                    'backtrace'=>$this->slow_query_backtrace ? -1 : 0,
+                    // 'memory'=>false
+                    // TODO: backtrace支持until_class参数，以便到达该类后不再追溯
+                ]);
             }
 
             $this->last_query=$sql;
