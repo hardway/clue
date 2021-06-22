@@ -4,14 +4,14 @@
     @define("FATAL_ERROR_SCRIPT", '/tmp/clue-fatal-error.php');
     @define("FATAL_ERROR_LOG", '/tmp/clue-fatal-error.log');
 
-    class Test_Clickhouse extends PHPUnit_Framework_TestCase{
+    class clickhouse_test extends PHPUnit\Framework\TestCase{
         protected $backupGlobals = FALSE;
         protected $backupGlobalsBlacklist = array('mysql');
 
-        protected function setUp(){
+        protected function setUp():void {
             $config=[
                 'type'=>'clickhouse',
-                'host' => '127.0.0.1',
+                'host' => 'db.xen',
                 'user' => 'default',
                 'pass' => '',
                 'db'=>'test',
@@ -26,7 +26,7 @@
             $this->db->exec('CREATE DATABASE test');
         }
 
-        protected function tearDown(){
+        protected function tearDown():void {
         }
 
         function test_create_table(){

@@ -323,12 +323,23 @@ class ClickHouse extends \Clue\Database{
 
         if(preg_match('/^(create|drop)\s+database/i', $sql)) unset($param['database']);
 
-        return $this->_api('write', $param);
+        $query_begin=microtime(true);
+        $r=$this->_api('write', $param);
+        $query_end=microtime(true);
+
+        $this->audit($sql, $query_end - $query_begin);
+
+        return $r;
     }
 
     function query($sql){
         $sql=call_user_func_array(array($this, "format"), func_get_args());
-        return $this->_api("query", ['database'=>$this->db, 'query'=>$sql]);
+
+        $query_begin=microtime(true);
+        $r=$this->_api("query", ['database'=>$this->db, 'query'=>$sql]);
+        $query_end=microtime(true);
+
+        return r;
     }
 
     function has_table($table){
