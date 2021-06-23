@@ -192,7 +192,7 @@ namespace Clue\Database{
                 'cursor'=>['batchSize'=>1000]
             ];
 
-            $rs=$this->command($cmd, 'read');
+            $rs=$this->command($cmd, 'read', 'result');
             return json_decode(json_encode($rs), true);
         }
 
