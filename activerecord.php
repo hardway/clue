@@ -389,7 +389,7 @@
         }
 
         function validate(){
-            $this->clear_validation_error();
+            $this->clear_error('validation');
             // always true, because root class didn't have any business constraints
             return true;
         }
@@ -520,34 +520,53 @@
             return $ret;
         }
 
-        // TODO: proper error handling
-        function clear_validation_error(){
-            $errors=array();
-            foreach($this->_errors as $err){
-                if($err['type']=='validation') continue;
-                $errors[]=$err;
-            }
-            $this->_errors=$errors;
-        }
 
         function set_validation_error($error){
-            $this->_errors[]=array('type'=>'validation', 'error'=>$error);
+            return $this->set_error($error, 'validation');
         }
 
-        function hasError(){
-            return count($this->_errors)>0;
-        }
-
-        function setError($err, $type='other'){
+        // TODO: 作为Trait
+        function set_error($err, $type='other'){
             $this->_errors[]=array('type'=>$type, 'error'=>$err);
         }
 
-        function errors(){
-            return $this->_errors;
+        function has_error($type=null){
+            if(empty($type)){
+                return count($this->_errors);
+            }
+
+            $errors=0;
+            foreach($this->_errors as $err){
+                if($err['type']==$type) $errors++;
+            }
+            return $errors;
         }
 
-        function clearError(){
-            $this->_errors=array();
+        function errors($type=null){
+            if(empty($type)){
+                return $this->_errors;
+            }
+
+            $errors=[];
+            foreach($this->_errors as $err){
+                if($err['type']==$type) $errors[]=$err;
+            }
+            return $errors;
+        }
+
+        // 清除错误信息
+        function clear_error($type=null){
+            if(empty($type)){
+                $this->_errors=array();
+            }
+            else{
+                $errors=array();
+                foreach($this->_errors as $err){
+                    if($err['type']==$type) continue;
+                    $errors[]=$err;
+                }
+                $this->_errors=$errors;
+            }
         }
     }
 ?>
