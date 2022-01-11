@@ -1,4 +1,6 @@
 <?php
+    namespace Clue;
+
     # URL路径
     if(!CLI && !defined('APP_BASE')){
         define('APP_BASE', '/'.trim(dirname(str_replace($_SERVER['DOCUMENT_ROOT'], '', $_SERVER['SCRIPT_FILENAME'])), '/.'));
