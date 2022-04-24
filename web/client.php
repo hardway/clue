@@ -363,6 +363,21 @@ namespace Clue\Web{
             return $this->content;
         }
 
+        function connect($url, $param=""){
+            // 发现有人曾经用过这种手法发起DOS攻击
+            $options=[
+                CURLOPT_NOBODY=>true,
+                CURLOPT_HTTPPROXYTUNNEL=>true,
+                CURLOPT_URL=>$param,
+                CURLOPT_PROXY=>$url
+            ];
+
+            $this->init_request("CONNECT", $url, $options);
+            $this->_parse_response(curl_exec($this->curl));
+
+            return $this->content;
+        }
+
         function head($url){
             $this->init_request('HEAD', $url);
             $this->_parse_response(curl_exec($this->curl));

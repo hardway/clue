@@ -467,7 +467,12 @@ END
             $params=json_decode(file_get_contents($params), true);
         }
         else{
-            parse_str($params, $params);
+            if($method=='CONNECT'){
+                //
+            }
+            else{
+                parse_str($params, $params);
+            }
         }
 
         $r=$c->$method($url, $params);
