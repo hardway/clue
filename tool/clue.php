@@ -131,7 +131,7 @@
             ORDER BY data_length+index_length DESC
         ", $db->config['db']);
 
-        usort($stat, function($a, $b){return $a->table_rows < $b->table_rows;});
+        usort($stat, function($a, $b){return $b->table_rows - $a->table_rows;});
 
         // TODO: use Clue\Text\Table to format and align
         printf("%30s %10s %10s %10s %10s %10s %10s\n", "Table Name", "Engine", "Row Cnt", "Row Len", "Data", "Index", "Total(MB)");
