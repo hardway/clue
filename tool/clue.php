@@ -446,6 +446,29 @@ END
         print_r($ret);
     }
 
+    /**
+     * 发送邮件
+     * @param $recipient 收件地址
+     * @param $subject  主题
+     * @param $body 正文（可以是文件路径）
+     * @param $from 发件人地址
+     * @param $server 服务器地址（为空则使用内置MTA）
+     * @param $port 服务器端口
+     * @param $username 服务器用户名
+     * @param $password 服务器密码
+     */
+    function clue_email($recipient, $subject, $body, $from, $server=null, $port=25, $username=null, $password=null){
+        $mailer=new \Clue\Mail\Sender($server, $port, $username, $password);
+        $mailer->debug=true;
+
+        $mailer->add_recipient($recipient);
+        $mailer->subject=$subject;
+        $mailer->body=$body ?: "";
+        $mailer->sender=$from;
+        $r=$mailer->send();
+
+        var_dump($r);
+    }
 
     /**
      * HTTP RESTFUL CLIENT测试
