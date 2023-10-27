@@ -2,14 +2,11 @@
 namespace Clue{
     class Router{
         protected $app;
-        protected $translates=array();
+        protected $connection=[];   // 连接规则
+        protected $translates=[];   // URL重写
 
         function __construct($app){
             $this->app=$app;
-            $this->debug=false;
-
-            $this->connection=[];   // 连接规则
-            $this->translates=[];   // URL重写
         }
 
         /**
@@ -179,7 +176,8 @@ namespace Clue{
                     $path[]=urlencode($v);
                 }
                 else{
-                    $query[$k]=urlencode($v);
+                    // http_build_query 会再做一次编码，避免双重转换（以免 '(' 会变成 '%2528' ）
+                    $query[$k]=$v;
                 }
             }
 
@@ -206,6 +204,9 @@ namespace Clue{
 
             if(is_array($callable)){
                 $rfx=new \ReflectionMethod($callable[0], $callable[1]);
+                if(!$rfx->isPublic()){
+                    throw new \Exception("$rfx->class::$rfx->name() need to be public");
+                }
             }
             else{
                 $rfx=new \ReflectionFunction($callable);
