@@ -5,6 +5,8 @@ class Parser{
     public $dom;
     public $xp;
 
+    public $root=null;
+
     static function css2xpath($css){
         // 以/开始的话，应该已经是xpath了
         if(preg_match('/^\//', $css)) return $css;
@@ -84,10 +86,14 @@ class Parser{
 
         // 检测编码，并转换
         if($encoding==null){
-            if(preg_match('/meta[^>]+charset\=[\"\']?([0-9a-zA-Z\-]+)/i', $html, $match)){
+            // 仅试图从头部寻找编码
+            $head=strpos($html, "</head>");
+            $head=substr($html, 0, $head ?: 1024);
+
+            if(preg_match('/meta[^>]+charset\=[\"\']?([0-9a-zA-Z\-]+)/i', $head, $match)){
                 $encoding=$match[1];
             }
-            else if(preg_match('/encoding=[\"\']?([0-9a-zA-Z\-]+)/i', $html, $match))
+            else if(preg_match('/encoding=[\"\']?([0-9a-zA-Z\-]+)/i', $head, $match))
                 $encoding=$match[1];
             else
                 $encoding='utf-8';
@@ -272,17 +278,22 @@ class Element implements \ArrayAccess{
         $this->parser=null;
     }
 
-    function offsetExists($key){
+    function __toString(){
+        return $this->text;
+    }
+
+    function offsetExists($key):bool{
         return $this->el->hasAttribute($key);
     }
+
+    #[\ReturnTypeWillChange]
     function offsetGet($key){
         return $this->el->getAttribute($key);
     }
-    function offsetSet($key, $value){
+    function offsetSet($key, $value):void{
         $this->el->setAttribute($key, $value);
-        return $value;
     }
-    function offsetUnset($key){
+    function offsetUnset($key):void{
         $this->el->removeAttribute($key);
     }
 
