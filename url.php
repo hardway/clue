@@ -7,11 +7,11 @@
     }
     if(!CLI && !defined('APP_URL')){
         // 不使用常规端口的情况
-        $server_port=intval($_SERVER['SERVER_PORT']);
-        $app_port=in_array($server_port, array(80, 443)) ? '' : ":$server_port";
+        // $server_port=intval($_SERVER['SERVER_PORT']);
+        // $app_port=in_array($server_port, array(80, 443)) ? '' : ":$server_port";
         $scheme=@$_SERVER['REQUEST_SCHEME'] ?: "http";
         // TODO: 对于非常规的情况，其实在config中自定义APP_URL省很多事
-        @define('APP_URL', $scheme.'://'.$_SERVER['SERVER_NAME'].$app_port.APP_BASE);
+        @define('APP_URL', $scheme.'://'.$_SERVER['HTTP_HOST'].APP_BASE);
     }
 
     /**
