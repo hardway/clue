@@ -1,6 +1,5 @@
 {
-    "name": "clue/clue",
-    "version": "0.2",
+    "name": "hardway/clue",
     "description": "Quick way to start project? I got clue.",
     "require": {
 		"php": ">=5.4.0"
