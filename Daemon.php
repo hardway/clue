@@ -67,6 +67,8 @@ class Daemon{
         return $revision;
     }
 
+    public $timeout;
+
     function __construct(array $option=[]){
         $this->timeout=@$option['timeout'] ?: 10;
     }
