@@ -13,8 +13,9 @@ class DBSession implements \SessionHandlerInterface{
         $this->db->exec("update $this->table set retention=%d where id=%s", $retention, session_id());
     }
 
-    public function close(){return true;}
-    public function open($save_path, $session_name){
+    public function close():bool {return true;}
+
+    public function open($path, $name):bool{
         // 创建Session表
         if(!$this->db->has_table($this->table)){
             $this->db->exec("
@@ -33,7 +34,7 @@ class DBSession implements \SessionHandlerInterface{
         return true;
     }
 
-    public function read($session_id){
+    public function read($session_id) : string|false{
         $s=$this->db->get_row("select *, now() now from $this->table where id=%s", $session_id);
 
         if(!$s) return null;
@@ -55,7 +56,7 @@ class DBSession implements \SessionHandlerInterface{
         return $s->data;
     }
 
-    public function write($session_id, $session_data){
+    public function write($session_id, $session_data) : bool{
         $this->db->exec("
             insert into $this->table (id, ipaddr, useragent, created, data)
             values(%s, %s, %s, now(), %s)
@@ -65,11 +66,11 @@ class DBSession implements \SessionHandlerInterface{
         return true;
     }
 
-    public function destroy($session_id){
+    public function destroy($session_id) : bool{
         return $this->db->exec("delete from $this->table where id=%s", $session_id);
     }
 
-    public function gc($maxlifetime){
+    public function gc($maxlifetime):int|false{
         // 有Retention的不会被轻易gc
         return $this->db->exec("delete from $this->table where last_update + interval retention day < now() - interval %d second", $maxlifetime);
     }
@@ -93,8 +94,8 @@ class FileSession implements \SessionHandlerInterface{
         return file_put_contents($path, json_encode($json));
     }
 
-    public function close(){return true;}
-    public function open($save_path, $session_name){
+    public function close():bool{return true;}
+    public function open($save_path, $session_name):bool{
         // 创建Session目录
         if(!is_dir($this->folder)){
             $ok=mkdir($this->folder, 0775, true);
@@ -104,7 +105,7 @@ class FileSession implements \SessionHandlerInterface{
         return true;
     }
 
-    public function read($session_id){
+    public function read($session_id):string|false{
         $path="$this->folder/$session_id";
         if(!file_exists($path)) return null;
 
@@ -126,7 +127,7 @@ class FileSession implements \SessionHandlerInterface{
         return $json['data'];
     }
 
-    public function write($session_id, $session_data){
+    public function write($session_id, $session_data):bool{
         $path="$this->folder/$session_id";
 
         if(!file_exists($path)){
@@ -149,11 +150,11 @@ class FileSession implements \SessionHandlerInterface{
         return true;
     }
 
-    public function destroy($session_id){
+    public function destroy($session_id):bool{
         return unlink("$this->folder/$session_id");
     }
 
-    public function gc($maxlifetime){
+    public function gc($maxlifetime):int|false{
         foreach(scandir($this->folder) as $f){
             if($f[0]=='.') continue;
 

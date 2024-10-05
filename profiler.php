@@ -8,6 +8,15 @@
 namespace Clue;
 
 class Profiler{
+	protected $profiler;
+	
+	protected $xhprof;
+	protected $xhprof_options;
+
+	protected $start_time, $stop_time;
+	protected $previous_time;
+	protected $start_memory, $stop_memory;
+
 	function __construct($source='xhprof', $options=[]){
 		$this->profiler=@$options['profiler'] ?: 'xhprof';
 
