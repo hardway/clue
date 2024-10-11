@@ -175,7 +175,7 @@ redirect:
         }
         elseif(preg_match('/3\d\d/', $header['http_code'])){
             // 自动Follow新的URL
-            $this->endpoint=url_follow($header['redirect_url'], $this->endpoint);
+            $this->endpoint=\Clue\url_follow($header['redirect_url'], $this->endpoint);
             $this->debug_log("[RPC] Redirecting: ".$this->endpoint);
 
             $redirect--;
