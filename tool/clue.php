@@ -126,7 +126,13 @@
         echo "Version: $current_version"."\n";
 
         $stat=$db->get_results("
-            SELECT table_name, engine, table_rows, avg_row_length, data_length, index_length
+            SELECT
+                table_name table_name,
+                engine engine,
+                table_rows table_rows,
+                avg_row_length avg_row_length,
+                data_length data_length,
+                index_length index_length
             FROM information_schema.tables WHERE table_schema=%s
             ORDER BY data_length+index_length DESC
         ", $db->config['db']);
@@ -441,7 +447,7 @@ END
             $params=file_get_contents($params);
         }
 
-        $ret=call_user_func_array(array($c, $function), json_decode($params, true));
+        $ret=call_user_func_array(array($c, $function), Clue\json5_decode($params, true));
 
         print_r($ret);
     }
@@ -479,13 +485,16 @@ END
      * @param $header 自定义头部，格式: a=1&b=2
      * @param $ignorecert 是否忽略服务器证书
      */
-    function clue_http($method, $url, $params="[]", $header="", $ignorecert=true){
+    function clue_http($method, $url, $params="[]", $data="", $header="", $ignorecert=true){
         $c=new Clue\Web\Client([
             'debug'=>true, 'ignore_certificate'=>$ignorecert
         ]);
 
         parse_str($header, $c->custom_header);
 
+        if(is_file($data)){
+            $data=file_get_contents($data);
+        }
         if(is_file($params)){
             $params=json_decode(file_get_contents($params), true);
         }
@@ -498,7 +507,14 @@ END
             }
         }
 
-        $r=$c->$method($url, $params);
+        if($method=='POST'){
+            $r=$c->post($url, $data);
+        }
+        else{
+            $r=$c->$method($url, $params);
+        }
+
+        print_r($r);
 
         print_r($c->request);
         print_r($c->response);
@@ -568,7 +584,7 @@ END
         if(!$db){
             $cfg=_current_config()['database'];
             // 从config.php中获取数据库配置
-            
+
             $db=\Clue\Database::create($cfg);
             if(!$db) panic(sprintf(
                 "Can't connect to database %s:\"%s\"@%s/%s", $cfg['username'], $cfg['password'], $cfg['host'], $cfg['db']
