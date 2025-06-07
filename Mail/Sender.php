@@ -8,6 +8,22 @@ namespace Clue\Mail;
 class Sender{
     const EOL="\r\n";
 
+    protected $server;
+    protected $hostname;
+    protected $port;
+    protected $scheme;
+    protected $username;
+    protected $password;
+    protected $headers;
+    protected $dns_server;
+    protected $sender;
+    protected $socket;
+
+    protected $debug;
+
+    protected $attachments;
+    protected $recipients;
+
     /**
      * @param $server 使用外部服务器或者内置MTA
      */
@@ -22,8 +38,8 @@ class Sender{
 
         $this->scheme='';
         // 根据端口自动判别SSL/TLS，也可以在后续自行更改
-        if($this->port==587) $this->scheme='tls';
-        if($this->port==465) $this->scheme='ssl';
+        if($this->port==587) $this->scheme='tls';   // 邮件递交专用端口，通过STARTTLS命令开启加密
+        if($this->port==465) $this->scheme='ssl';   // 已经废弃的SMTPS端口，默认开启ssl加密
 
         $this->dns_server='8.8.8.8';
 
@@ -183,7 +199,7 @@ class Sender{
 
     function send_smtp($server, $port, $scheme, $header, $data, $recipients){
         $socket=&$this->socket;
-        $socket=fsockopen(($scheme ? 'ssl://' : '').$server, $port);
+        $socket=fsockopen(($scheme=='ssl' ? 'ssl://' : '').$server, $port);
         if(!$socket){
             trigger_error("Connection $this->server:$this->port failed", E_USER_ERROR);
             return false;
