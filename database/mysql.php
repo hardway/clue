@@ -1,6 +1,8 @@
 <?php
 namespace Clue\Database{
     class Mysql extends \Clue\Database{
+        public $config;
+        public $result_mode;
         protected $_result;
         protected $_savepoints=[];  //用于追踪Transaction和Savepoint
 

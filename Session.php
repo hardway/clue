@@ -77,6 +77,9 @@ class DBSession implements \SessionHandlerInterface{
 }
 
 class FileSession implements \SessionHandlerInterface{
+    public $folder;
+    public $ttl;
+
     public function __construct(array $options=[]){
         assert(isset($options['folder']), "options.folder is required");
 

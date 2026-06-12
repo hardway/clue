@@ -4,6 +4,12 @@
 // TODO: BUG: ENV=XXX cli.php 之后auto_complete不工作
 namespace Clue\CLI{
     class Command{
+        public $description;
+        public $app;
+        public $global_options = [];
+        public $options;
+        public $args;
+
         function __construct($description=null, $app=null){
             $this->description=$description;
             $this->app=$app;

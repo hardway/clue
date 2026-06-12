@@ -8,6 +8,13 @@ namespace Clue\Web{
         public $agent="ClueHTTPClient";
         public $referer=null;
         public $custom_header=[];       // 类似 {AWS_AUTH:xxxxx, AWS_SECRET:yyyyyy}
+        public $config;
+        public $cookie_readonly = false;
+        public $errno = 0;
+        public $error = '';
+        public $request;
+        public $response;
+        public $cache_hit = false;
 
         private $cookie_file;
         private $cookie=[];

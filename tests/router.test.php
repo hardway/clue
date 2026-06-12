@@ -1,6 +1,7 @@
 <?php
 	define('TEST_APP_ROOT', '/tmp/testapp');
 	class Test_Router extends PHPUnit_Framework_TestCase{
+    public $app;
 		protected $backupGlobals = FALSE;
 		protected $backupGlobalsBlacklist = array('mysql');
 

@@ -2,6 +2,11 @@
 namespace Clue\Mail;
 
 class Address{
+    public $email;
+    public $name;
+    public $user;
+    public $domain;
+
     function __construct($email, $name=null){
         if($email instanceof Address){
             $copy=$email;

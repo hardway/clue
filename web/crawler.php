@@ -26,6 +26,16 @@ namespace Clue\Web;
 class Crawler{
     use \Clue\Traits\Events;
 
+    public $options;
+    public $client;
+    public $last_delay;
+    public $retry_download;
+    public $debug;
+    public $delay;
+    public $pending = [];
+    public $visited = [];
+
+
     function __construct(array $options=array()){
         $default_options=[
             'cache_dir'=>'/tmp/crawler',

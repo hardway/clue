@@ -2,6 +2,8 @@
 	use Clue\Tool as Tool;
 
 	class ToolTest extends PHPUnit_Framework_TestCase{
+    public $folder;
+    public $folder2;
 		protected function setUp(): void{
 			$this->folder="/tmp/delete-test";
 			mkdir("$this->folder", 0775);

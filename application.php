@@ -61,7 +61,8 @@ namespace Clue{
         }
 
         // Dependency Injection, Ref: Pimple
-        function offsetGet($id){
+        #[\ReturnTypeWillChange]
+    function offsetGet($id){
             if(!isset($this->_values[$id])) return null;
 
             $callable = is_object($this->_values[$id]) && method_exists($this->_values[$id], '__invoke');
