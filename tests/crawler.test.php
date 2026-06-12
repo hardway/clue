@@ -1,23 +1,21 @@
 <?php
-    require_once dirname(__DIR__).'/stub.php';
-
-    if(!class_exists("PHPUnit_Framework_TestCase")){
-        class PHPUnit_Framework_TestCase {}
-
-        if(isset($_GET['status'])){
-            header("HTTP/1.0 {$_GET['status']} TEST");
-            exit();
-        }
+    // When loaded as a CLI-server router script (php -S)
+    if (php_sapi_name() === 'cli-server' && isset($_GET['status'])) {
+        header("HTTP/1.0 {$_GET['status']} TEST");
+        exit();
     }
 
     class DebugCrawler extends Clue\Web\Crawler{
+        public $last503Url = '';
+        public $last503Html = '';
+
         function crawl_503($url, $html){
-            var_dump($url, $html);
-            exit();
+            $this->last503Url = $url;
+            $this->last503Html = $html;
         }
 
         function process_503($data){
-            var_dump($data);
+            // no-op for test
         }
     }
 
@@ -57,4 +55,3 @@
             $c->crawl();
         }
     }
-?>

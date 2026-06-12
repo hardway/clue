@@ -1,5 +1,9 @@
 <?php
-	require_once dirname(__DIR__).'/stub.php';
+	use function Clue\path_normalize;
+	use function Clue\url_normalize;
+	use function Clue\url_path;
+	use function Clue\url_follow;
+	use function Clue\asset;
 
 	class Test_URL extends PHPUnit_Framework_TestCase{
 		protected function temp_folder($prefix){

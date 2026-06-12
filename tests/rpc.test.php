@@ -1,6 +1,4 @@
 <?php
-    require_once dirname(__DIR__).'/stub.php';
-
     define("TEST_ENABLE_BOOKKEEPING", 0);
 
     class TestService{
@@ -44,13 +42,7 @@
         Clue\RPC\Client::enable_bookkeeping(init_bookkeeper(), 'rpc_log');
     }
 
-    if(!class_exists("PHPUnit_Framework_TestCase")){
-        class PHPUnit_Framework_TestCase {}
-        if(@$_SERVER["REQUEST_URI"]=='/redirect'){
-            header("Location: /"); exit();
-        }
-
-        Clue\RPC\Server::bind(new TestService);
+    Clue\RPC\Server::bind(new TestService);
     }
 
     class Test_RPC extends PHPUnit_Framework_TestCase{

@@ -1,15 +1,13 @@
 <?php
-    require_once dirname(__DIR__).'/stub.php';
-
     class Test_Mysql extends PHPUnit_Framework_TestCase{
-        function setUp(){
+        function setUp(): void{
             $this->mysql=Clue\Database::create(['type'=>'mysql', 'host'=>'127.0.0.1', 'username'=>'root', 'password'=>'', 'db'=>'test']);
             $this->mysql->exec("truncate table foo");
 
             $this->watch=Clue\Database::create(['type'=>'mysql', 'host'=>'127.0.0.1', 'username'=>'root', 'password'=>'', 'db'=>'test']);
         }
 
-        function tearDown(){
+        function tearDown(): void{
             $this->mysql->close();
         }
 

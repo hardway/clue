@@ -4,7 +4,7 @@
  */
 namespace Clue\Mail;
 
-if(!extension_loaded("imap")) exit("Extension imap required.");
+if(!extension_loaded("imap")) throw new \Exception("Extension imap required.");
 
 class Fetcher{
     function __construct($server, $port, $username, $password, $spec=null){

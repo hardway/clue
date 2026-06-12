@@ -1,6 +1,4 @@
 <?php
-	require_once dirname(__DIR__).'/stub.php';
-
 	class Test_HTML extends PHPUnit_Framework_TestCase{
 		function test_select_option_single(){
 			$options=['a'=>'apple', 'b'=>'banana'];

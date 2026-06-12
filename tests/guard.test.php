@@ -1,11 +1,9 @@
 <?php
-    require_once dirname(__DIR__).'/stub.php';
-
     @define("FATAL_ERROR_SCRIPT", '/tmp/clue-fatal-error.php');
     @define("FATAL_ERROR_LOG", '/tmp/clue-fatal-error.log');
 
     class Test_Guard extends PHPUnit_Framework_TestCase{
-        protected function setUp(){
+        protected function setUp(): void{
             $this->app=new Clue\Application(['config'=>null]);
         }
 

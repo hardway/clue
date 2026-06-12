@@ -2,7 +2,7 @@
 include dirname(__DIR__).'/Collection.php';
 use Clue\Collection;
 
-class Test_ActiveRecord extends PHPUnit_Framework_TestCase{
+class Test_Collection extends PHPUnit_Framework_TestCase{
     function test_data_get_set(){
         $arr=['foo'=>['bar'=>1]];
 

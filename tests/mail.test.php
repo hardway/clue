@@ -1,11 +1,8 @@
 <?php
-require_once 'clue/stub.php';
-
-require_once dirname(__DIR__).'/stub.php';
 define("DEBUG", 1);
 
-class Test_Mail_Manual extends PHPUnit_Framework_TestCase{
-    protected function setUp(){
+class Test_Mail_Manual extends Clue\Test\TestCase{
+    protected function setUp(): void{
     }
 
     function test_mx_dns(){

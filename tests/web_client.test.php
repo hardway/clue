@@ -1,13 +1,10 @@
 <?php
-    require_once dirname(__DIR__).'/stub.php';
-
-    // 独立HTTPServer的行为
-    if(!class_exists("PHPUnit_Framework_TestCase")){
-        class PHPUnit_Framework_TestCase {}
-        if($_SERVER["REQUEST_URI"]=='/redirect'){
-            header("Location: /"); exit();
+    // When loaded as a CLI-server router script (php -S)
+    if (php_sapi_name() === 'cli-server') {
+        if ($_SERVER["REQUEST_URI"] == '/redirect') {
+            header("Location: /");
+            exit();
         }
-
         exit(json_encode($_SERVER));
     }
 
@@ -65,4 +62,3 @@
             $this->assertEquals("ftp://test.ftp.com/abc", $c->follow_url("ftp://test.ftp.com/abc", "http://some.host.com"));
         }
     }
-?>

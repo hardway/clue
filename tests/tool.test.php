@@ -1,9 +1,8 @@
 <?php
-    require_once dirname(__DIR__).'/stub.php';
 	use Clue\Tool as Tool;
 
 	class ToolTest extends PHPUnit_Framework_TestCase{
-		protected function setUp(){
+		protected function setUp(): void{
 			$this->folder="/tmp/delete-test";
 			mkdir("$this->folder", 0775);
 			touch("$this->folder/file");
@@ -13,7 +12,7 @@
 			$this->folder2="/tmp/copy-test";
 		}
 
-		protected function tearDown(){
+		protected function tearDown(): void{
 			@unlink("$this->folder/folder/file");
 			@unlink("$this->folder/file");
 			@rmdir("$this->folder/folder");

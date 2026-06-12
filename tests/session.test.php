@@ -1,6 +1,4 @@
 <?php
-    require_once dirname(__DIR__).'/stub.php';
-
     class Test_SESSION extends PHPUnit_Framework_TestCase{
         function test_file_session(){
             $id="TEST";

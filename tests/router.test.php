@@ -1,13 +1,10 @@
 <?php
 	define('TEST_APP_ROOT', '/tmp/testapp');
-
-	require_once dirname(__DIR__).'/stub.php';
-
 	class Test_Router extends PHPUnit_Framework_TestCase{
 		protected $backupGlobals = FALSE;
 		protected $backupGlobalsBlacklist = array('mysql');
 
-		protected function setUp(){
+		protected function setUp(): void{
 			// 清空环境变量，避免多个TestCase间相互干扰
 			@$_GET=[];
 			$this->app=new Clue\Application(['config'=>null]);
@@ -18,7 +15,7 @@
 			Clue\add_site_path(TEST_APP_ROOT);
 		}
 
-		protected function tearDown(){
+		protected function tearDown(): void{
 			Clue\Tool::remove_directory(TEST_APP_ROOT);
 		}
 
