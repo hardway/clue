@@ -20,6 +20,7 @@ namespace Clue\Web{
         private $cookie=[];
         private $cache;
         private $curl;
+        public $post_data = null;
 
         /**
          * Example of config file:
@@ -44,11 +45,6 @@ namespace Clue\Web{
             if($this->curl) curl_close($this->curl);
         }
 
-        function __get($name){
-            if($name=='status'){
-                return curl_getinfo($this->curl, CURLINFO_HTTP_CODE);
-            }
-        }
 
         function init_request($method, $url, $options=[]){
             $this->content=null;
@@ -87,9 +83,9 @@ namespace Clue\Web{
 
                 case 'POST':
                     curl_setopt($this->curl, CURLOPT_POST, true);
-                    // PHP5.6 requires CurlFile
-                    if(version_compare(PHP_VERSION, '5.6.0') < 0){
-                        curl_setopt($this->curl, @CURLOPT_SAFE_UPLOAD, false);
+                    // PHP5.5/5.5：CURLOPT_SAFE_UPLOAD 已从 PHP 8.0 移除
+                    if(version_compare(PHP_VERSION, '5.6.0') < 0 && defined('CURLOPT_SAFE_UPLOAD')){
+                        curl_setopt($this->curl, CURLOPT_SAFE_UPLOAD, false);
                     }
                     break;
 
@@ -123,6 +119,7 @@ namespace Clue\Web{
             // HTTPS
             if(@$this->config['ignore_certificate']){
                 curl_setopt($this->curl, CURLOPT_SSL_VERIFYPEER, false);
+                curl_setopt($this->curl, CURLOPT_SSL_VERIFYHOST, 0);
             }
 
             // HTTP认证
@@ -223,14 +220,16 @@ namespace Clue\Web{
             $this->cookie_readonly=$readonly;
         }
 
-        function disable_cookie($cookie_file){ $this->cookie_file=null; }
+        function disable_cookie(){ $this->cookie_file=null; }
         function set_cookie($cookies=array()){ $this->cookie=array_merge($this->cookie, $cookies); }
         function get_cookie(){
             $cookies=[];
             if(file_exists($this->cookie_file)){
-                foreach(file($this->cookie_file) as $line){
-                    if(preg_match('/^\..*\s+(\S+)\s+(\S+)$/', $line, $m)){
-                        $cookies[$m[1]]=$m[2];
+                foreach(file($this->cookie_file, FILE_IGNORE_NEW_LINES | FILE_SKIP_EMPTY_LINES) as $line){
+                    if(strpos($line, '#') === 0) continue;
+                    $fields = explode("\t", $line);
+                    if(count($fields) >= 7){
+                        $cookies[$fields[5]] = $fields[6];
                     }
                 }
             }
@@ -309,7 +308,7 @@ namespace Clue\Web{
             $result=array();
             $result[]=$current['scheme'].'://';
             $result[]=$current['host'];
-            $result[]=isset($current['port']) ? $current['port'] : "";
+            $result[]=isset($current['port']) ? ':'.$current['port'] : "";
             $result[]=implode("/", $path);
             $result[]=isset($parts['query']) ? '?'.$parts['query'] : "";
             $result[]=isset($parts['fragment']) ? '#'.$parts['fragment'] : '';
@@ -341,6 +340,8 @@ namespace Clue\Web{
                     list($this->content, $meta)=$this->cache_hit;
                     $this->status=$meta['status'];
                     $this->header=$meta['header'];
+                    $this->errno = 0;
+                    $this->error = '';
                 }
             }
 
