@@ -28,6 +28,17 @@ class Client{
     use \Clue\Logger\LoggerTrait;
     use \Clue\Traits\Bookkeeper;
 
+    public $endpoint;
+    public $debug = false;
+    public $client;
+    public $token;
+    public $secret;
+    public $timeout = 30;
+    public $proxy;
+    public $compression;
+    public $cache_dir;
+    public $cache_ttl;
+
     /**
      * @param $endpoint 远程调用端的URL，格式 https://127.0.0.1/api/EchoService
      * @param $options  选项，比如是否加密会话，通讯格式为php或者json

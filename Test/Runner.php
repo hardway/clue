@@ -14,6 +14,8 @@ class Runner {
 
     /** @var array<array{file:string,class:string,method:string,type:string,message:string,line:int,sourceFile:string}> */
     private array $failures = [];
+    /** @var array<array{class:string,method:string,message:string}> */
+    private array $skippedTests = [];
 
     public function runDir(string $dir): bool {
         $files = glob(rtrim($dir, '/') . '/*.test.php');
@@ -92,6 +94,10 @@ class Runner {
         } catch (SkipException $e) {
             $this->skipped++;
             echo 's';
+            $this->skippedTests[] = [
+                'class' => $className, 'method' => $methodName,
+                'message' => $e->getMessage(),
+            ];
         } catch (AssertionFailedException $e) {
             $this->failed++;
             echo 'F';
@@ -255,6 +261,18 @@ class Runner {
                 }
                 echo "  " . str_replace("\n", "\n  ", $f['message']) . "\n\n";
             }
+        }
+
+        if ($this->skippedTests) {
+            echo "Skipped:\n";
+            foreach ($this->skippedTests as $s) {
+                $loc = $s['class'] ? "{$s['class']}::{$s['method']}" : $s['method'];
+                echo "  $loc\n";
+                if ($s['message']) {
+                    echo "    " . str_replace("\n", "\n    ", $s['message']) . "\n";
+                }
+            }
+            echo "\n";
         }
     }
 }
