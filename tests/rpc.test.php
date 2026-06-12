@@ -114,6 +114,15 @@
         function test_encdec(){
             include_once __DIR__ . '/../RPC/common.php';
 
+            // Skip if no cipher backend available
+            if (!extension_loaded('mcrypt')
+                && (!extension_loaded('openssl')
+                    || !in_array('BF-ECB', openssl_get_cipher_methods())))
+            {
+                $this->markTestSkipped('No cipher backend (mcrypt or BF-ECB in openssl)');
+                return;
+            }
+
             $payload = "Quick brown fox jumps over the lazy dog!";
             $secret = "secret";
 
