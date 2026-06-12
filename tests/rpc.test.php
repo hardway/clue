@@ -114,18 +114,6 @@
         function test_encdec(){
             include_once __DIR__ . '/../RPC/common.php';
 
-            // Skip if no cipher extension available
-            $has_mcrypt = extension_loaded('mcrypt');
-            $has_bfecb = extension_loaded('openssl')
-                && in_array('BF-ECB', openssl_get_cipher_methods());
-            if (!$has_mcrypt && !$has_bfecb) {
-                $this->markTestSkipped(
-                    'Requires mcrypt or openssl with BF-ECB support. '
-                    . 'See: https://stackoverflow.com/a/74608852'
-                );
-                return;
-            }
-
             $payload = "Quick brown fox jumps over the lazy dog!";
             $secret = "secret";
 

@@ -14,13 +14,6 @@ function clue_rpc_encrypt($str, $secret=RPC_SECRET){
     }
 
     if (extension_loaded('openssl')) {
-        if (!in_array('BF-ECB', openssl_get_cipher_methods())) {
-            throw new RuntimeException(
-                'clue_rpc_encrypt: OpenSSL 3.0+ removed Blowfish by default. '
-                . 'Add "bf-ecb = BF-ECB" to [openssl_section] in openssl.cnf, '
-                . 'or install the mcrypt extension.'
-            );
-        }
         return base64_encode(
             openssl_encrypt($str, 'BF-ECB', $secret, OPENSSL_RAW_DATA | OPENSSL_NO_PADDING)
         );
@@ -40,13 +33,6 @@ function clue_rpc_decrypt($str, $secret=RPC_SECRET){
             MCRYPT_BLOWFISH, $secret, base64_decode($str), MCRYPT_MODE_ECB
         );
     } elseif (extension_loaded('openssl')) {
-        if (!in_array('BF-ECB', openssl_get_cipher_methods())) {
-            throw new RuntimeException(
-                'clue_rpc_decrypt: OpenSSL 3.0+ removed Blowfish by default. '
-                . 'Add "bf-ecb = BF-ECB" to [openssl_section] in openssl.cnf, '
-                . 'or install the mcrypt extension.'
-            );
-        }
         $str = openssl_decrypt(
             base64_decode($str), 'BF-ECB', $secret, OPENSSL_RAW_DATA | OPENSSL_NO_PADDING
         );
