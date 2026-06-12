@@ -1,7 +1,7 @@
 <?php
     class Test_RPC extends PHPUnit_Framework_TestCase{
         function test_encdec(){
-            include_once dirname(__DIR__).'/rpc/common.php';
+            include_once dirname(__DIR__).'/RPC/common.php';
 
             $payload="Quick brown fox jumps over the lazy dog!";
             $secret="secret";

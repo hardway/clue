@@ -110,5 +110,17 @@
             $c=new Clue\RPC\Client(self::$ENDPOINT);
             echo $c->trigger_error();
         }
+
+        function test_encdec(){
+            include_once __DIR__ . '/../RPC/common.php';
+
+            $payload = "Quick brown fox jumps over the lazy dog!";
+            $secret = "secret";
+
+            $enc = clue_rpc_encrypt($payload, $secret);
+            $dec = clue_rpc_decrypt($enc, $secret);
+
+            $this->assertEquals($payload, $dec);
+            $this->assertNotEquals($payload, $enc);
+        }
     }
-?>
