@@ -1,10 +1,10 @@
 <?php
     class Test_Mysql extends PHPUnit_Framework_TestCase{
         function setUp(): void{
-            $this->mysql=Clue\Database::create(['type'=>'mysql', 'host'=>'127.0.0.1', 'username'=>'root', 'password'=>'', 'db'=>'test']);
+            $this->mysql=Clue\Database::create(['type'=>'mysql', 'host'=>'127.0.0.1', 'username'=>'root', 'password'=>'root', 'db'=>'test']);
             $this->mysql->exec("truncate table foo");
 
-            $this->watch=Clue\Database::create(['type'=>'mysql', 'host'=>'127.0.0.1', 'username'=>'root', 'password'=>'', 'db'=>'test']);
+            $this->watch=Clue\Database::create(['type'=>'mysql', 'host'=>'127.0.0.1', 'username'=>'root', 'password'=>'root', 'db'=>'test']);
         }
 
         function tearDown(): void{

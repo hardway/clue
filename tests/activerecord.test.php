@@ -1,14 +1,15 @@
 <?php
 // Guard: only attempt DB connection when MySQL extension is available
 // and this file is loaded in test context
+global $db;
 $db = null;
 if (extension_loaded('mysqli')) {
     try {
         $db = Clue\Database::create([
             'type' => 'mysql',
-            'host' => 'localhost',
+            'host' => '127.0.0.1',
             'username' => 'root',
-            'password' => '',
+            'password' => 'root',
             'db' => 'mysql'
         ]);
     } catch (\Throwable $e) {
@@ -30,6 +31,33 @@ class AR extends Clue\ActiveRecord{
 }
 
 class Test_ActiveRecord extends PHPUnit_Framework_TestCase{
+    static function setUpBeforeClass(){
+        global $db;
+
+        if (!$db) return;
+
+        // 创建测试数据库和表
+        $db->exec("drop database if exists clue_test");
+        $db->exec("create database clue_test");
+        $db->exec("use clue_test");
+        $db->exec("
+            create table if not exists ar_test(
+                pid int not null primary key auto_increment,
+                test_name varchar(64),
+                test_value varchar(64)
+            );
+        ");
+    }
+
+    static function tearDownAfterClass(){
+        global $db;
+
+        if (!$db) return;
+
+        // 清理测试数据库
+        $db->exec("drop database clue_test");
+    }
+
     function test_crud(){
         global $db;
 
