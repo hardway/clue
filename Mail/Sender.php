@@ -232,9 +232,9 @@ class Sender{
             $cap=$this->_parse_capability($reply);
 
             if (isset($cap['8BITMIME']))
-                $headers['Content-Transfer-Encoding']='8bit';
+                $header='Content-Transfer-Encoding: 8bit'.self::EOL.$header;
             else {
-                $headers['Content-Transfer-Encoding']='quoted-printable';
+                $header='Content-Transfer-Encoding: quoted-printable'.self::EOL.$header;
                 $data=quoted_printable_encode($data);
             }
         }
