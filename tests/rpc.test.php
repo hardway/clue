@@ -42,7 +42,9 @@
         Clue\RPC\Client::enable_bookkeeping(init_bookkeeper(), 'rpc_log');
     }
 
-    Clue\RPC\Server::bind(new TestService);
+    // Only bind when running as CLI-server router
+    if (php_sapi_name() === 'cli-server') {
+        Clue\RPC\Server::bind(new TestService);
     }
 
     class Test_RPC extends PHPUnit_Framework_TestCase{
