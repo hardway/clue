@@ -1,4 +1,9 @@
 <?php
+    // Bootstrap when loaded as CLI-server router script
+    if (php_sapi_name() === 'cli-server') {
+        require_once __DIR__ . '/../stub.php';
+    }
+
     define("TEST_ENABLE_BOOKKEEPING", 0);
 
     class TestService{

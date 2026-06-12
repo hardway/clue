@@ -49,14 +49,52 @@ class Runner {
 
     public function runClass(string $className, string $fileLabel = ''): void {
         $ref = new \ReflectionClass($className);
+
+        // setUpBeforeClass / tearDownAfterClass
+        $hasBefore = $ref->hasMethod('setUpBeforeClass')
+            && $ref->getMethod('setUpBeforeClass')->isStatic();
+        $hasAfter = $ref->hasMethod('tearDownAfterClass')
+            && $ref->getMethod('tearDownAfterClass')->isStatic();
+
+        if ($hasBefore) {
+            try {
+                $ref->getMethod('setUpBeforeClass')->invoke(null);
+            } catch (\Throwable $e) {
+                // If setUpBeforeClass fails, skip the whole class
+                echo 'E';
+                $this->errors++;
+                $this->failures[] = [
+                    'file' => $fileLabel, 'class' => $className, 'method' => 'setUpBeforeClass',
+                    'type' => 'ERROR',
+                    'message' => get_class($e) . ': ' . $e->getMessage(),
+                ];
+                return;
+            }
+        }
+
         $methods = $ref->getMethods(\ReflectionMethod::IS_PUBLIC);
 
         foreach ($methods as $method) {
             $name = $method->getName();
             if (!str_starts_with($name, 'test')) continue;
-            if ($name === 'setUp' || $name === 'tearDown') continue;
+            if ($name === 'setUp' || $name === 'tearDown'
+                || $name === 'setUpBeforeClass' || $name === 'tearDownAfterClass') continue;
 
             $this->runTest($className, $name, $fileLabel);
+        }
+
+        if ($hasAfter) {
+            try {
+                $ref->getMethod('tearDownAfterClass')->invoke(null);
+            } catch (\Throwable $e) {
+                echo 'E';
+                $this->errors++;
+                $this->failures[] = [
+                    'file' => $fileLabel, 'class' => $className, 'method' => 'tearDownAfterClass',
+                    'type' => 'ERROR',
+                    'message' => get_class($e) . ': ' . $e->getMessage(),
+                ];
+            }
         }
     }
 
