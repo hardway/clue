@@ -1,5 +1,8 @@
 <?php
     class Test_Mysql extends PHPUnit_Framework_TestCase{
+        protected $mysql;
+        protected $watch;
+
         function setUp(): void{
             $this->mysql=Clue\Database::create(['type'=>'mysql', 'host'=>'127.0.0.1', 'username'=>'root', 'password'=>'root', 'db'=>'test']);
             $this->mysql->exec("truncate table foo");
