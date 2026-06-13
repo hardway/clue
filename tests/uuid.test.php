@@ -1,5 +1,4 @@
 <?php
-include dirname(__DIR__).'/tool.php';
 
 class Test_UUID extends PHPUnit_Framework_TestCase{
     function test_uuid36(){
