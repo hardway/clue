@@ -108,6 +108,20 @@ namespace Clue\Database{
             return $r->ok;
         }
 
+        function list_collections(){
+            $r=$this->command(['listCollections'=>1], 'read', 'result');
+            $result=[];
+            foreach($r as $c){
+                $result[]=$c->name;
+            }
+            sort($result);
+            return $result;
+        }
+
+        function stat_collection($collection){
+            return $this->command(['collStats'=>$collection], 'default', 'row');
+        }
+
         function delete($collection, $query=[]){
             $cmd=[
                 'delete'=>$collection,
