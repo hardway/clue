@@ -69,9 +69,12 @@ namespace Clue{
             $callable = is_object($this->_values[$id]) && method_exists($this->_values[$id], '__invoke');
             return $callable ? $this->_values[$id]($this) : $this->_values[$id];
         }
+        #[\ReturnTypeWillChange]
         function offsetSet($id, $val)   { $this->_values[$id]=$val; }
+        #[\ReturnTypeWillChange]
         function offsetExists($id)      { return array_key_exists($id, $this->_values); }
-        function offsetUnset($id)       { unset($this->_value[$id]); }
+        #[\ReturnTypeWillChange]
+        function offsetUnset($id)       { unset($this->_values[$id]); }
         function share(\Closure $callable){
             return function ($c) use ($callable) {
                 static $object;
