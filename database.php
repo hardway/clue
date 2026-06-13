@@ -10,8 +10,6 @@ namespace Clue{
     abstract class Database{
         use \Clue\Logger\LoggerTrait;
 
-        protected static $_cons=array();
-
         static function create(array $param){
             $dbms=$param['type'];
 
@@ -26,6 +24,7 @@ namespace Clue{
         }
 
         static function sql_to_create_table($table, $columns){
+            $sql=[];
             foreach($columns as $name=>$def){
                 if($name=='_pkey'){
                     // Constraints: Primary Key
@@ -45,13 +44,6 @@ namespace Clue{
             return "CREATE TABLE IF NOT EXISTS `$table` (\n".implode(", \n", $sql)."\n);";
         }
 
-        // TODO: refactor profile, use config inject
-        static function open($profile='default'){
-            if(!isset(self::$_cons[$profile]))
-                self::$_cons[$profile]=new Database($profile);
-            return self::$_cons[$profile];
-        }
-        //===========================================================
 
         protected $setting;
 
@@ -59,10 +51,11 @@ namespace Clue{
         public $last_query=null;
 
         public $slow_query_time_limit=0;
+        public $slow_query_backtrace=false;
 
         public $dbh=null;
         public $last_error=null;
-        public $errors=null;
+        public $errors=[];
 
         public function enable_slow_query_log($logfile='', $time_limit=1, $backtrace=false){
             $this->enable_log($logfile);
@@ -76,15 +69,14 @@ namespace Clue{
 
             error_log("SQL ERROR: {$err['code']} {$err['error']}");
             error_log($this->last_query);
-            error_log($this->err['location']);
+            error_log($err['location']);
 
             throw new \Exception("SQL ERROR: {$err['code']} {$err['error']} [$this->last_query]");
-            //trigger_error("SQL ERROR: {$err['code']} {$err['error']} [$this->last_query]", E_USER_ERROR);
         }
 
         protected function clearError(){
             $this->last_error=null;
-            $this->errors=null;
+            $this->errors=[];
         }
 
         function format($sql){
@@ -92,16 +84,16 @@ namespace Clue{
             $me=$this;
 
             $idx=1;
-            $sql=preg_replace_callback('/(^|\W)%(t|c|s|d|f|%)(\W|$)/', function($m) use($me, $args, &$idx){
-                // 转义 %% => %
-                if($m[2]=='%') return $m[1].'%'.$m[3];
+            $sql=preg_replace_callback('/%([tcsdf%])(?=\W|$)/u', function($m) use($me, $args, &$idx){
+                // %% → %
+                if($m[1]=='%') return '%';
 
                 if(!array_key_exists($idx, $args)){
                     throw new \Exception("Not enough arguments for SQL statement.");
                 }
 
                 $var="";
-                switch($m[2]){
+                switch($m[1]){
                     case 't':   // Table/View
                     case 'c':   // Column
                         $var="`".$args[$idx]."`";
@@ -119,24 +111,22 @@ namespace Clue{
 
                 $idx++;
 
-                return $m[1].$var.$m[3];
+                return $var;
             }, $sql);
             return $sql;
         }
 
-        // Basic implementation
-        /**
-         * quote means return type is string
-         * so either it's quoted with ', or it should display null
-         */
+        /** quote = escape + 加引号 */
         function quote($data){
-            if(is_null($data) || $data===false)
-                return 'null';
-            elseif(is_string($data)){
-                return "'".addslashes($data)."'";
-            }
-            else
-                return $data;
+            $v=$this->escape($data);
+            return $v==='null' ? 'null' : "'$v'";
+        }
+
+        /** 转义数据（不含引号） */
+        function escape($data){
+            if(is_null($data) || $data===false) return 'null';
+            if(is_string($data)) return addslashes($data);
+            return $data;
         }
 
         function audit($sql, $time=0){
@@ -150,17 +140,6 @@ namespace Clue{
 
             $this->last_query=$sql;
             $this->query_count++;
-        }
-
-        // Basic implementation
-        function escape($data){
-            if(is_null($data))
-                return 'null';
-            elseif(is_string($data)){
-                return addslashes($data);
-            }
-            else
-                return $data;
         }
 
         function insert_id(){
@@ -204,14 +183,13 @@ namespace Clue{
 
                 unset($row[$key_name]);
                 if(count($row)>1){
-                    $val=array_combine(array_keys($row), array_values($row));
+                    $val=$row;
                     if($mode==OBJECT){
                         $val=ary2obj($val);
                     }
                 }
                 else{
-                    $vals=array_values($row);
-                    $val=$vals[0];
+                    $val=reset($row);
                 }
 
                 if(is_null($key)) continue;
@@ -232,15 +210,12 @@ namespace Clue{
             array_push($args, ARRAY_A);
             $r=call_user_func_array(array($this, 'get_row'), $args);
 
-            if(empty($r))
-                return null;
-            else{
-                $obj=new $class($r);
-                $obj->_snap_shot();
-                $obj->after_retrieve();
-            }
+            if(empty($r)) return null;
 
-            return empty($r) ? null : new $class($r);
+            $obj=new $class($r);
+            $obj->_snap_shot();
+            $obj->after_retrieve();
+            return $obj;
         }
 
         function get_objects(){
