@@ -6,6 +6,7 @@ namespace Clue{
         public $view;
         protected $app;
 
+        public $params=[];
         public $layout="default";
         public $catch_exception=false;  // 设置为true将exception转到->error()并且->redirect_return()
 

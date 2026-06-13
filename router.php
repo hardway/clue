@@ -38,6 +38,7 @@ namespace Clue{
             }
 
             // decode url pattern into name list
+            $names=[];
             $pattern=preg_replace_callback('/:([a-zA-Z0-9_]+)/', function($m) use(&$names, $mapping){
                 $name=$m[1];
                 $names[]=$name;
@@ -83,13 +84,20 @@ namespace Clue{
                 return $this->app->http_error(404, "No controller found: $controller");
 
             require_once $path;
-            $source=file_get_contents($path);
 
-            // 确定类名
-            // TODO: 更好的reflective或者规定controller的类名必须符合PSR-0
-            preg_match('/namespace\s+([a-z0-9_\\\\]+)/i', $source, $n);
-            preg_match('/class\s+([a-z0-9_]*)/i', $source, $m);
-            $class=($n?$n[1].'\\':'').$m[1];
+            // 用反射定位文件中定义的 Controller 类名
+            $class=null;
+            $realPath=realpath($path);
+            foreach(get_declared_classes() as $c){
+                $ref=new \ReflectionClass($c);
+                if($ref->getFileName() === $realPath && $ref->isSubclassOf('Clue\Controller')){
+                    $class=$c;
+                    break;
+                }
+            }
+            if(!$class){
+                return $this->app->http_error(500, "No valid controller class in: $controller");
+            }
 
             // 形如 abc.htm 的Action将被拆分为 action=abc, layout=htm
             $core_action=null;
@@ -284,12 +292,10 @@ namespace Clue{
             }
 
             // 优先尝试用url来match connection
-            $rules=array_filter($this->connection, function($c){return $c['verb']==$_SERVER['REQUEST_METHOD'];});
-            $rules=array_merge($rules, array_filter($this->connection, function($c){return $c['verb']=='*';}));
+            $method=$_SERVER['REQUEST_METHOD'] ?? 'GET';
+            $rules=array_filter($this->connection, function($c) use($method){return $c['verb']==$method;});
+            $rules=array_merge($rules, array_filter($this->connection, function($c) use($method){return $c['verb']=='*';}));
             foreach($rules as $c){
-                // 检查HTTP Verb
-                if($c['verb']!='*' && $c['verb']!=$_SERVER['REQUEST_METHOD']) continue;
-
                 if(preg_match(chr(27).$c['pattern'].chr(27), $url, $m)){
                     array_shift($m);    // 去除完整匹配
                     $params=[];
@@ -365,7 +371,7 @@ namespace Clue{
 
                 // POST方法加上前缀_
                 // TODO: GET和PUT加上什么？
-                if(@$_SERVER['REQUEST_METHOD']=='POST') $mapping['action']="_".$mapping['action'];
+                if($method=='POST') $mapping['action']="_".$mapping['action'];
 
                 // 将GET/POST一并加入参数中
                 $mapping['params']=array_map(function($v){if(is_string($v)) return rawurldecode($v); else return $v;}, array_merge($params, $_GET ?: [], $_POST ?: []));
