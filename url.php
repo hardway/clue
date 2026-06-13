@@ -2,15 +2,11 @@
     namespace Clue;
 
     # URL路径
-    if(!CLI && !defined('APP_BASE')){
+    if(php_sapi_name() !== 'cli' && !defined('APP_BASE')){
         define('APP_BASE', '/'.trim(dirname(str_replace($_SERVER['DOCUMENT_ROOT'], '', $_SERVER['SCRIPT_FILENAME'])), '/.'));
     }
-    if(!CLI && !defined('APP_URL')){
-        // 不使用常规端口的情况
-        // $server_port=intval($_SERVER['SERVER_PORT']);
-        // $app_port=in_array($server_port, array(80, 443)) ? '' : ":$server_port";
+    if(php_sapi_name() !== 'cli' && !defined('APP_URL')){
         $scheme=@$_SERVER['REQUEST_SCHEME'] ?: "http";
-        // TODO: 对于非常规的情况，其实在config中自定义APP_URL省很多事
         @define('APP_URL', $scheme.'://'.$_SERVER['HTTP_HOST'].APP_BASE);
     }
 
@@ -105,6 +101,10 @@
     function url_for($controller, $action='index', $params=array()){
         global $app;
 
+        if(!isset($app['router'])){
+            throw new \RuntimeException('Router not configured for url_for');
+        }
+
         $url=APP_URL.$app['router']->reform($controller, $action, $params);
 
         return url_normalize($url);
@@ -115,8 +115,8 @@
 
         $url=url_for($controller, $action, $params);
 
-        if($config['ssl']){
-            $url=preg_replace('/^http:/', 'https:', $url);
+        if(!empty($config['ssl'])){
+            $url=str_replace('http://', 'https://', $url);
         }
         return $url;
     }
@@ -127,9 +127,8 @@
         preg_match_all('/[a-z0-9\-_]+/i', $title, $m);
         $words=array_map('strtolower', array_filter($m[0], 'strlen'));
 
-        // 防止name超限
         if(count($words) > $limit){
-            $words=array_splice($words, 0, $limit);
+            $words=array_slice($words, 0, $limit);
         }
 
         // 合并
@@ -147,7 +146,7 @@
         $result=array();
         $result[]=$parts['scheme'].'://';
         $result[]=$parts['host'];
-        $result[]=isset($parts['port']) ? $parts['port'] : "";
+        $result[]=isset($parts['port']) ? ':'.$parts['port'] : "";
         $result[]=$parts['path'];
         $result[]=isset($parts['query']) ? '?'.$parts['query'] : "";
         $result[]=isset($parts['fragment']) ? '#'.$parts['fragment'] : '';
@@ -164,36 +163,27 @@
 
         $parts=parse_url(trim($url));
 
-        // Another host
+        // 完整的绝对 URL，直接返回
         if(isset($parts['host']) && isset($parts['scheme'])) return $url;
 
         $current=parse_url($current);
 
-        $path=isset($current['path']) ? explode("/",  $current['path']) : array("");
+        $path=isset($current['path']) ? explode("/", $current['path']) : [""];
         if(isset($parts['path'])){
-            // Jump to root if path begins with '/'
-            if(strpos($parts['path'],'/')===0) $path=array();
-
-            // Remove tip file
-            if(count($path)>1) array_pop($path);
-
-            // Normalize path
-            foreach(explode("/", $parts['path']) as $p){
-                if($p=="."){
-                    continue;
-                }
-                elseif($p=='..'){
-                    if(count($path)>1) array_pop($path);
-                    continue;
-                }
-                else{
-                    array_push($path, $p);
-                }
+            // 以 / 开头则跳转到根
+            if($parts['path'][0] === '/'){
+                $path=[];
             }
-        }
-        $parts['path']=implode("/", $path);
+            else{
+                // 去掉当前路径末尾的文件名
+                if(count($path) > 1) array_pop($path);
+            }
 
-        // Build url
+            // 用 path_normalize 规范化
+            $combined=implode("/", $path).'/'.$parts['path'];
+            $parts['path']=path_normalize($combined);
+        }
+
         return url_build(array_merge($current, $parts));
     }
 
@@ -207,7 +197,6 @@
         $path="asset/".trim($asset, '/ ');
         $base=APP_URL;
 
-        // 如果定义了CDN，则从CDN列表中随机抽取
         global $app;
         static $cdns=null;
         if($cdns || (isset($app['cdn']) && is_array($app['cdn']))){
@@ -230,6 +219,5 @@
             $fragment="?t=$bundle->last_modified.$bundle->total_size";
         }
 
-        // Always return url, let web server handle it
         return url_normalize($base.'/asset/'.$asset.$fragment);
     }
