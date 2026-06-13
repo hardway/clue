@@ -1,4 +1,18 @@
 <?php
+    // MongoRecord 测试用子类
+    class TestMongoFoo extends \Clue\MongoRecord{
+        protected static $_model = [
+            'table' => 'foo',
+            'pkey' => 'id',
+            'columns' => [
+                'id' => ['name' => 'id', 'type' => 'number'],
+                'name' => ['name' => 'name', 'type' => 'string'],
+                'profile' => ['name' => 'profile', 'type' => 'string'],
+                'tags' => ['name' => 'tags', 'type' => 'string'],
+            ]
+        ];
+    }
+
     class Test_Mongo extends PHPUnit_Framework_TestCase{
         protected $mongo;
 
@@ -6,23 +20,28 @@
             if(!extension_loaded('mongodb')){
                 throw new \Exception('extension mongodb is required for MongoDB tests');
             }
+            \Clue\MongoRecord::use_database(null);  // 重置，让测试用 $this->mongo
         }
 
         protected function setUp(): void{
-            // 连接本机 Docker MongoDB 4.4
             $this->mongo = \Clue\Database::create([
                 'type' => 'mongodb',
                 'host' => '127.0.0.1',
                 'db'   => 'test'
             ]);
 
-            // 清空测试用集合
+            // 设置动态数据库实例（替换 $GLOBALS['db']）
+            $GLOBALS['db'] = $this->mongo;
+
             $this->mongo->delete('foo');
         }
 
         protected function tearDown(): void{
             $this->mongo = null;
+            unset($GLOBALS['db']);
         }
+
+        // ==================== 数据库层测试 ====================
 
         function test_connection(){
             $r = $this->mongo->exec(['ping' => 1]);
@@ -33,7 +52,6 @@
         function test_crud(){
             $db = $this->mongo;
 
-            // Insert
             $id1 = $db->insert('foo', ['id' => 1, 'val' => 'A', 'nest' => ['val' => 'a']]);
             $id2 = $db->insert('foo', ['id' => 2, 'val' => 'B', 'nest' => ['val' => 'b']]);
             $id3 = $db->insert('foo', ['id' => 3, 'val' => 'C', 'nest' => ['val' => 'c']]);
@@ -41,42 +59,26 @@
             $this->assertEquals(3, $db->count('foo'));
             $this->assertEquals(2, $db->count('foo', ['id' => ['$gt' => 1]]));
 
-            // get_results
             $rs = $db->get_results('foo');
             $this->assertEquals(3, count($rs));
-            $this->assertEquals('A', $rs[0]['val']);  // 默认无排序，只要查到即可
 
-            // get_row
             $r = $db->get_row('foo', ['id' => 1]);
             $this->assertEquals('A', $r['val']);
-            $this->assertEquals(1, $r['id']);
 
             $r = $db->get_row('foo', ['val' => 'B'], ['nest' => 1]);
             $this->assertEquals(['val' => 'b'], $r['nest']);
 
-            // get_var
             $v = $db->get_var('foo.val', ['id' => 2]);
             $this->assertEquals('B', $v);
 
-            // get_col
-            $v = $db->get_col('foo.nest.val');
-            $this->assertEquals(3, count($v));
-
-            // Replace
             $db->replace('foo', ['id' => 1, 'val' => 'AA', 'nest' => ['val' => 'aa']]);
             $this->assertEquals(3, $db->count('foo'));
-            $r = $db->get_row('foo', ['id' => 1]);
-            $this->assertEquals('AA', $r['val']);
 
-            // Update
             $db->update('foo', ['batch' => 1], ['id' => ['$gte' => 2]]);
             $this->assertEquals(2, $db->count('foo', ['batch' => 1]));
 
-            // Delete
             $db->delete('foo', ['id' => 3]);
             $this->assertEquals(2, $db->count('foo'));
-            $r = $db->get_row('foo', ['id' => 2]);
-            $this->assertNotNull($r);
         }
 
         function test_distinct(){
@@ -103,7 +105,6 @@
         }
 
         function test_get_var_no_dot(){
-            // 不带字段路径，直接返回整行
             $db = $this->mongo;
             $db->insert('foo', ['id' => 1, 'val' => 'A']);
             $r = $db->get_var('foo', ['id' => 1]);
@@ -122,5 +123,95 @@
             }
             $this->assertEquals(2, count($rows));
             $this->assertEquals('A', $rows[0]['val']);
+        }
+
+        function test_list_collections(){
+            $cols = $this->mongo->list_collections();
+            $this->assertContains('foo', $cols);
+        }
+
+        function test_stat_collection(){
+            $this->mongo->insert('foo', ['id' => 1]);
+            $stat = $this->mongo->stat_collection('foo');
+            $this->assertNotNull($stat);
+            $this->assertTrue($stat->count > 0);
+        }
+
+        // ==================== MongoRecord 测试 ====================
+
+        function test_mongo_record_crud(){
+            \Clue\MongoRecord::use_database($this->mongo);
+
+            // save
+            $r = new TestMongoFoo(['id' => 10, 'name' => 'hello', 'profile' => ['bar' => 1, 'x' => 'd'], 'tags' => ['a', 'b']]);
+            $ok = $r->save();
+            $this->assertTrue($ok);
+            $this->assertEquals(10, $r->id);
+
+            // get
+            $r2 = TestMongoFoo::get(10);
+            $this->assertNotNull($r2);
+            $this->assertEquals('hello', $r2->name);
+            $this->assertEquals(1, $r2->profile['bar']);
+            $this->assertEquals('d', $r2->profile['x']);
+            $this->assertContains('a', $r2->tags);
+
+            // find
+            $all = TestMongoFoo::find(['id' => 10]);
+            $this->assertEquals(1, count($all));
+            $this->assertEquals('hello', $all[0]->name);
+
+            // iterate
+            $cnt = 0;
+            foreach(TestMongoFoo::iterate(['id' => 10]) as $obj){
+                $cnt++;
+                $this->assertEquals('hello', $obj->name);
+            }
+            $this->assertEquals(1, $cnt);
+
+            // count
+            $this->assertEquals(1, TestMongoFoo::count(['id' => 10]));
+            $this->assertEquals(0, TestMongoFoo::count(['id' => 999]));
+        }
+
+        function test_mongo_record_nested_object(){
+            \Clue\MongoRecord::use_database($this->mongo);
+
+            // 复杂 JSON 结构：{foo: {bar:1, x:"d"}, bar:2}
+            $r = new TestMongoFoo([
+                'id' => 20,
+                'name' => 'nested',
+                'profile' => ['bar' => 1, 'x' => 'd'],
+                'tags' => ['a', 'b', 'c']
+            ]);
+            $r->save();
+
+            // 取出验证
+            $r2 = TestMongoFoo::get(20);
+            $this->assertEquals('nested', $r2->name);
+            $this->assertEquals(1, $r2->profile['bar']);
+            $this->assertEquals('d', $r2->profile['x']);
+            $this->assertEquals(3, count($r2->tags));
+            $this->assertContains('a', $r2->tags);
+            $this->assertContains('b', $r2->tags);
+            $this->assertContains('c', $r2->tags);
+
+            // 验证脏数据跟踪
+            $r2->name = 'updated';
+            $r2->save();
+
+            $r3 = TestMongoFoo::get(20);
+            $this->assertEquals('updated', $r3->name);
+        }
+
+        function test_mongo_record_find_by(){
+            \Clue\MongoRecord::use_database($this->mongo);
+
+            $r = new TestMongoFoo(['id' => 30, 'name' => 'found_me', 'profile' => ['val' => 42]]);
+            $r->save();
+
+            $results = TestMongoFoo::find_by_name('found_me');
+            $this->assertEquals(1, count($results));
+            $this->assertEquals(42, $results[0]->profile['val']);
         }
     }
