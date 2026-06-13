@@ -30,6 +30,7 @@ class Crawler{
     public $client;
     public $last_delay;
     public $retry_download;
+    public $retry_delay = 5;
     public $debug;
     public $delay;
     public $pending = [];
@@ -128,7 +129,7 @@ class Crawler{
 
             $retry++;
             $html=$this->client->get($url);
-            $this->traffic_control(5);
+            $this->traffic_control($this->retry_delay);
         }
 
         // 保存临时文件，方便调试
