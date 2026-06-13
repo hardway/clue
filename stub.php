@@ -48,3 +48,25 @@
     require_once __DIR__.'/autoload.php';
     require_once __DIR__."/tool.php";
     require_once __DIR__."/url.php";
+
+    // ====== 函数别名（在全局命名空间创建短名） ======
+
+    /**
+     * 为 namespaced function 创建全局别名
+     */
+    if(!function_exists('function_alias')){
+        function function_alias($alias, $original){
+            if(function_exists($alias) || !function_exists($original)) return;
+
+            eval(sprintf(
+                'function %s(...$args) { return \%s(...$args); }',
+                $alias,
+                ltrim($original, '\\')
+            ));
+        }
+    }
+
+    // 常用函数别名
+    function_alias('url_for',   '\\Clue\\url_for');
+    function_alias('url_slug',  '\\Clue\\url_slug');
+    function_alias('asset',     '\\Clue\\asset');
