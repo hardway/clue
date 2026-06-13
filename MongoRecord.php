@@ -27,6 +27,10 @@ class MongoRecord extends ActiveRecord{
         return self::db()->distinct($model['table'], $field, $query);
     }
 
+    static function count($cond=[]){
+        return self::db()->count(self::model()['table'], $cond);
+    }
+
     static function get($id){
         $model=self::model();
         $pkey=$model['columns'][$model['pkey']]['name'];
@@ -35,7 +39,7 @@ class MongoRecord extends ActiveRecord{
         if($row){
             $class=get_called_class();
             $r=new $class($row);
-            // $r->_snap_shot();
+            $r->_snap_shot();
             $r->after_retrieve();
 
             return $r;
@@ -44,13 +48,29 @@ class MongoRecord extends ActiveRecord{
             return false;
     }
 
+    static function find_one($cond=[]){
+        $class=get_called_class();
+        $r=self::db()->get_row(self::model()['table'], $cond);
+        if($r){
+            $obj=new $class($r);
+            $obj->_snap_shot();
+            $obj->after_retrieve();
+            return $obj;
+        }
+        return null;
+    }
+
+    static function find_all($cond=[]){
+        return self::find($cond);
+    }
+
     static function iterate($cond=[], $option=[]){
         $class=get_called_class();
 
         $iter=self::db()->iterate_results(self::model()['table'], $cond, [], $option);
         foreach($iter as $r){
             $r=new $class($r);
-            // $r->_snap_shot();
+            $r->_snap_shot();
             $r->after_retrieve();
 
             yield $r;
@@ -62,30 +82,28 @@ class MongoRecord extends ActiveRecord{
     }
 
     function save(){
-        // 验证业务逻辑是否允许保存
         if(!$this->validate()) return false;
 
-        // 确保自动生成一个ID
+        $model=self::model();
+
         if($this->id==null){
             $this->id=\Clue\uuid();
         }
-        // $old_data=$this->_snap;
-        // $dirty_data=[];
-        // foreach($model['columns'] as $c=>$m){
-        //     if(isset($m['readonly']) || @$this->_snap[$c]===$this->$c) continue;
 
-        //     $dirty_data[$c]=$this->$c;
-        // }
+        $old_data=$this->_snap;
+        $dirty_data=[];
+        foreach($model['columns'] as $c=>$m){
+            if(isset($m['readonly']) || @$this->_snap[$c]===$this->$c) continue;
+            $dirty_data[$c]=$this->$c;
+        }
 
-        // if(!$this->before_save($dirty_data)) return false;
+        if(!$this->before_save($dirty_data)) return false;
 
         $obj=$this->to_array();
-
-        $model=self::model();
         $ok=self::db()->replace($model['table'], $obj);
 
-        // $this->_snap_shot();
-        // $this->after_save($this->_snap, $old_data);
+        $this->_snap_shot();
+        $this->after_save($this->_snap, $old_data);
 
         return $ok;
     }
