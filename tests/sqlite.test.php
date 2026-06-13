@@ -170,6 +170,61 @@
             $this->assertTrue($ret);
         }
 
+        // ==================== iterate_results ====================
+
+        function test_iterate_results(){
+            $rows = [];
+            foreach(self::$db->iterate_results("SELECT * FROM " . self::$table . " ORDER BY id") as $r){
+                $rows[] = $r;
+            }
+            $this->assertEquals(2, count($rows));
+            $this->assertEquals('foo', $rows[0]->name);
+        }
+
+        function test_iterate_results_array(){
+            $rows = [];
+            foreach(self::$db->iterate_results("SELECT * FROM " . self::$table . " ORDER BY id", ARRAY_A) as $r){
+                $rows[] = $r;
+            }
+            $this->assertEquals(2, count($rows));
+            $this->assertEquals('foo', $rows[0]['name']);
+        }
+
+        function test_iterate_results_break(){
+            // 提前 break 不泄漏
+            $count = 0;
+            foreach(self::$db->iterate_results("SELECT * FROM " . self::$table . " ORDER BY id") as $r){
+                $count++;
+                break;
+            }
+            $this->assertEquals(1, $count);
+
+            // break 后还能正常执行其他查询
+            $cnt = self::$db->get_var("SELECT COUNT(*) FROM " . self::$table);
+            $this->assertEquals(2, $cnt);
+        }
+
+        function test_iterate_results_empty(){
+            $rows = [];
+            foreach(self::$db->iterate_results("SELECT * FROM " . self::$table . " WHERE name=%s", 'nonexistent') as $r){
+                $rows[] = $r;
+            }
+            $this->assertEquals(0, count($rows));
+        }
+
+        /** iterate_results 支持 format 参数 */
+        function test_iterate_results_format(){
+            $rows = [];
+            foreach(self::$db->iterate_results(
+                "SELECT * FROM %t WHERE name=%s ORDER BY id",
+                self::$table, 'foo', OBJECT
+            ) as $r){
+                $rows[] = $r;
+            }
+            $this->assertEquals(1, count($rows));
+            $this->assertEquals('foo', $rows[0]->name);
+        }
+
         // ==================== 错误处理 ====================
 
         function test_error_on_bad_sql(){

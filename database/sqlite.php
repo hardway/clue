@@ -98,6 +98,36 @@ namespace Clue\Database{
             return $this->dbh->changes();
         }
 
+		function iterate_results($sql, $mode=OBJECT){
+            // 解析参数，支持 format 风格
+            $args=func_get_args();
+            $mode=array_pop($args);
+            if($mode!=OBJECT && $mode!=ARRAY_A && $mode!=ARRAY_N){
+                array_push($args, $mode);
+                $mode=OBJECT;
+            }
+
+            $this->free_result();
+            $sql=call_user_func_array(array($this, "format"), $args);
+            $this->audit($sql);
+
+            $this->_result=$this->dbh->query($sql);
+            if(!$this->_result){
+                $this->setError(array('error'=>$this->dbh->lastErrorMsg(), 'code'=>$this->dbh->lastErrorCode()));
+                return;
+            }
+
+            $fetchMode=($mode==ARRAY_N) ? SQLITE3_NUM : SQLITE3_ASSOC;
+
+            try {
+                while($r=$this->_result->fetchArray($fetchMode)){
+                    yield $mode===OBJECT ? (object)$r : $r;
+                }
+            } finally {
+                $this->free_result();
+            }
+        }
+
 		function has_table($table){
 			$cnt=$this->get_var(
 				"select count(*) from sqlite_master where type='table' and tbl_name=".$this->quote($table)
@@ -156,34 +186,11 @@ namespace Clue\Database{
 		}
 
 		function get_results($sql, $mode=OBJECT){
-            if (!call_user_func_array(array($this, "exec"), func_get_args())) {
-                return false;
+            $result=[];
+            foreach($this->iterate_results(...func_get_args()) as $r){
+                $result[]=$r;
             }
-
-            $result=array();
-            $mode=func_get_arg(func_num_args()-1);
-            if($mode!=OBJECT && $mode!=ARRAY_A && $mode!=ARRAY_N){
-                $mode=OBJECT;
-            }
-
-			if($mode==OBJECT){
-				while($r=$this->_result->fetchArray(SQLITE3_ASSOC)){
-					$result[]=(object)$r;
-				}
-			}
-			else if($mode==ARRAY_A){
-				while($r=$this->_result->fetchArray(SQLITE3_ASSOC)){
-					$result[]=$r;
-				}
-			}
-			else if($mode==ARRAY_N){
-				while($r=$this->_result->fetchArray(SQLITE3_NUM)){
-					$result[]=$r;
-				}
-			}
-
-			$this->free_result();
-			return $result;
+            return $result;
 		}
 	}
 }
