@@ -4,7 +4,9 @@
  */
 namespace Clue\Database{
     class MongoDB extends \Clue\Database{
-        protected $_result;
+        public $conn;
+        public $db;
+        public $log;
 
         function __construct(array $param){
             if(!extension_loaded('mongodb')) throw new \Exception(__CLASS__.": extension mongodb is missing!");
@@ -16,14 +18,21 @@ namespace Clue\Database{
         }
 
         function __destruct(){
-            if($this->db){
-                $this->exec(['logout'=>1]);
+            // 析构时清理连接资源
+        }
+
+        /** 规范化 _id 字段：id → _id，$oid → ObjectId */
+        private function _prepare_id(array &$doc): void{
+            if(isset($doc['id']) && !isset($doc['_id'])){
+                $doc['_id']=$doc['id'];
+            }
+            if(isset($doc['_id']['$oid'])){
+                $doc['_id']=new \MongoDB\BSON\ObjectId($doc['_id']['$oid']);
             }
         }
 
         function insert($collection, $doc){
-            if(isset($doc['id']) && !isset($doc['_id'])) $doc['_id']=$doc['id'];
-            if(isset($doc['_id']['$oid'])) $doc['_oid']=new \MongoDB\BSON\ObjectId($doc['_id']['$oid']);
+            $this->_prepare_id($doc);
 
             $cmd=[
                 'insert'=>$collection,
@@ -32,16 +41,17 @@ namespace Clue\Database{
 
             $r=$this->command($cmd, 'write', 'row');
 
-            if(@$r->writeErrors) foreach($r->writeErrors as $e){
-                $this->setError(['code'=>$e->code, 'error'=>$e->errmsg]);
+            if(isset($r->writeErrors)){
+                foreach($r->writeErrors as $e){
+                    $this->setError(['code'=>$e->code, 'error'=>$e->errmsg]);
+                }
             }
 
-            return $r->ok ? @$doc['_id'] : false;
+            return ($r->ok ?? false) ? ($doc['_id'] ?? null) : false;
         }
 
         function replace($collection, $doc){
-            if(isset($doc['id']) && !isset($doc['_id'])) $doc['_id']=$doc['id'];
-            if(isset($doc['_id']['$oid'])) $doc['_id']=new \MongoDB\BSON\ObjectId($doc['_id']['$oid']);
+            $this->_prepare_id($doc);
 
             $cmd=[
                 'update'=>$collection,
@@ -129,7 +139,7 @@ namespace Clue\Database{
          * @param $func 执行方式: default | read | write
          * @param $return 返回风格: row | result | iterator
          */
-        function command($cmd, $func="executeCommand", $return="row"){
+        function command($cmd, $func='default', $return='row'){
             if(!$cmd instanceof \MongoDB\Driver\Command){
                 $sql=json_encode($cmd);
                 $cmd=new \MongoDB\Driver\Command($cmd);
@@ -143,7 +153,7 @@ namespace Clue\Database{
                 'read'=>'executeReadCommand',
                 'write'=>'executeWriteCommand',
             ];
-            $func=$funcMap[$func];
+            $func=$funcMap[$func] ?? throw new \Exception("Unknown MongoDB command function: $func");
 
             $t_begin=microtime(true);
             $rs=$this->conn->$func($this->db, $cmd);
@@ -214,9 +224,12 @@ namespace Clue\Database{
 
         function get_var($path, $query=[]){
             // Path必须是"Collection.Fields"格式
-            list($collection, $field)=explode(".", $path, 2);
+            $parts=explode(".", $path, 2);
+            $collection=$parts[0];
+            $field=$parts[1] ?? null;
 
             $r=$this->get_row($collection, $query);
+            if($field===null) return $r;
 
             foreach(explode(".", $field) as $f){
                 if(!isset($r[$f])) return null;
@@ -227,20 +240,23 @@ namespace Clue\Database{
         }
 
         function get_col($path, $query=[]){
-            // Path必须是"Collection.Fields"格式
-            list($collection, $field)=explode(".", $path, 2);
+            $parts=explode(".", $path, 2);
+            $collection=$parts[0];
+            $field=$parts[1] ?? null;
 
             $result=[];
-            foreach($this->iterate_results($collection, $query, ["$field"=>1]) as $r){
-                foreach(explode(".", $field) as $f){
-                    if(!isset($r[$f])){
-                        $r=null; break;
-                    }
-
-                    $r=$r[$f];
+            foreach($this->iterate_results($collection, $query, $field ? [$field=>1] : []) as $r){
+                if($field===null){
+                    $result[]=$r;
+                    continue;
                 }
 
-                $result[]=$r;
+                $val=$r;
+                foreach(explode(".", $field) as $f){
+                    if(!isset($val[$f])){ $val=null; break; }
+                    $val=$val[$f];
+                }
+                $result[]=$val;
             }
 
             return $result;
