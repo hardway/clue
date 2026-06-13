@@ -12,12 +12,8 @@ namespace Clue\Database{
 			if(!extension_loaded('sqlite3'))
 				throw new \Exception(__CLASS__.": extension sqlite3 is missing!");
 
-			// Check Parameter, TODO: access mode
+			// SQLite3 构造失败会抛异常，无需额外检查
 			$this->dbh=new \SQLite3($param['db'], @$param['readonly'] ? SQLITE3_OPEN_READONLY : SQLITE3_OPEN_READWRITE | SQLITE3_OPEN_CREATE);
-
-			if(!$this->dbh){
-				$this->setError(array('error'=>SQLite3::lastErrorMsg()));
-			}
 
             $this->dbh->createFunction('regexp', function($pattern, $string) {
                 if(preg_match('/'.$pattern.'/i', $string)) {
@@ -42,31 +38,37 @@ namespace Clue\Database{
 			$this->_result=null;
 		}
 
-        // TODO: 使用statement和bind
         function quote($data){
+            if(is_null($data) || $data===false) return 'null';
             return "'".$this->escape($data)."'";
         }
 
         function escape($data){
-            return \SQLite3::escapeString($data);
+            if(is_null($data) || $data===false) return 'null';
+            return \SQLite3::escapeString((string)$data);
         }
 
 		function insert_id(){
 			return $this->dbh->lastInsertRowID();
 		}
 
+        function replace($table, $fields){
+            return $this->insert($table, $fields, 'insert or replace');
+        }
+
         function insert_ignore($table, $fields){
             return $this->insert($table, $fields, 'insert or ignore');
         }
 
         function insert($table, $fields, $verb='insert'){
-            $cols=array();
-            $vals=array();
+            $cols=[];
+            $vals=[];
+            $table='`'.trim($table, '`').'`';
             foreach($fields as $c=>$v){
                 $cols[]='`'.trim($c, '`').'`';
                 $vals[]=":$c";
             }
-            $sql="$verb into `$table`(".implode(',', $cols).") values(".implode(',', $vals).")";
+            $sql="$verb into $table(".implode(',', $cols).") values(".implode(',', $vals).")";
 
             $stmt=$this->dbh->prepare($sql);
             foreach($fields as $c=>$v){
@@ -79,13 +81,14 @@ namespace Clue\Database{
         }
 
         function update($table, $fields, $where){
-            $updates=array();
+            $updates=[];
+            $table='`'.trim($table, '`').'`';
 
             foreach ($fields as $c=>$v) {
                 $updates[]="`$c`=:$c";
             }
 
-            $stmt=$this->dbh->prepare("update `$table` set ".implode(', ', $updates)." where $where");
+            $stmt=$this->dbh->prepare("update $table set ".implode(', ', $updates)." where $where");
             foreach($fields as $c=>$v){
 	            $stmt->bindValue(":$c", $v);
 	        }
@@ -96,20 +99,20 @@ namespace Clue\Database{
         }
 
 		function has_table($table){
-			$cnt=$this->get_var("select count(*) from sqlite_master where type='table' and tbl_name='$table'");
+			$cnt=$this->get_var(
+				"select count(*) from sqlite_master where type='table' and tbl_name=".$this->quote($table)
+			);
 			return $cnt==1;
 		}
 
 		function exec($sql){
-			$result_type=false;
-
 			$this->free_result();
 
             if(func_num_args()>1){
                 $sql=call_user_func_array(array($this, "format"), func_get_args());
-				$this->audit($sql);
             }
 
+			$this->audit($sql);
 			$this->_result=$this->dbh->query($sql);
 
 			if(!$this->_result){
@@ -122,11 +125,22 @@ namespace Clue\Database{
 		}
 
 		function get_var($sql){
+			$this->audit($sql);
 			return $this->dbh->querySingle($sql);
 		}
 
 		function get_row($sql, $mode=OBJECT){
-			return $this->dbh->querySingle($sql, true);
+			$this->audit($sql);
+			$r=$this->dbh->querySingle($sql, true);  // 始终返回 associative array
+			if(empty($r)) return null;
+
+			if($mode==ARRAY_N){
+				return array_values($r);
+			}
+			if($mode==OBJECT){
+				return (object)$r;
+			}
+			return $r;  // ARRAY_A
 		}
 
 		function get_col($sql){
@@ -154,8 +168,7 @@ namespace Clue\Database{
 
 			if($mode==OBJECT){
 				while($r=$this->_result->fetchArray(SQLITE3_ASSOC)){
-					$r = json_decode(json_encode($r), FALSE);
-					$result[]=$r;
+					$result[]=(object)$r;
 				}
 			}
 			else if($mode==ARRAY_A){

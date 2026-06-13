@@ -68,8 +68,8 @@ namespace Clue{
             $this->errors[]=$err;
 
             error_log("SQL ERROR: {$err['code']} {$err['error']}");
-            error_log($this->last_query);
-            error_log($err['location']);
+            error_log((string)$this->last_query);
+            if(isset($err['location'])) error_log($err['location']);
 
             throw new \Exception("SQL ERROR: {$err['code']} {$err['error']} [$this->last_query]");
         }

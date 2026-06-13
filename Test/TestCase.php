@@ -154,6 +154,21 @@ class TestCase {
         $this->_expectExceptionMessageRegex = '';
     }
 
+    // ========== 临时抑制 PHP 警告 ==========
+
+    private int $_warningLevel = 0;
+
+    /** 保存当前 error_reporting 并关闭警告 */
+    protected function suppressWarnings(): void {
+        $this->_warningLevel = error_reporting();
+        error_reporting(0);
+    }
+
+    /** 恢复之前保存的 error_reporting */
+    protected function restoreWarnings(): void {
+        error_reporting($this->_warningLevel);
+    }
+
     // ========== Helpers ==========
 
     private function export($value): string {
