@@ -27,7 +27,8 @@ namespace Clue{
             }
 
             $this['referer_url']=isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : null;
-            $this['return_url']=urldecode(POST('return_url') ?: GET('return_url') ?: $this['referer_url']);
+            $url=POST('return_url') ?: GET('return_url') ?: ($this['referer_url'] ?? '');
+            $this['return_url']=$url ? urldecode($url) : '';
 
             if(@$this['config']['database']){
             	// 按需加载，不再需要设置default
