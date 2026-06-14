@@ -5,8 +5,8 @@ class DBSession implements \SessionHandlerInterface{
     public function __construct(array $options=[]){
         $this->db=$options['db'];
 
-        $this->table=@$options['table'] ?: "_session";
-        $this->ttl=@$options['ttl'] ?: 1440;
+        $this->table=isset($options['table']) ? $options['table'] : '_session';
+        $this->ttl=isset($options['ttl']) ? (int)$options['ttl'] : 1440;
     }
 
     function remember($retention){
@@ -21,7 +21,7 @@ class DBSession implements \SessionHandlerInterface{
             $this->db->exec("
                 CREATE TABLE `$this->table`(
                     id varchar(32) not null primary key,
-                    ipaddr varchar(16) not null,
+                    ipaddr varchar(45) not null,
                     useragent varchar(256),
                     created datetime not null,
                     retention int not null default 0,   -- 多少天内可以用cookie恢复
@@ -37,7 +37,7 @@ class DBSession implements \SessionHandlerInterface{
     public function read($session_id) : string|false{
         $s=$this->db->get_row("select *, now() now from $this->table where id=%s", $session_id);
 
-        if(!$s) return null;
+        if(!$s) return false;
 
         // 检测是否超时
         $idle=strtotime($s->now) - strtotime($s->last_update);
@@ -49,7 +49,7 @@ class DBSession implements \SessionHandlerInterface{
             }
             else{
                 $this->destroy($s->id);
-                return null;
+                return false;
             }
         }
 
@@ -60,8 +60,8 @@ class DBSession implements \SessionHandlerInterface{
         $this->db->exec("
             insert into $this->table (id, ipaddr, useragent, created, data)
             values(%s, %s, %s, now(), %s)
-            on duplicate key update data=%s, last_update=now()
-        ", $session_id, $_SERVER['REMOTE_ADDR'], @$_SERVER['HTTP_USER_AGENT'], $session_data, $session_data);
+            on duplicate key update data=%s, last_update=now(), ipaddr=%s, useragent=%s
+        ", $session_id, $_SERVER['REMOTE_ADDR'], @$_SERVER['HTTP_USER_AGENT'], $session_data, $session_data, $_SERVER['REMOTE_ADDR'], @$_SERVER['HTTP_USER_AGENT']);
 
         return true;
     }
@@ -84,7 +84,7 @@ class FileSession implements \SessionHandlerInterface{
         assert(isset($options['folder']), "options.folder is required");
 
         $this->folder=$options['folder'];
-        $this->ttl=@$options['ttl'] ?: 1440;
+        $this->ttl=isset($options['ttl']) ? (int)$options['ttl'] : 1440;
     }
 
     function remember($retention){
@@ -110,8 +110,9 @@ class FileSession implements \SessionHandlerInterface{
 
     public function read($session_id):string|false{
         $path="$this->folder/$session_id";
-        if(!file_exists($path)) return null;
+        if(!file_exists($path)) return false;
 
+        clearstatcache(true, $path);
         $json=json_decode(file_get_contents($path), true);
         $idle=time() - filemtime($path);
 
@@ -119,11 +120,11 @@ class FileSession implements \SessionHandlerInterface{
         if($idle > $this->ttl){
             // 综合IP和Agent，是否可以根据Cookie恢复
             if(@$json['retention'] && $idle < $json['retention']*86400 && $_SERVER['REMOTE_ADDR']==$json['ipaddr'] && @$_SERVER['HTTP_USER_AGENT']==$json['useragent']){
-                $this->write($session_id, $s->data);
+                $this->write($session_id, $json['data']);
             }
             else{
                 $this->destroy($session_id);
-                return null;
+                return false;
             }
         }
 
@@ -138,6 +139,7 @@ class FileSession implements \SessionHandlerInterface{
                 'ipaddr'=>@$_SERVER['REMOTE_ADDR'],
                 'useragent'=>@$_SERVER['HTTP_USER_AGENT'],
                 'created'=>time(),
+                'data'=>'',
             ];
         }
         else{
@@ -145,7 +147,7 @@ class FileSession implements \SessionHandlerInterface{
         }
 
         // 避免重复写入
-        if($json['data']!=$session_data){
+        if($json['data']!==$session_data){
             $json['data']=$session_data;
             file_put_contents("$this->folder/$session_id", json_encode($json), LOCK_EX);
         }
@@ -162,10 +164,10 @@ class FileSession implements \SessionHandlerInterface{
             if($f[0]=='.') continue;
 
             $path="$this->folder/$f";
-            $idle=tiem() - filemtime($path);
+            $idle=time() - filemtime($path);
             if($idle > $maxlifetime){
                 // 检查Retention
-                $json=json_decode(file_get_contents($f), true);
+                $json=json_decode(file_get_contents($path), true);
                 if($idle > @$json['retention']*86400){
                     $this->destroy($f);
                 }
