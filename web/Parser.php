@@ -383,6 +383,17 @@ class Element implements \ArrayAccess{
         return preg_replace("/\e+/", "\n", $text);
     }
 
+    /**
+     * 返回消除多余空白后的文本
+     * 相比 get_text() 去掉了 \e 转义和元素间空白导致的空行
+     */
+    function get_trimmed_text($n){
+        $text = $this->get_text($n);
+        $text = preg_replace('/\n[ \t]+/', "\n", $text);
+        $text = preg_replace('/\n{3,}/', "\n\n", $text);
+        return trim($text);
+    }
+
     function get_html($n){
         $html="";
         $html="<".$n->tagName;
