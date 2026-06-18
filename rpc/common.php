@@ -14,7 +14,7 @@ function clue_rpc_encrypt($str, $secret=RPC_SECRET){
     }
 
     if (extension_loaded('openssl')) {
-        if (!in_array('BF-ECB', openssl_get_cipher_methods())) {
+        if (!in_array('BF-ECB', array_map('strtoupper', openssl_get_cipher_methods()))) {
             throw new RuntimeException(
                 'clue_rpc_encrypt: OpenSSL 3.0+ removed BF-ECB (Blowfish). '
                 . 'Install mcrypt extension, or configure OpenSSL legacy provider.'
@@ -39,7 +39,7 @@ function clue_rpc_decrypt($str, $secret=RPC_SECRET){
             MCRYPT_BLOWFISH, $secret, base64_decode($str), MCRYPT_MODE_ECB
         );
     } elseif (extension_loaded('openssl')) {
-        if (!in_array('BF-ECB', openssl_get_cipher_methods())) {
+        if (!in_array('BF-ECB', array_map('strtoupper', openssl_get_cipher_methods()))) {
             throw new RuntimeException(
                 'clue_rpc_decrypt: OpenSSL 3.0+ removed BF-ECB (Blowfish). '
                 . 'Install mcrypt extension, or configure OpenSSL legacy provider.'
