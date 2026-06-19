@@ -18,6 +18,6 @@ class Controller extends Clue\Controller{
         $sidebar=$this->book->index($path);
         $sidebar=$sidebar->render_content();
 
-        $this->render($page->view, ['page'=>$page, 'sidebar'=>$sidebar, 'search'=>url_for('doc', 'search')]);
+        $this->render($page->view, ['page'=>$page, 'sidebar'=>$sidebar, 'search'=>Clue\url_for('doc', 'search')]);
     }
 }

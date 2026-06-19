@@ -5,9 +5,10 @@
 
 	<title><?=defined("META_TITLE") ? META_TITLE : "CLUE SKELETON"?></title>
 
-    <link rel="stylesheet" type="text/css" href="<?=asset('clue.css')?>">
-    <link rel="stylesheet" type="text/css" href="<?=asset('app.css')?>">
-    <script type="text/javascript" src='<?=asset('app.js')?>' defer></script>
+    <link rel="stylesheet" type="text/css" href="<?=\Clue\asset('clue.css')?>">
+    <link rel="stylesheet" type="text/css" href="<?=\Clue\asset('app.css')?>">
+    <script src="https://unpkg.com/vue@3"></script>
+    <script type="text/javascript" src='<?=\Clue\asset('app.js')?>'></script>
 </head>
 <body>
     <div class='container'>
