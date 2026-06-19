@@ -38,10 +38,7 @@
         // 资源文件
         'asset'=>[
             'app.css'=>['asset/css/*.css', 'asset/css/*.less'],
-            'app.js'=>[
-                // 'asset/vue-spectre/vue.min.js',
-                'asset/vue-spectre/vs*.js'
-            ],
+            'app.js'=>[],
         ],
 
         'route'=>[

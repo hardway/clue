@@ -1,47 +1,31 @@
 ## 前端UI
 
-浏览器前端UI主要组合了[Vue][vue]和[Spectre.css][spectre]两个框架
+前端框架使用 [Spectre.css][spectre] 作为 CSS 基础，配合 [HTMX][htmx] 实现动态交互。
 
-[vue]: https://vuejs.org/
 [spectre]: https://picturepan2.github.io/spectre/index.html
+[htmx]: https://htmx.org/
 
-根据项目需要，也可以完全使用另外的前端框架或方案代替
+根据项目需要，也可以完全使用另外的前端框架或方案代替。
 
-## 现有组件
+## HTMX 示例
 
-#### AutoComplete
+点击按钮加载服务器时间：
 
-<script>
-    var vsa={
-        data:function(){
-            console.log("data");
-            return {}
-        },
-        mounted:function(){
-            console.log("MOUNT");
-        },
-        template:
-            "<div><h1>VSA</h1></div>"
-    };
-</script>
+```html
+<button class="btn btn-primary"
+        hx-get="/doc/htmx_time"
+        hx-target="#time-result"
+        hx-trigger="click">
+  🕐 获取服务器时间
+</button>
+```
 
-<div id='app'>
-    <vs-toast>HI</vs-toast>
-    <vs-autocomplete items="a, b, c">
-        asdf
-    </vsautocomplete>
+<div class="mt-2">
+<button class="btn btn-primary"
+        hx-get="/doc/htmx_time"
+        hx-target="#time-result"
+        hx-trigger="click">
+  🕐 获取服务器时间
+</button>
 </div>
-
-<script type="text/javascript">
-    Vue.createApp({
-        data() {
-          return {
-            message: 'Hello Vue!'
-          }
-        },
-        components:{
-            'vs-autocomplete': VueSpectre.Autocomplete,
-            'vs-toast': VueSpectre.Toast
-        }
-      }).mount('#app');
-</script>
+<div id="time-result" class="mt-2"></div>

@@ -10,6 +10,10 @@ class Controller extends Clue\Controller{
         $this->render($page->view, ['content'=>$page->content, 'search'=>'search']);
     }
 
+    function htmx_time(){
+        echo '<div class="toast toast-success">✅ 当前服务器时间：' . date('Y-m-d H:i:s') . '</div>';
+    }
+
     function __catch_params(){
         $path=implode('/', array_map('rawurldecode', func_get_args()));
 
