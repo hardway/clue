@@ -18,8 +18,12 @@
         </div>
 
     <?php if($search): ?>
-    <form class='clue-book-search' action='<?=$search?>'>
-        <input type='text' name='q' placeholder="Search" value="<?=htmlspecialchars(GET("q"))?>" />
+    <form class='clue-book-search' action='<?=$search?>'
+          hx-get='<?=$search?>' hx-target='.clue-book-html'>
+        <input type='search' name='q' placeholder="Search"
+               value="<?=htmlspecialchars(GET("q"))?>"
+               hx-trigger='keyup changed delay:500ms, search'
+               hx-get='<?=$search?>' hx-target='.clue-book-html' />
     </form>
     <?php endif; ?>
 
