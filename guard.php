@@ -14,6 +14,8 @@ class Guard{
     protected $errors=array();
     protected $channels=[];
     public $summarized=false;
+    protected $stop_level=0;
+    protected $error_threshold=0;
 
     public function __construct(array $option=array()){
         $default_config=array(
