@@ -120,6 +120,9 @@ class WebHandler extends SyslogHandler{
             echo $this->format($data);
         }
         elseif(isset($data['errors'])){
+            // 有错误输出则返回 500，消息取第一个错误作为 Reason-Phrase
+            header(@$data['errors'][0]['message'], true, 500);
+
             // 针对Guard::summarize()返回的全部error
             $errors=$data['errors']; unset($data['errors']);
             echo $this->format($data);
