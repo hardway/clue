@@ -47,11 +47,15 @@ namespace Clue{
             return null;
         }
 
-        function __construct($view=null, $parent=null){
+        function __construct($view, $parent=null){
+            if(!is_string($view) || trim($view) === ''){
+                throw new \InvalidArgumentException('View name must be a non-empty string');
+            }
+
             $this->template=self::find_view($view, $parent);
 
             if(empty($this->template)){
-                throw new \Exception("View does not exists: $view");
+                throw new \Exception("View does not exist: $view");
             }
 
             $this->view=strtolower(trim($view, '/'));
@@ -75,6 +79,12 @@ namespace Clue{
         function incl($view=null, $vars=array(), $default_view=null){
             // 未指定view则默认显示content内容
             if($view==null){
+                if(!isset($this->vars['content']) || !is_object($this->vars['content'])){
+                    throw new \RuntimeException('incl(): $this->vars["content"] is not set or not an object');
+                }
+                if(!method_exists($this->vars['content'], 'render')){
+                    throw new \RuntimeException('incl(): $this->vars["content"] has no render() method');
+                }
                 $this->vars['content']->render();
                 return;
             }
@@ -101,7 +111,7 @@ namespace Clue{
                 $this->vars=array_merge($this->vars, $vars);
 
             // View Logic
-            extract(array_merge($GLOBALS ?: [], $this->vars));
+            extract($this->vars);
 
             // Code Behind
             if(file_exists("$this->template.php")){
