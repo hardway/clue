@@ -16,6 +16,7 @@ class Guard{
     public $summarized=false;
     protected $stop_level=0;
     protected $error_threshold=0;
+    protected $mail_logger;
 
     public function __construct(array $option=array()){
         $default_config=array(
@@ -133,10 +134,12 @@ class Guard{
 
                 if(empty($errors)) continue;
 
+                $errors=array_values($errors);
+
                 // 记录Summary
                 $level=$errors[0]['type'];
-                $resource=@$context['_SERVER']['REQUEST_URI'] ?: $context['_SERVER']['SCRIPT_FILENAME'];
-                $message=count($errors)." error occured recently at \"$resource\"";
+                $resource=$context['_SERVER']['REQUEST_URI'] ?? $context['_SERVER']['SCRIPT_FILENAME'] ?? 'unknown';
+                $message=count($errors)." error occurred recently at \"$resource\"";
 
                 $context['first_error']=$errors[0]['type'].' '.$errors[0]['message'];
                 $context['first_trace']=$errors[0]['backtrace'][0]['file'].':'.$errors[0]['backtrace'][0]['line'];
@@ -159,8 +162,8 @@ class Guard{
      */
     function debug($var){
         $trace=debug_backtrace();
-        $t=$trace[0];
-        $location=isset($t['file']) ? $t['file'].":".$t['line'] : $item['t']['class'].$item['t']['type'].$item['t']['function'].'('.')';
+        $t=$trace[1] ?? $trace[0];
+        $location=isset($t['file']) ? $t['file'].":".$t['line'] : get_class($this)."::debug()";
 
         $this->channels['display']['logger']->debug($var, ['location'=>$location]);
         return;
@@ -187,7 +190,7 @@ class Guard{
         return \Clue\Logger::log_level($level);
     }
 
-    static $PHP_ERROR_MAP=array(
+    protected static $PHP_ERROR_MAP=array(
         E_NOTICE=>"NOTICE",             # 8
         E_USER_NOTICE=>'NOTICE',        # 1024
         E_STRICT=>'NOTICE',             # 2048
@@ -235,13 +238,13 @@ class Guard{
     function handle_exception($e){
         $trace=$e->getTrace();
         array_unshift($trace, ["file"=>$e->getFile(), 'line'=>$e->getLine()]);
-        return $this->handle_error(E_ERROR, "Exception: ".$e->getMessage(), $e->getFile(), $e->getLine(), $GLOBALS, $trace);
+        return $this->handle_error(E_ERROR, "Exception: ".$e->getMessage(), $e->getFile(), $e->getLine(), $trace);
     }
 
     /**
      * 记录发生的Error
      */
-    function handle_error($errno, $errstr, $errfile=null, $errline=null, array $errcontext=null, array $errtrace=array()){
+    function handle_error($errno, $errstr, $errfile=null, $errline=null, array $errtrace=array()){
         // if error has been supressed with an @
         if (!(error_reporting() & $errno)) return false;
 
