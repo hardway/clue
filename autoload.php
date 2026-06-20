@@ -115,7 +115,17 @@ namespace Clue{
             foreach([$class, strtolower($class), str_replace('_', '/', $class), str_replace('_', '/', strtolower($class))] as $cls){
                 $searches=[];
                 if(stripos($cls, (string)$ns)===0){
-                    $searches[]=sprintf("%s/%s.php", $path, str_ireplace($ns, '', $cls), '.php');
+                    $relative = str_ireplace($ns, '', $cls);
+                    $searches[]=sprintf("%s/%s.php", $path, $relative, '.php');
+
+                    // PHAR兼容: 目录全小写 + 文件名保留原始大小写
+                    // (phar内文件系统大小写敏感, 项目目录名全小写但文件名大小写不一)
+                    $parts = explode('/', $relative);
+                    $basename = array_pop($parts);
+                    if ($parts) {
+                        $lc_dir = implode('/', array_map('strtolower', $parts));
+                        $searches[] = sprintf("%s/%s/%s.php", $path, $lc_dir, $basename);
+                    }
                 }
                 $searches[]=sprintf("%s/%s.php", $path, $cls, '.php');
 
