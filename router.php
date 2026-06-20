@@ -68,7 +68,12 @@ namespace Clue{
 
         // 根据controller/action定位并返回相应的callable handler
         function determine_handler($controller, $action){
-            // TODO
+            $router=$this;
+            return function(...$args) use($router, $controller, $action){
+                $params=$args[0] ?? [];
+                if(!is_array($params)) $params=[$params];
+                return $router->route($controller, $action, $params);
+            };
         }
 
 
@@ -83,12 +88,13 @@ namespace Clue{
             if(!file_exists($path))
                 return $this->app->http_error(404, "No controller found: $controller");
 
+            $before=get_declared_classes();
             require_once $path;
 
-            // 用反射定位文件中定义的 Controller 类名
+            // 只检查 require 后新增的类，避免遍历全部已加载类
             $class=null;
             $realPath=realpath($path);
-            foreach(get_declared_classes() as $c){
+            foreach(array_diff(get_declared_classes(), $before) as $c){
                 $ref=new \ReflectionClass($c);
                 if($ref->getFileName() === $realPath && $ref->isSubclassOf('Clue\Controller')){
                     $class=$c;
@@ -339,8 +345,8 @@ namespace Clue{
                 }
             }
 
-            // url translate后生成的?query也要合并到GET中
-            $_GET=array_merge($_GET ?: [], $query);
+            // url translate 后生成的 ?query 合并到本地变量，不修改全局 $_GET
+            $merged_get=array_merge($_GET ?: [], $query);
             $candidates=explode("/", "/".trim($url,'/'));
             $params=array();
 
@@ -374,7 +380,7 @@ namespace Clue{
                 if($method=='POST') $mapping['action']="_".$mapping['action'];
 
                 // 将GET/POST一并加入参数中
-                $mapping['params']=array_map(function($v){if(is_string($v)) return rawurldecode($v); else return $v;}, array_merge($params, $_GET ?: [], $_POST ?: []));
+                $mapping['params']=array_map(function($v){if(is_string($v)) return rawurldecode($v); else return $v;}, array_merge($params, $merged_get, $_POST ?: []));
 
                 break;
             }
