@@ -5,6 +5,7 @@ namespace Clue\Tool{
 
     class Constructor{
         protected $root;
+        protected $options;
 
         protected $build_exclude=array(
             '/\/\./',   // 不要包含所有隐藏文件

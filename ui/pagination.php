@@ -34,6 +34,12 @@ namespace Clue\UI{
 			return "limit $begin, $size";
 		}
 
+		// MongoDB-style pagination: {limit: xx, skip: xx}
+		function limit_skip(){
+			$skip = ($this->page - 1) * $this->pageSize;
+			return ['limit' => $this->pageSize, 'skip' => $skip];
+		}
+
 		function item_range(){
 			$begin=($this->page-1) * $this->pageSize;
 			$end=($this->page) * $this->pageSize;
@@ -89,7 +95,8 @@ namespace Clue\UI{
 			}
 
             $view=new \Clue\View("clue/pagination");
-            $data=compact("prevLink", 'nextLink', 'links', 'currentPage', 'totalPages');
+            $total=$this->size;
+            $data=compact("prevLink", 'nextLink', 'links', 'currentPage', 'totalPages', 'total');
 
             $view->render($data);
 		}
