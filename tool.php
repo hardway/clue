@@ -68,12 +68,12 @@ namespace Clue{
      * 		  ]
      */
 	function run_command($command, $options=[]){
-		$timeout=$options['timeout'] ?: 0;
+		$timeout=$options['timeout'] ?? 0;
 		$last_output=null;					// 最后输出时间
-		$verbose=@$options['verbose'] ?: false;
+		$verbose=$options['verbose'] ?? false;
 
-		$cwd=@$options['cwd'] ?: null;
-		$env=@$options['env'] ?: null;
+		$cwd=$options['cwd'] ?? null;
+		$env=$options['env'] ?? null;
 		$desc = array(
 		   0 => array("pipe", "r"),
 		   1 => array("pipe", "w"),
@@ -102,7 +102,7 @@ namespace Clue{
 
 				$read=array_filter([$pipes[1], $pipes[2]], function($p){return !feof($p);});
 
-				if($last_output && $timeout && time() - $last_output > $timeout){
+				if($timeout && $last_output !== null && time() - $last_output > $timeout){
 					// 超过timeout没有任何输出
 					error_log("[CLUE] Proc terminated due to idle timeout: $timeout");
 					proc_terminate($process);
@@ -150,17 +150,17 @@ namespace Clue{
 
     # 检测浏览器cookie支持
     function cookie_test(){
-        if($_COOKIE['cookie_test']=='1'){
+        if(isset($_COOKIE['cookie_test']) && $_COOKIE['cookie_test']=='1'){
             if(isset($_GET['cookie_test'])){
-                header("Location: ".str_replace('cookie_test', '', $_SERVER['REQUEST_URI']));
+                header("Location: ".str_replace('cookie_test', '', $_SERVER['REQUEST_URI']), true, 302);
                 exit();
             }
             return true;
         }
         else{
-            if(strpos($_SERVER['QUERY_STRYING'], 'cookie_test')===FALSE){
+            if(strpos($_SERVER['QUERY_STRING'], 'cookie_test')===FALSE){
                 setcookie('cookie_test', '1', time()+86400, '/');
-                header("Location: ".$_SERVER['REQUEST_URI'].'?cookie_test');
+                header("Location: ".$_SERVER['REQUEST_URI'].'?cookie_test', true, 302);
                 exit();
             }
 
@@ -180,8 +180,7 @@ namespace Clue{
     	$ch = curl_init($url);
     	curl_setopt($ch, CURLOPT_HEADER, 0);
     	curl_setopt($ch, CURLOPT_RETURNTRANSFER, 1);
-    	curl_setopt($ch, CURLOPT_BINARYTRANSFER,1);
-
+    	
     	$raw_image_data = curl_exec($ch);
     	curl_close ($ch);
 
@@ -362,7 +361,7 @@ namespace Clue{
 			$if_none_match = isset($_SERVER['HTTP_IF_NONE_MATCH']) ? $_SERVER['HTTP_IF_NONE_MATCH'] : false;
 			if ($if_none_match == $etag  || (!$if_none_match && $timestamp == $if_modified_since))
 			{
-            	header('Not Modified', true, 304);
+            	http_response_code(304);
 			    exit();
 			}
 		}
@@ -378,7 +377,7 @@ namespace Clue{
 
 			$str=str_replace(
 				array("&", "<", ">", "\n", "\""),
-				array("&amp;", "&lt;", "&gt", "<br/>", "&quot;"),
+				array("&amp;", "&lt;", "&gt;", "<br/>", "&quot;"),
 				$str);
 
 			if($preservSpace){
@@ -522,7 +521,7 @@ namespace Clue{
      * 特殊字符被转码
      */
     function sanitize_string($input, $length=null){
-        $str=filter_var(trim($input), FILTER_SANITIZE_STRING);
+        $str=htmlspecialchars(trim($input), ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8', false);
         if($length!==null) $str=mb_substr($str, 0, $length);
 
         return $str;
@@ -652,34 +651,14 @@ namespace{
      * 仅返回key在fields中的结果
      */
     function array_include($ary, $fields){
-        if(version_compare(PHP_VERSION, '5.6.0') >=0){
-            return array_filter($ary, function($f) use($fields){return in_array($f, $fields);}, ARRAY_FILTER_USE_KEY);
-        }
-        else{
-            foreach($ary as $k=>$v){
-                if(!in_array($k, $fields)){
-                    unset($ary[$k]);
-                }
-            }
-            return $ary;
-        }
+        return array_filter($ary, function($f) use($fields){return in_array($f, $fields);}, ARRAY_FILTER_USE_KEY);
     }
 
     /**
      * 剔除key在fields中的结果
      */
     function array_exclude($ary, $fields){
-        if(version_compare(PHP_VERSION, '5.6.0') >=0){
-            return array_filter($ary, function($f) use($fields){return !in_array($f, $fields);}, ARRAY_FILTER_USE_KEY);
-        }
-        else{
-            foreach($ary as $k=>$v){
-                if(in_array($k, $fields)){
-                    unset($ary[$k]);
-                }
-            }
-            return $ary;
-        }
+        return array_filter($ary, function($f) use($fields){return !in_array($f, $fields);}, ARRAY_FILTER_USE_KEY);
     }
 
     /**
