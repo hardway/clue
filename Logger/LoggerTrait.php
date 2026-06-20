@@ -99,16 +99,7 @@ trait LoggerTrait{
     static function _get_backtrace($depth=null){
         $trace=debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS);
 
-        $trace=$depth ? array_slice($trace, 2, $depth) : array_slice($trace, 2);
-        return $trace;
-
-        return implode("\n\t", array_map(function($t){
-            $pos=$t['class'].$t['type'].$t['function']."()";
-            if(isset($t['file'])){
-                $pos=$t['file'].':'.$t['line'] .' '. $pos;
-            }
-            return $pos;
-        }, $trace));
+        return $depth ? array_slice($trace, 2, $depth) : array_slice($trace, 2);
     }
 }
 ?>

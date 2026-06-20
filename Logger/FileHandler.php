@@ -7,6 +7,10 @@ class FileHandler extends SyslogHandler{
         'context'=>false,
     ];
 
+    public $filename;
+    protected $file=null;
+    protected $file_error=false;
+
     function __construct($path){
         $dir=dirname($path);
 
@@ -17,7 +21,6 @@ class FileHandler extends SyslogHandler{
             umask($umask);
         }
         $this->filename=$path;
-        $this->file=null;
     }
 
     function __destruct(){
@@ -29,9 +32,10 @@ class FileHandler extends SyslogHandler{
     }
 
     function write($data){
-        if(!$this->file){
+        if(!$this->file && !$this->file_error){
             $this->file=fopen($this->filename, 'a');
             if(!$this->file){
+                $this->file_error=true;
                 error_log("Can't open log file: $this->filename");
             }
         }

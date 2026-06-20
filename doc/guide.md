@@ -268,6 +268,60 @@ Less语法参考：
 
 示例见 `tests/logger.manual.php`
 
+#### 扩展自定义 Handler
+
+Logger 的 Handler 架构支持任意输出目标。继承 `LoggerHandler`（或方便的 `SyslogHandler`）并实现 `write()` 和 `format()` 即可。
+
+例如发送日志到 Graylog2（GELF over UDP）：
+
+```php
+namespace Clue\Logger;
+
+class GelfHandler extends LoggerHandler{
+    public function __construct($server, $port=12201, $defaults=[]){
+        $this->server=$server;
+        $this->port=$port;
+        $this->defaults=$defaults;
+        if(!isset($this->defaults['host']))
+            $this->defaults['host']=gethostname();
+    }
+
+    public function write($data){
+        $data=array_merge($this->defaults, $data);
+        $data['level']=array_search($data['level'],
+            ['emergency'=>0,'alert'=>1,'critical'=>2,'error'=>3,
+             'warning'=>4,'notice'=>5,'info'=>6,'debug'=>7]);
+        $data['short_message']=$data['message'];
+        unset($data['message']);
+
+        $payload=gzcompress(json_encode($data), -1);
+
+        $udp=@stream_socket_client(
+            "udp://{$this->server}:{$this->port}", $errno, $error, 30);
+        if($udp) @fwrite($udp, $payload);
+    }
+
+    public function format($data){
+        return $this->format_json($data);
+    }
+}
+```
+
+使用：
+```php
+$logger = new Logger('myapp', new GelfHandler('graylog.local', 12201));
+$logger->error('Something went wrong');
+```
+
+其他 Handler 参考：
+
+| Handler | 输出目标 |
+|---------|----------|
+| `SyslogHandler` | PHP error_log（默认） |
+| `FileHandler` | 指定文件路径 |
+| `EmailHandler` | 邮件通知（需配合 Mail\Sender） |
+| `WebHandler` | 浏览器直接输出（Guard 默认） |
+
 
 ### CLI 命令行模式
 

@@ -24,7 +24,7 @@ class WebHandler extends SyslogHandler{
             unset($item['backtrace']);
         }
 
-        $type=@$item['type'];
+        $type=strtoupper($item['level']);
         $message=$item['message'];
 
         foreach(['backtrace', 'location', 'channel', 'type', 'level', 'message', 'timestamp'] as $field) unset($item[$field]);
@@ -117,7 +117,6 @@ class WebHandler extends SyslogHandler{
         $this->write_html_prerequisite();
 
         if(!isset($data['errors'])){
-            $data['type']=strtoupper($data['type'] ?: $data['level']);
             echo $this->format($data);
         }
         elseif(isset($data['errors'])){
