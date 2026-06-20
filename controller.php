@@ -9,6 +9,7 @@ namespace Clue{
         public $params=[];
         public $layout="default";
         public $catch_exception=false;  // 设置为true将exception转到->error()并且->redirect_return()
+        public $layout_vars=[];
 
         static function find_controller($controller){
             $controller=strtolower($controller);
@@ -16,11 +17,15 @@ namespace Clue{
             return site_file("source/control/$controller.php");
         }
 
-        function __construct($controller=null, $action=null){
+        function __construct($controller, $action='index'){
+            if(!is_string($controller) || trim($controller) === ''){
+                throw new \InvalidArgumentException('Controller name must be a non-empty string');
+            }
+
             global $app;
 
             $this->app=$app;
-            $this->controller=$controller;
+            $this->controller=strtolower($controller);
             $this->action=$action;
 
             $this->__init();
