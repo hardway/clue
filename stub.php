@@ -48,6 +48,7 @@
     require_once __DIR__.'/autoload.php';
     require_once __DIR__."/tool.php";
     require_once __DIR__."/url.php";
+    require_once __DIR__."/debug.php";
 
     // ====== 函数别名（在全局命名空间创建短名） ======
 

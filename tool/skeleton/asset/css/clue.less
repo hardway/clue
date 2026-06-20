@@ -32,3 +32,40 @@
     }
 }
 
+/* debug() 输出样式 */
+.clue-debug {
+    background: #1e1e1e;
+    color: #ccc;
+    font: 13px/1.5 Monaco, Menlo, monospace;
+    padding: 12px;
+    margin: 8px 0;
+    border-radius: 4px;
+    overflow: auto;
+    max-height: 600px;
+}
+.clue-debug-item {
+    border-bottom: 1px solid #333;
+    padding: 4px 0;
+}
+.clue-debug {
+    .d-null { color: #888; }
+    .d-bool { color: #a67f59; }
+    .d-num { color: #d35400; }
+    .d-str { color: #2ecc71; }
+    .d-str-q { color: #27ae60; }
+    .d-str-len { color: #999; font-size: 11px; }
+    .d-key { color: #2980b9; }
+    .d-type { color: #888; }
+    .d-class { color: #8e44ad; }
+    .d-label { color: #999; }
+    .d-location { color: #666; font-size: 11px; }
+    .d-recursion { color: #c0392b; }
+
+    /* 折叠展开 */
+    .d-toggle { cursor: pointer; user-select: none; }
+    .d-toggle::before { content: "\2212"; margin-right: 2px; }
+    .d-toggle.collapsed::before { content: "\002B"; }
+    .d-children { display: inline; }
+    .d-toggle.collapsed ~ .d-children { display: none; }
+    .d-bracket { color: #666; }
+}

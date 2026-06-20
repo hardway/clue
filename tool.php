@@ -623,7 +623,7 @@ namespace{
 		}
 	}
 
-    function collect($items){
+function collect($items){
         return new Clue\Collection($items);
     }
 

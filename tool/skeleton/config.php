@@ -38,7 +38,7 @@
         // 资源文件
         'asset'=>[
             'app.css'=>['asset/css/*.css', 'asset/css/*.less'],
-            'app.js'=>[],
+            'app.js'=>['asset/js/*.js'],
         ],
 
         'route'=>[
