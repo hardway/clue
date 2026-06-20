@@ -71,3 +71,5 @@
     function_alias('url_for',   '\\Clue\\url_for');
     function_alias('url_slug',  '\\Clue\\url_slug');
     function_alias('asset',     '\\Clue\\asset');
+    function_alias('retry',     '\\Clue\\retry');
+    function_alias('debug',     '\\Clue\\debug');

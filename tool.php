@@ -570,6 +570,19 @@ namespace Clue{
         return $left.$masked.$right;
     }
 
+    // REF: https://gist.github.com/mudge/5948769
+    function retry(callable $f, $delay = 1, $retries = 3){
+        for ($i = 1; $i <= $retries; $i++) {
+            try {
+                return $f();
+            } catch (\Throwable $e) {
+                if ($i === $retries) throw $e;
+                error_log("Retry #{$i} failed: ".$e->getMessage());
+                sleep($delay);
+            }
+        }
+    }
+
 }
 
 namespace{

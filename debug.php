@@ -1,7 +1,7 @@
 <?php
-namespace{
-	if(!function_exists('debug')){
-		function debug(...$vars){
+namespace Clue;
+
+	function debug(...$vars){
 			$trace = debug_backtrace(DEBUG_BACKTRACE_IGNORE_ARGS, 1);
 			$location = isset($trace[0]['file']) ? $trace[0]['file'].':'.$trace[0]['line'] : '';
 
@@ -98,6 +98,4 @@ namespace{
 				}
 				echo '</div>';
 			}
-		}
 	}
-}
