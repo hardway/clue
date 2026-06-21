@@ -1,8 +1,11 @@
-# 用户偏好模型
+# User Preferences
 
-- 偏好将 HTML 结构与 Controller 逻辑分离（view 模板模式）
-- 交互逻辑收敛到单个 JS 文件（spectre.js）
-- 后端返回 HTML 片段时显式使用 `hx-on:click` 而非 JS 全局委托
-- 文档示例代码优先从源头动态加载而非手写死代码
-- 不修改框架核心文件（Pagination 等），在 controller 层用 ob/包装解决
-- 提交前先确认，不自行 commit
+## 代码风格
+- 视图模板默认值用通用表述（"输入搜索内容"），具体语境由调用方传入
+- 先提交确认再 commit（不自动 commit）
+- 无 console.log 等调试代码残留
+
+## 调试偏好
+- 优先在浏览器 Elements 面板和 console 中定位问题
+- 愿意手动加 `console.log` 调试验证假设
+- 不接受绕过式修复（workaround），要根本原因分析和彻底修复

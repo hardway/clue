@@ -68,11 +68,8 @@ window.selectSuggestion = function(el, e){
     var value = el.getAttribute('data-value');
     if (!value) return;
 
-    // abort 输入框上的 inflight 请求，防止并发响应 swap 时元素被 detached
     var autoBox = el.closest('.form-autocomplete');
     if (!autoBox) return;
-    var input = autoBox.querySelector('.form-input');
-    if (input && typeof htmx !== 'undefined') htmx.trigger(input, 'htmx:abort');
 
     var menu = autoBox.querySelector('.menu');
     if (menu) menu.innerHTML = '';

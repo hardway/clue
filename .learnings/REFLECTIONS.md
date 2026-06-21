@@ -1,37 +1,35 @@
-# 2026-06-21: HTMX 交互组件进阶
+# Technical Reflections
 
-## 会话概要
-在 Clue skeleton 的 doc/ui 页面中，围绕 Spectre.css + HTMX 实现了完整的交互组件体系。
+## 2026-06-21: HTMX Autocomplete Race Condition
 
-### 组件列表
-1. **Toast** — 后端返回带关闭按钮的 toast，点击 × 关闭
-2. **Modal** — HTMX 动态渲染模态弹窗，遮罩层/×/底部按钮三入口关闭
-3. **Pagination** — `Clue\UI\Pagination` 后端分页 + `hx-boost` 无刷新翻页
-4. **Tab** — 标签切换，内容通过 HTMX 请求，激活态前端管理
+**最小成功路径：**
 
-### 经验教训
+1. 视图模板 `source/view/clue/autocomplete.php` — Spectre `.form-autocomplete` 结构 + `hx-trigger="keyup changed delay:300ms"`
+2. Controller 端点 `htmx_autocomplete_suggest($q)` — 过滤数据返回 `<li class="menu-item">`
+3. JS `selectSuggestion()` — 添加 chip、清空输入、关闭菜单
+4. JS `removeChip()` — 删除 chip
 
-**htmx.on() 不能用在后端渲染的元素上**
-- `htmx.on("click", selector, fn)` 不是事件委托形式，第二个参数被当作 DOM 元素
-- 动态渲染的元素用 `hx-on:click` 属性，逻辑收敛到 `spectre.js`
+**关键发现 — 并发请求时序竞争：**
 
-**HX-Push-Url 响应头 vs hx-push-url 属性**
-- `hx-boost` 默认推送 URL 到 history，`hx-push-url="false"` 在 boost 场景不生效
-- 服务端返回 `header('HX-Push-Url: false')` 可有效抑制
+`hx-trigger="keyup changed delay:300ms"` 会产生多个并发 GET 请求。由于响应到达顺序不定（晚发的可能先到），JavaScript 事件循环中可能发生：
 
-**视图模板分离**
-- Controller 不再 echo HTML 字符串，改用 `new \Clue\View('clue/xxx')` 传数据
-- HTML 结构 → `source/view/clue/*.php`，交互逻辑 → `spectre.js`
+1. 用户点击 suggestion → click event 排队
+2. 另一个 AJAX 响应回调排在 click 之前 → swap `#auto-menu` → 被点击的 `<a>` 被 detached
+3. click handler 执行在 detached 元素上 → `closest('.menu')` 返回 null
 
-**Clue 参数映射**
-- `$_GET` 参数自动映射到 controller action 的函数参数
-- `function htmx_tab($tab = 'server')` 无需手动 `$_GET`
+**修复：** 在 `selectSuggestion()` 开头调用 `htmx.trigger(input, 'htmx:abort')` 取消所有 inflight 请求，阻止后续响应干扰 selection 处理。
 
-**动态源码展示**
-- `htmx_source` 端点用 `ReflectionMethod` 提取 Controller 方法源码
-- doc 页面通过 `hx-trigger="load"` 自动加载，代码永不过期
+**纯 `closest()` 方案可行** — 无需 `getElementById` fallback，前提是消除并发竞争。
 
-### Bug 修复
-- `Pagination::render()` `$begin` 计算到 0 → 加 `max(1, ...)`
-- `pagination.php` 视图残留的 `<i></i>` 标签
-- 正则匹配 `href` 时单双引号问题
+## 2026-06-21 同步: HTMX Autocomplete 竞态分析修正
+
+**初期诊断错误：** 认为 `closest('.menu')` 返回 null 是 HTMX 并发请求的时序竞争导致的。
+错误推断路径：多个 `keyup delay:300ms` 请求 → 响应乱序 → swap 在 click 前 detached 元素。
+
+**实际根因回顾：**
+1. 初始代码 `el.closest('.form-autocomplete-input')` 天然失败（`.form-autocomplete-input` 是 `.menu` 的兄弟，不是 `<a>` 的祖先）
+2. debug log 中 `el.closest('menu')` 漏了 `.`，实际匹配 `<menu>` 标签而非 `.menu` class
+3. HTMX 默认 `queue:last` + `delay:300ms` 已保证同时最多 1 个 inflight 请求，不存在并发竞态
+4. `htmx:abort` 是多余的，最终移除
+
+**经验：** 调试时 selector 准确性先行验证，不要急着往并发方向猜。
