@@ -1,6 +1,6 @@
 <ul class='pagination'>
   <?php if($prevLink): ?>
-    <li class='page-item'><a href='<?=$prevLink?>'>Prev</i></a></li>
+    <li class='page-item'><a href='<?=$prevLink?>'>Prev</a></li>
   <?php endif; ?>
 
   <?php
@@ -15,6 +15,6 @@
   ?>
 
   <?php if($nextLink): ?>
-    <li class='page-item'><a href='<?=$nextLink?>'>Next</i></a></li>
+    <li class='page-item'><a href='<?=$nextLink?>'>Next</a></li>
   <?php endif; ?>
 </ul>

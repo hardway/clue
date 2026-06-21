@@ -84,7 +84,7 @@ namespace Clue\UI{
 			$prevLink=$this->page > 1 ? $this->page_url($this->page - 1, $url_option) : "";
 			$nextLink=$this->page < $this->pageCount ? $this->page_url($this->page + 1, $url_option) : "";
 
-			$begin=$this->page > $this->navPages/2 ? floor($this->page - $this->navPages/2) : 1;
+			$begin=max(1, $this->page > $this->navPages/2 ? floor($this->page - $this->navPages/2) : 1);
 			$end=$this->page + $this->navPages/2 > $this->pageCount ? $this->pageCount : floor($this->page + $this->navPages/2);
 
 			$currentPage=$this->page;
