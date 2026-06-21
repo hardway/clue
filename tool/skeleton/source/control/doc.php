@@ -118,9 +118,34 @@ class Controller extends Clue\Controller{
         }
     }
 
+    function htmx_autocomplete(){
+        $view = new \Clue\View('clue/autocomplete');
+        $view->render(['placeholder' => '输入搜索技术栈...']);
+    }
+
+    function htmx_autocomplete_suggest($q = ''){
+        $items = ['PHP', 'JavaScript', 'TypeScript', 'Python', 'Ruby', 'Go', 'Rust', 'Java', 'Kotlin', 'Swift', 'C++', 'C#', 'HTML', 'CSS', 'SCSS', 'SQL', 'Bash', 'Lua', 'Elixir', 'Haskell', 'Clojure', 'Dart', 'R', 'MATLAB', 'Perl', 'Vue.js', 'React', 'Angular', 'Svelte', 'Node.js', 'Deno', 'Bun', 'Django', 'Laravel', 'Symfony', 'Spring', 'Flask', 'Express'];
+
+        $q = trim($q);
+        if ($q !== '') {
+            $items = array_values(array_filter($items, function($item) use ($q) {
+                return stripos($item, $q) !== false;
+            }));
+        }
+
+        if (empty($items)) {
+            echo '<li class="menu-item"><div class="menu-badge"><label class="label label-gray">无匹配结果</label></div></li>';
+            return;
+        }
+
+        foreach ($items as $item) {
+            echo '<li class="menu-item"><a href="javascript:void(0)" class="c-hand" data-value="' . htmlspecialchars($item) . '" hx-on:click="selectSuggestion(this, event)">' . htmlspecialchars($item) . '</a></li>';
+        }
+    }
+
     function htmx_source($type = '', $name = ''){
 
-        $allowedMethods = ['htmx_time', 'htmx_modal_time', 'htmx_pagination', 'htmx_tab'];
+        $allowedMethods = ['htmx_time', 'htmx_modal_time', 'htmx_pagination', 'htmx_tab', 'htmx_autocomplete', 'htmx_autocomplete_suggest'];
 
         if ($type === 'controller' && in_array($name, $allowedMethods)) {
             try {

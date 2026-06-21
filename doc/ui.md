@@ -173,16 +173,67 @@
 每个标签的 `hx-on:click` 同时触发 HTMX 请求和本地激活态切换，
 面板内容由服务端返回 HTML 片段，激活态由前端管理，避免服务端状态同步。
 
+## HTMX + Autocomplete
+
+Spectre.css 的 `.form-autocomplete` 组件配合 HTMX 实现键盘输入即时搜索建议：
+
+```html
+<button class="btn btn-primary"
+        hx-get="/doc/htmx_autocomplete"
+        hx-target="#autocomplete-root"
+        hx-trigger="click">
+  🔍 显示 Autocomplete
+</button>
+<div id="autocomplete-root"></div>
+```
+
+<div class="mt-2">
+<button class="btn btn-primary"
+        hx-get="/doc/htmx_autocomplete"
+        hx-target="#autocomplete-root"
+        hx-trigger="click">
+  🔍 显示 Autocomplete
+</button>
+</div>
+<div id="autocomplete-root"></div>
+
+点击按钮加载自动补全组件，在输入框中输入关键词，延迟 300ms 后自动搜索建议。
+点击建议项即添加为 chip，点击 chip 的 × 可移除。
+
+端点代码 — 渲染 widget（`source/control/doc.php`）：
+
+<div class="code-block" hx-get="/doc/htmx_source?type=controller&name=htmx_autocomplete" hx-trigger="load">加载中...</div>
+
+端点代码 — 搜索建议（`source/control/doc.php`）：
+
+<div class="code-block" hx-get="/doc/htmx_source?type=controller&name=htmx_autocomplete_suggest" hx-trigger="load">加载中...</div>
+
+视图模板（`source/view/clue/autocomplete.php`）：
+
+<div class="code-block" hx-get="/doc/htmx_source?type=view&name=autocomplete" hx-trigger="load">加载中...</div>
+
+交互逻辑：
+
+- **输入触发**：`hx-trigger="keyup changed delay:300ms"`，输入变化后等待 300ms 发送请求，避免频繁调用
+- **建议渲染**：服务端返回 `<li class="menu-item">` 列表，HTMX 直接替换 `#auto-menu`
+- **选择建议**：每个 `<a>` 上的 `hx-on:click="selectSuggestion(this); return false;"` 动态添加 chip
+- **移除 chip**：chip 的 × 按钮绑定 `removeChip(this)`，删除对应 chip
+- **加载指示**：`hx-indicator="closest .has-icon"` 控制加载旋转图标显隐
+
+`selectSuggestion()` 和 `removeChip()` 定义在 `asset/js/spectre.js` 中。
+建议由服务端过滤，前端仅负责视觉交互（添加/移除 chip、关闭菜单），职责分离清晰。
+
 ## 视图模板文件一览
 
-上述三个示例的 HTML 结构与 Controller 分离后，视图文件集中在 `source/view/clue/`：
+上述示例的 HTML 结构与 Controller 分离后，视图文件集中在 `source/view/clue/`：
 
 | 文件 | 用途 | 可用变量 |
 |------|------|---------|
 | `source/view/clue/toast.php` | Spectre.css Toast 通知 | `$level`（success/error/primary）、`$message` |
 | `source/view/clue/modal.php` | Spectre.css 模态弹窗 | `$id`、`$title`、`$body`、`$footer`（可选） |
 | `source/view/clue/pagination.php` | 分页导航 | 由 `Pagination::render()` 传入 |
-| `asset/js/spectre.js` | Spectre.css 交互逻辑（关闭 toast/modal、切换 tab） | `closeToast()`、`closeModal()`、`switchTab()` |
+| `source/view/clue/autocomplete.php` | 自动补全组件 | `$placeholder`（输入框占位文字） |
+| `asset/js/spectre.js` | Spectre.css 交互逻辑（关闭 toast/modal、切换 tab、autocomplete） | `closeToast()`、`closeModal()`、`switchTab()`、`selectSuggestion()`、`removeChip()` |
 
 Controller 只需 `new \Clue\View('clue/xxx')` 并传入数据，由视图模板
 处理 Spectre.css 的 HTML 结构，`asset/js/spectre.js` 处理交互逻辑。
