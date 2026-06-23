@@ -321,7 +321,7 @@ namespace Clue{
                 });
             }
 
-            if(is_callable(@$map['handler'])){
+            if(is_callable($map['handler'] ?? null)){
 				$ret=$this['router']->handle($map['handler'], $map['params']);
 	        }
 	        else{

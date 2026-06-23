@@ -111,6 +111,7 @@ namespace Clue{
                 $this->vars=array_merge($this->vars, $vars);
 
             // View Logic
+            global $app, $db;
             extract($this->vars);
 
             // Code Behind

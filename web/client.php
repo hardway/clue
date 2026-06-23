@@ -117,7 +117,7 @@ namespace Clue\Web{
             }
 
             // HTTPS
-            if(@$this->config['ignore_certificate']){
+            if($this->config['ignore_certificate'] ?? null){
                 curl_setopt($this->curl, CURLOPT_SSL_VERIFYPEER, false);
                 curl_setopt($this->curl, CURLOPT_SSL_VERIFYHOST, 0);
             }

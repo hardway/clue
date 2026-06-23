@@ -94,7 +94,7 @@ namespace Clue\CLI{
                 if($para->isDefaultValueAvailable()){
                     $help['options'][$para->name]=[
                         'default'=>$para->getDefaultValue(),
-                        'summary'=>@$help['param'][$para->name],
+                        'summary'=> $help['param'][$para->name] ?? null,
                         'idx'=>$idx
                     ];
                     unset($help['param'][$para->name]);
