@@ -339,3 +339,11 @@ Clue\Web\Parser用于解析HTML文件，支持常用css selector
     $mission=$dom->getElement("#about-mission blockquote");
     echo $mission->text;
 </pre>
+
+### 子目录 Controller 的 View 路径
+
+当 Controller 文件放在子目录时（如 `control/amazon/order.php`），`$this->controller` 为 `"amazon/order"`，调用 `$this->render('index')` 会查找 `source/view/amazon/order/index.{php|htm}`。
+
+同理，`control/amazon/product.php` 中 `$this->render('product')` 查找 `source/view/amazon/product/product.{php|htm}`。
+
+若需引用其他 Controller 的 View，使用绝对路径（以 `/` 开头），如 `$this->render('/common/header')`。
