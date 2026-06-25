@@ -39,10 +39,10 @@ namespace Clue\Database{
                 $error=mysqli_connect_error();
 
                 // 尝试创建数据库
-                $this->dbh=@mysqli_connect($param['host'], $param['username'], $param['password'], null, @$param['port']);
+                $this->dbh=@mysqli_connect($param['host'], $param['username'], $param['password'], null, ($param['port'] ?? null));
                 if($this->dbh){
                     $this->exec("create database {$param['db']} default character set utf8");
-                    $this->dbh=@mysqli_connect($param['host'], $param['username'], $param['password'], $param['db'], @$param['port']);
+                    $this->dbh=@mysqli_connect($param['host'], $param['username'], $param['password'], $param['db'], ($param['port'] ?? null));
                 }
 
                 if(!$this->dbh){
@@ -61,10 +61,7 @@ namespace Clue\Database{
             $this->free_result();
 
             if($this->dbh){
-                if(@mysqli_ping($this->dbh)){
-                    $this->rollback();
-                }
-
+                @mysqli_rollback($this->dbh);
                 @mysqli_close($this->dbh);
                 $this->dbh=null;
             }
@@ -123,11 +120,6 @@ namespace Clue\Database{
 
             if($name===null){
                 // 默认回退一个savepoint
-
-                // BUG: this api not working properly
-                // $ret=mysqli_release_savepoint($this->dbh, array_pop($this->_savepoints));
-
-                // Workaround
                 $this->exec("rollback to ".array_pop($this->_savepoints));
             }
             else{
@@ -141,7 +133,7 @@ namespace Clue\Database{
                 }
 
                 // 没有找到savepoint，抛出异常
-                throw new Exception("MYSQL Transaction savepoint $name not found");
+                throw new \Exception("MYSQL Transaction savepoint $name not found");
             }
         }
 
@@ -201,41 +193,6 @@ namespace Clue\Database{
             return mysqli_affected_rows($this->dbh);
         }
 
-        function format($sql){
-            $args=func_get_args();
-            $me=$this;
-
-            $idx=1;
-            $sql=preg_replace_callback('/%(t|c|s|d|f|%)/', function($m) use($me, $args, &$idx){
-                if($m[1]=='%') return '%';
-
-                if(!array_key_exists($idx, $args)){
-                    throw new \Exception("Not enough arguments for SQL statement.");
-                }
-
-                $var="";
-                switch($m[1]){
-                    case 't':   // Table/View
-                    case 'c':   // Column
-                        $var="`".$args[$idx]."`";
-                        break;
-                    case 's':
-                        $var=$me->quote($args[$idx]);
-                        break;
-                    case 'd':
-                        $var=intval($args[$idx]);
-                        break;
-                    case 'f':
-                        $var=floatval($args[$idx]);
-                        break;
-                }
-
-                $idx++;
-                return $var;
-            }, $sql);
-            return $sql;
-        }
-
         function exec($sql)
         {
             $this->free_result();
@@ -256,12 +213,12 @@ namespace Clue\Database{
 
             $this->audit($sql, $query_end - $query_begin);
 
+
             if (!$this->_result) {
                 $this->setError(
                     array(
                         'code'=>mysqli_errno($this->dbh),
-                        'error'=>mysqli_error($this->dbh),
-                        'location'=>$location
+                        'error'=>mysqli_error($this->dbh)
                     )
                 );
 
@@ -395,7 +352,7 @@ namespace Clue\Database{
                     break;
                 }
 
-                if (empty($r)) {
+                if ($r === null) {
                     break;
                 }
 
@@ -446,7 +403,7 @@ namespace Clue\Database{
 	                break;
 	            }
 
-	            if (empty($r)) {
+	            if ($r === null) {
 	                break;
 	            }
 

@@ -12,6 +12,8 @@ namespace Clue{
         public $controller;
         public $action;
         public $params;
+        public $uri;
+        public $http_handler = [];
 
         protected $default_config=[
             'override_definition_table'=>'config', // 加载数据库的config表以设置definition
@@ -121,7 +123,7 @@ namespace Clue{
             // 指定Session名称
             if(isset($options['name'])) session_name($options['name']);
 
-            session_start();
+            if (session_status() === PHP_SESSION_NONE) session_start();
             setcookie(session_name(),session_id(),time()+$lifetime, '/');
 
 		    if (!isset($_SESSION['security_token'])) {
@@ -152,9 +154,9 @@ namespace Clue{
             // TODO: 可以通过配置修改策略以允许或替换 (deny, allow, replace)
             $app_host=parse_url(APP_URL, PHP_URL_HOST);
             $redirect_host=parse_url($url, PHP_URL_HOST);
-            $referer_host=parse_url($url, PHP_URL_HOST);
+            $referer_host=parse_url($_SERVER['HTTP_REFERER'] ?? '', PHP_URL_HOST) ?? '';
 
-            if($redirect_host && $redirect_host!=$app_host && $redirect_host!=$referer_host) panic("External redirection not allowed");
+            if($redirect_host && $redirect_host!=$app_host && $referer_host && $redirect_host!=$referer_host) panic("External redirection not allowed");
 
             if(!headers_sent()){
                 header("Status: 302 Found");
@@ -187,7 +189,8 @@ namespace Clue{
             // TODO: use memcache or apc instead
             $path=sys_get_temp_dir().'/'.APP_NAME.'/'.$name;
 
-            if(empty($path) || !file_exists($path) || time() > filemtime($path)) return false;
+            $mtime = @filemtime($path);
+            if (!file_exists($path) || $mtime === false || time() > $mtime) return false;
 
             return file_get_contents($path);
         }
@@ -198,6 +201,8 @@ namespace Clue{
 
             $expire=$expire?:time()+3600;   // default expires in 1 hour
 
+            $dir = dirname($path);
+            if (!is_dir($dir)) mkdir($dir, 0777, true);
             file_put_contents($path, $data);
             touch($path, $expire);
         }
@@ -233,7 +238,7 @@ namespace Clue{
 
         function display_alerts($context_pattern='.*', $level='alert'){
             $messages=$this->get_alerts($context_pattern, $level);
-            if(empty($messages)) return false;
+            if(empty($messages)) return;
 
             foreach($messages as $message){
                 $alert=new View("clue/alert");
@@ -243,7 +248,7 @@ namespace Clue{
 
         function get_alerts($context_pattern=".*", $level='alert'){
             $messages=array();
-            if(is_array(@$_SESSION['app_msg'][$level])) foreach($_SESSION['app_msg'][$level] as $context=>$msgs){
+            if(isset($_SESSION['app_msg'][$level]) && is_array($_SESSION['app_msg'][$level])) foreach($_SESSION['app_msg'][$level] as $context=>$msgs){
                 if(!preg_match('/'.$context_pattern.'/i', $context)) continue;
 
                 $messages=array_merge($messages, $msgs);
@@ -269,15 +274,15 @@ namespace Clue{
         }
 
         public function is_json(){
-            return strpos($_SERVER['HTTP_ACCEPT'], '/json')>0;
+            return isset($_SERVER['HTTP_ACCEPT']) && strpos($_SERVER['HTTP_ACCEPT'], '/json')>0;
         }
 
         // 是否跨域POST请求
         // TODO: 支持CORS
         // TODO: 默认强制所有的POST响应都要检查这个，并给出警告
         public function is_csrf(){
-            $actual_host=@parse_url(@$_SERVER['HTTP_REFERER'])['host'];
-            $expect_host=@parse_url(APP_URL)['host'];
+            $actual_host=parse_url($_SERVER['HTTP_REFERER'] ?? '')['host'] ?? '';
+            $expect_host=parse_url(APP_URL)['host'] ?? '';
 
             // 没有referer也同样视作CSRF
             return $actual_host!=$expect_host;
@@ -285,6 +290,7 @@ namespace Clue{
 
         // 是否现存的静态资源文件
         public function is_static(){
+            if (empty($_SERVER['DOCUMENT_ROOT']) || empty($_SERVER['REQUEST_URI'])) return false;
             $path=$_SERVER['DOCUMENT_ROOT'].'/'.$_SERVER['REQUEST_URI'];
             $path=preg_replace('/\?.+/', '', $path);
 
@@ -302,7 +308,7 @@ namespace Clue{
 
                 if($path==$_SERVER['PHP_SELF']) $path='/';
             }
-            $this->uri=$path;
+            $this->uri = $path;
 
             // 通过Router分析controller / action 和 params
             $map=$this['router']->resolve($path);
