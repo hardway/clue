@@ -5,6 +5,8 @@ namespace Clue\Logger;
 
 class EmailHandler extends SyslogHandler{
     protected $font_style="font-family:consolas, monospace";
+    protected $recipients;
+    protected $mailer;
 
     function __construct($recipients, $mailer=null){
         $this->recipients=is_array($recipients) ? $recipients : array($recipients);

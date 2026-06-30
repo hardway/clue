@@ -299,7 +299,8 @@ namespace Clue{
 
         function run(){
             // 获得原始URI
-            if(isset($_SERVER['PATH_INFO']))
+            // PATH_INFO 可能被 nginx 设为空字符串，此时走 REQUEST_URI
+            if(isset($_SERVER['PATH_INFO']) && $_SERVER['PATH_INFO'] !== '')
                 $path=$_SERVER['PATH_INFO'];
             else{
                 // Normalize Path
