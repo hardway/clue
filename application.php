@@ -284,8 +284,8 @@ namespace Clue{
             $actual_host=parse_url($_SERVER['HTTP_REFERER'] ?? '')['host'] ?? '';
             $expect_host=parse_url(APP_URL)['host'] ?? '';
 
-            // 没有referer也同样视作CSRF
-            return $actual_host!=$expect_host;
+            // 没有referer时不视为CSRF（可能被隐私工具/浏览器策略移除）
+            return ($_SERVER["HTTP_REFERER"] ?? "") && $actual_host != $expect_host;
         }
 
         // 是否现存的静态资源文件

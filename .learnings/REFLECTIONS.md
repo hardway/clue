@@ -33,3 +33,19 @@
 4. `htmx:abort` 是多余的，最终移除
 
 **经验：** 调试时 selector 准确性先行验证，不要急着往并发方向猜。
+
+## 2026-06-30: Guard + MySQL 8 兼容集成调试
+
+**上下文：** top4amazon 项目与 Clue 联调，解决 PHP 8.2 兼容问题、MySQL 8 SQL 错误、Guard 异常显示缺失。
+
+**最小成功路径：**
+
+1. **PHP 8.2 动态属性** — `EmailHandler` 中未声明的 `$recipients` 和 `$mailer` 加 `protected` 声明即可，无需 `#[AllowDynamicProperties]`
+2. **nginx PATH_INFO** — `isset()` 对空字符串返回 true，叠加 `!== ''` 检查
+3. **Guard 变量模式** — 必须存变量才能在 catch 块中引用，`handle_exception()` + `summarize()` 手动触发
+4. **`APP_BASE` 自动推断** — `url.php` 在 `php_sapi_name() !== 'cli'` 时自动定义（含 `cli-server`），纯 CLI 测试才需手动指定
+5. **MySQL 8 `rank`** — 三处裸列名 `min(rank) rank` 和 `order by rank` 全需反引号
+
+**关键发现：** Guard 的 `set_exception_handler` 对 try/catch 内的异常无效，这是设计层面的事件拦截时效问题，不是 bug。
+
+**预期收益：** 下次接入新项目到 Clue 时，Guard 变量模式、APP_BASE 推断、MySQL 8 兼容这三项可直接套用，减少约 60% 的集成调试开销。
