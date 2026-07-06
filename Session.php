@@ -34,10 +34,10 @@ class DBSession implements \SessionHandlerInterface{
         return true;
     }
 
-    public function read($session_id) : string|false{
+    public function read($session_id):string{
         $s=$this->db->get_row("select *, now() now from $this->table where id=%s", $session_id);
 
-        if(!$s) return false;
+        if(!$s) return '';
 
         // 检测是否超时
         $idle=strtotime($s->now) - strtotime($s->last_update);
@@ -49,7 +49,7 @@ class DBSession implements \SessionHandlerInterface{
             }
             else{
                 $this->destroy($s->id);
-                return false;
+                return '';
             }
         }
 
@@ -70,7 +70,7 @@ class DBSession implements \SessionHandlerInterface{
         return $this->db->exec("delete from $this->table where id=%s", $session_id);
     }
 
-    public function gc($maxlifetime):int|false{
+    public function gc($maxlifetime):int{
         // 有Retention的不会被轻易gc
         return $this->db->exec("delete from $this->table where last_update + interval retention day < now() - interval %d second", $maxlifetime);
     }
@@ -108,9 +108,9 @@ class FileSession implements \SessionHandlerInterface{
         return true;
     }
 
-    public function read($session_id):string|false{
+    public function read($session_id):string{
         $path="$this->folder/$session_id";
-        if(!file_exists($path)) return false;
+        if(!file_exists($path)) return '';
 
         clearstatcache(true, $path);
         $json=json_decode(file_get_contents($path), true);
@@ -124,7 +124,7 @@ class FileSession implements \SessionHandlerInterface{
             }
             else{
                 $this->destroy($session_id);
-                return false;
+                return '';
             }
         }
 
@@ -159,7 +159,7 @@ class FileSession implements \SessionHandlerInterface{
         return unlink("$this->folder/$session_id");
     }
 
-    public function gc($maxlifetime):int|false{
+    public function gc($maxlifetime):int{
         foreach(scandir($this->folder) as $f){
             if($f[0]=='.') continue;
 

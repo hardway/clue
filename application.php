@@ -64,18 +64,18 @@ namespace Clue{
         }
 
         // Dependency Injection, Ref: Pimple
-        #[\ReturnTypeWillChange]
+
     function offsetGet($id){
             if(!isset($this->_values[$id])) return null;
 
             $callable = is_object($this->_values[$id]) && method_exists($this->_values[$id], '__invoke');
             return $callable ? $this->_values[$id]($this) : $this->_values[$id];
         }
-        #[\ReturnTypeWillChange]
+
         function offsetSet($id, $val)   { $this->_values[$id]=$val; }
-        #[\ReturnTypeWillChange]
+
         function offsetExists($id)      { return array_key_exists($id, $this->_values); }
-        #[\ReturnTypeWillChange]
+
         function offsetUnset($id)       { unset($this->_values[$id]); }
         function share(\Closure $callable){
             return function ($c) use ($callable) {

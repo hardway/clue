@@ -1,7 +1,6 @@
 <?php
     namespace Clue;
 
-    #[\AllowDynamicProperties]
     class ActiveRecord{
         static protected $_db;
         static protected $_acl;
