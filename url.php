@@ -193,6 +193,20 @@
      * @param $asset string
      * @return $url 文件URL
      */
+    /**
+     * php -S 内建服务器：检查当前请求是否对应一个已存在的静态文件
+     *
+     * 入口脚本中调用：
+     *   if (php_sapi_name() === 'cli-server' && \Clue\is_static_request()) return false;
+     *
+     * @return bool 存在可直接返回的静态文件
+     */
+    function is_static_request(){
+        $path = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH);
+        $file = ($_SERVER['DOCUMENT_ROOT'] ?? '') . $path;
+        return is_file($file);
+    }
+
     function asset($asset){
         $path="asset/".trim($asset, '/ ');
         $base=APP_URL;

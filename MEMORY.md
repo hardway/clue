@@ -24,3 +24,11 @@
 - 测试文件 `.test.php` 放在 `tests/` 目录
 - `stub.php` 是入口引导文件
 - 自动加载: `autoload.php` — `spl_autoload_register("Clue\autoload_load")`
+
+## 2026-07-06 — PHP 7.0 兼容性改造
+
+- 放弃 PHP 5 支持，目标 PHP 7.0+
+- Session.php: union type `:string|false` / `:int|false` → `:string` / `:int`
+  - `return false` → `return ''`（SessionHandlerInterface 语义，无数据时空字符串）
+- 移除全部 `#[...]` 属性（`#[\ReturnTypeWillChange]` ×12、`#[\AllowDynamicProperties]` ×1）
+- 提交: `c742acc`
