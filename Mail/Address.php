@@ -23,7 +23,9 @@ class Address{
             $this->name=$name;
         }
 
-        @list($this->user, $this->domain)=explode('@', $this->email);
+        $parts = explode('@', $this->email);
+        $this->user = $parts[0] ?? '';
+        $this->domain = $parts[1] ?? null;
     }
 
     function __toString(){

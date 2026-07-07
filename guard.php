@@ -94,6 +94,9 @@ class Guard{
         error_reporting($error_reporting);
 
 
+        // 清除之前被 @ 压制的旧 error，避免 summarize() 误捞
+        error_clear_last();
+
         // 开始监控
         set_exception_handler(array($this, "handle_exception"));
         set_error_handler(array($this, "handle_error"));
