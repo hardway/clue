@@ -474,7 +474,7 @@
                     $list[]="`".$m['name']."`=".self::db()->quote($this->$c);
                 }
                 if(count($list)>0){
-                    $sql="update {$model['table_ref']} set ".join(",", $list)." where `$pkfield`='".$this->$pkey."'";
+                    $sql="update {$model['table_ref']} set ".join(",", $list)." where `$pkfield`=".self::db()->quote($this->$pkey);
                 }
                 else{
                     // Nothing has changed.
@@ -511,7 +511,7 @@
             $pkey=$model['pkey'];
             $pkfield=@$model['columns'][$pkey]['name'] ?: $pkey;
 
-            $sql="delete from {$model["table_ref"]} where `$pkfield`='".$this->$pkey."'";
+            $sql="delete from {$model["table_ref"]} where `$pkfield`=".self::db()->quote($this->$pkey);
 
             $ret=self::db()->exec($sql);
             $this->_snap_shot();

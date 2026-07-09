@@ -58,10 +58,10 @@ class Daemon{
      */
     static function code_version(){
         if(is_dir(APP_ROOT.'/.hg')){
-            $revision=exec("hg --cwd ".APP_ROOT." parent --template {rev} 2>/dev/null");
+            $revision=exec("hg --cwd ".escapeshellarg(APP_ROOT)." parent --template {rev} 2>/dev/null");
         }
         elseif(is_dir(APP_ROOT.'/.git')){
-            $revision=exec('git -C '.APP_ROOT.' rev-parse --short HEAD');
+            $revision=exec('git -C '.escapeshellarg(APP_ROOT).' rev-parse --short HEAD');
         }
 
         return $revision;
