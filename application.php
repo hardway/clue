@@ -127,7 +127,7 @@ namespace Clue{
             setcookie(session_name(),session_id(),time()+$lifetime, '/');
 
 		    if (!isset($_SESSION['security_token'])) {
-		        $_SESSION['security_token'] = md5(uniqid(rand(), true));
+		        $_SESSION['security_token'] = bin2hex(random_bytes(32));
 		    }
 
             // TODO: 尽早关闭session，最好在session start之后最快完成需要的SESSION修改，然后保存
