@@ -163,7 +163,7 @@ namespace Clue{
                 header("Location: $url");
             }
             else{
-                echo "<script>window.location=\"$url\"</script>";
+                echo '<script>window.location=' . json_encode($url) . '</script>';
             }
 
             exit();
@@ -228,7 +228,7 @@ namespace Clue{
             if(!is_array($messages)) $messages=array($messages);
             foreach($messages as $m){
                 if($this->is_ajax()){
-                    echo "<script>alert(\"$m\", \"$level\", 10000)</script>";   // 10秒后消失
+                    echo '<script>alert(' . json_encode($m) . ', ' . json_encode($level) . ', 10000)</script>';   // 10秒后消失
                 }
                 else{
                     $_SESSION["app_msg"][$level][$context][]=$m;
