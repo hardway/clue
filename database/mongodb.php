@@ -310,6 +310,7 @@ namespace Clue\Database{
             if(isset($options['limit'])) $cmd['limit']=$options['limit'];
             if(isset($options['skip'])) $cmd['skip']=$options['skip'];
             if(isset($options['sort'])) $cmd['sort']=$options['sort'];
+            if(!empty($options['noCursorTimeout'])) $cmd['noCursorTimeout']=true;
 
             $rs=$this->command($cmd, 'read', 'iterator');
             foreach($rs as $r){
