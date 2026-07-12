@@ -108,9 +108,10 @@ class Guard{
     }
 
     public function summarize(){
-        // 最后的机会捕捉到fatal error
+        // 仅捕获 set_error_handler 无法拦截的致命错误
+        // 其他错误已在 handle_error() 中正确处理或被 @ 压制
         $fatal_error=error_get_last();
-        if(is_array($fatal_error)){
+        if(is_array($fatal_error) && in_array($fatal_error['type'], [E_ERROR, E_PARSE, E_CORE_ERROR, E_COMPILE_ERROR])){
             $type=$this->php_level($fatal_error['type']);
             $level=$this->log_level($type);
 
