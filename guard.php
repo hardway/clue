@@ -250,7 +250,7 @@ class Guard{
      */
     function handle_error($errno, $errstr, $errfile=null, $errline=null, array $errtrace=array()){
         // if error has been supressed with an @
-        if (!(error_reporting() & $errno)) return false;
+        if (!(error_reporting() & $errno)) return true;
 
         $type=$this->php_level($errno);
         $level=$this->log_level($type);
