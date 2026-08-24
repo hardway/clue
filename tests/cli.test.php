@@ -32,6 +32,16 @@
         }
     }
 
+    /**
+     * Option Probe — 仅用于测试 option 解析（= 与空格两种形式、布尔 flag）
+     * @param $name 名称
+     * @param $count 数量
+     * @param $debug 调试开关
+     */
+    function cli_opts($name = null, $count = null, $debug = null){
+        // 空函数体: 测试只断言 Command 的解析结果 ($cmd->options / $cmd->args)
+    }
+
     class Test_CLI extends PHPUnit_Framework_TestCase{
 
         // ==================== ansi() 纯函数 ====================
@@ -151,6 +161,54 @@
         function test_erase_screen(){
             Clue\CLI::erase_screen();
             $this->assertTrue(true);
+        }
+
+        // ==================== option 解析: --opt value 空格形式 ====================
+
+        function test_option_space_separated_value(){
+            // 修复点: --count 5 中值不再被误当命令词, 顺序保持正确
+            $cmd = new \Clue\CLI\Command("", 'cli');
+            $cmd->handle(['cli', 'opts', '--name', 'hello', '--count', '5']);
+            $this->assertEquals('hello', $cmd->options['name']);
+            $this->assertEquals('5', $cmd->options['count']);
+        }
+
+        function test_option_equals_form_still_works(){
+            // 原有 --opt=value 形式不回归
+            $cmd = new \Clue\CLI\Command("", 'cli');
+            $cmd->handle(['cli', 'opts', '--name=hello', '--count=5']);
+            $this->assertEquals('hello', $cmd->options['name']);
+            $this->assertEquals('5', $cmd->options['count']);
+        }
+
+        function test_option_bool_flag_without_value(){
+            // 布尔 flag 无值 → 1
+            $cmd = new \Clue\CLI\Command("", 'cli');
+            $cmd->handle(['cli', 'opts', '--debug']);
+            $this->assertEquals(1, $cmd->options['debug']);
+        }
+
+        function test_option_space_value_not_leaked_to_args(){
+            // 回归: backtest --end 2026-08-24 的日期曾被误塞进 $start 位置参数
+            $cmd = new \Clue\CLI\Command("", 'cli');
+            $cmd->handle(['cli', 'opts', '--count', '2026-08-24']);
+            $this->assertEquals('2026-08-24', $cmd->options['count']);
+            $this->assertNull($cmd->args[0] ?? null, '值不应出现在位置参数中');
+        }
+
+        function test_positional_arg_with_space_option(){
+            // 位置参数 + 空格 option 混合 (位置参数保持原顺序)
+            $cmd = new \Clue\CLI\Command("", 'cli');
+            $cmd->handle(['cli', 'opts', 'hello', '--count', '5']);
+            $this->assertEquals('hello', $cmd->args[0]);
+            $this->assertEquals('5', $cmd->options['count']);
+        }
+
+        function test_option_flag_swallows_following_word(){
+            // --flag word: word 作为 flag 的值 (waiting_option 语义)
+            $cmd = new \Clue\CLI\Command("", 'cli');
+            $cmd->handle(['cli', 'opts', '--debug', 'extra']);
+            $this->assertEquals('extra', $cmd->options['debug']);
         }
 
         // ==================== Pipe 联动测试 ====================

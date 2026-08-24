@@ -1,5 +1,9 @@
 <?php
-    require_once dirname(__DIR__).'/cli/Command.php';
+    // 类可能已被 autoload 加载(cli.test.php 先跑会触发), require_once 不对 autoload 路径去重
+    // 用 class_exists 显式防护, 避免 "Cannot declare class" 重复声明
+    if (!class_exists('Clue\\CLI\\Command', false)) {
+        require_once dirname(__DIR__).'/cli/command.php';
+    }
 
     function test_dummy(){}
     function test_basic($foo, $bar="default"){

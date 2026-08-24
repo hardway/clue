@@ -352,13 +352,22 @@ END;
             $this->app=$this->app ?: pathinfo($app)['filename'];
 
             // 将arguments拆分成cmds和带有"-"开头的args
+            // 支持 --opt value 空格形式: option 后紧跟的非"-"token 作为其候选值(保持顺序)
+            // 旧逻辑会把值误当命令词, 匹配失败后 unshift 到 args 头部导致顺序错乱
             $cmds=$args=[];
+            $prev_dash=false;
             foreach($argv as $a){
                 if(strpos($a, '-')===0){
                     $args[]=$a;
+                    $prev_dash = (strpos($a, '=')===false);
+                }
+                elseif($prev_dash){
+                    $args[]=$a;
+                    $prev_dash=false;
                 }
                 else{
                     $cmds[]=$a;
+                    $prev_dash=false;
                 }
             }
 
