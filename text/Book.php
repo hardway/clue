@@ -163,7 +163,6 @@ namespace Clue\Text{
             $this->book=$book;
             $this->view=$book->default_view;
 
-            if($this->path) exit(var_dump($this->path));
             if($type=='md'){
                 // TODO: 更多FrontMatter的参考
                 // http://simpleprimate.com/blog/front-matter

@@ -2,11 +2,6 @@
 namespace Clue\Logger;
 
 class FileHandler extends SyslogHandler{
-    protected $option=[
-        'backtrace'=>true,
-        'context'=>false,
-    ];
-
     public $filename;
     protected $file=null;
     protected $file_error=false;

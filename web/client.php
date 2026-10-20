@@ -83,10 +83,6 @@ namespace Clue\Web{
 
                 case 'POST':
                     curl_setopt($this->curl, CURLOPT_POST, true);
-                    // PHP5.5/5.5：CURLOPT_SAFE_UPLOAD 已从 PHP 8.0 移除
-                    if(version_compare(PHP_VERSION, '5.6.0') < 0 && defined('CURLOPT_SAFE_UPLOAD')){
-                        curl_setopt($this->curl, CURLOPT_SAFE_UPLOAD, false);
-                    }
                     break;
 
                 case 'PUT':

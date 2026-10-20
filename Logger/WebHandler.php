@@ -31,7 +31,6 @@ class WebHandler extends SyslogHandler{
 
         if($item){
             $diag.="<dt>Context</dt><pre class='clue-log-context'>".$this->format_var($item)."</pre>";
-            unset($item['context']);
         }
 
         $uid=uniqid();

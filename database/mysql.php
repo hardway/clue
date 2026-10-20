@@ -264,14 +264,13 @@ namespace Clue\Database{
                 $mode=OBJECT;
             }
 
+            // $mode 已被规范化为 OBJECT/ARRAY_A/ARRAY_N 之一
             if ($mode==OBJECT) {
                 $result=mysqli_fetch_object($this->_result);
             } elseif ($mode==ARRAY_A) {
                 $result=mysqli_fetch_assoc($this->_result);
-            } elseif ($mode==ARRAY_N) {
-                $result=mysqli_fetch_row($this->_result);
             } else {
-                $result=mysqli_fetch_array($this->_result);
+                $result=mysqli_fetch_row($this->_result);
             }
 
             $this->free_result();

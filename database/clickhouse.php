@@ -153,7 +153,7 @@ class ClickHouse extends \Clue\Database{
         $sql=call_user_func_array(array($this, "format"), func_get_args());
 
         $rs=$this->_api("query", ['database'=>$this->db, 'query'=>$sql]);
-        $columns=array_shift($rs);
+        array_shift($rs);   // 去掉表头行（array_shift 会修改 $rs，不能省略）
 
         return @$rs[0][0];
     }
@@ -161,7 +161,7 @@ class ClickHouse extends \Clue\Database{
     function get_col($sql){
         $sql=call_user_func_array(array($this, "format"), func_get_args());
         $rs=$this->_api("query", ['database'=>$this->db, 'query'=>$sql]);
-        $columns=array_shift($rs);
+        array_shift($rs);   // 去掉表头行
 
         return array_map(function($r){return $r[0];}, $rs);
     }
@@ -228,7 +228,6 @@ class ClickHouse extends \Clue\Database{
         $sql=call_user_func_array(array($this, "format"), func_get_args());
 
         $rs=$this->_api_iterate(['database'=>$this->db, 'query'=>$sql]);
-        $ret=[];
         foreach($rs as $r){
             switch($mode){
                 case OBJECT:
