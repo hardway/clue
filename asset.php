@@ -69,9 +69,7 @@ namespace Clue{
             }
 
             if($translate_less){
-                include_once __DIR__.'/vendor/lessc.php';
-                $less=new \lessc();
-                $content.=$less->compile($less_content);
+                $content.=self::compile_less($less_content);
             }
 
             if(count($ext)==1){
@@ -80,6 +78,42 @@ namespace Clue{
             }
 
             return $content;
+        }
+
+        /**
+         * 编译 LESS，结果按 (lessc版本 + 源码内容) 的哈希缓存
+         * 源码或 lessc 变化时哈希随之变化，因此不会返回过期结果
+         */
+        static function compile_less($less_content){
+            $lessc_file=__DIR__.'/vendor/lessc.php';
+            $key='clue_less_'.md5(@filemtime($lessc_file).'|'.$less_content);
+
+            if(function_exists('apcu_fetch')){
+                $hit=apcu_fetch($key, $ok);
+                if($ok) return $hit;
+            }
+
+            $dir=sys_get_temp_dir().'/clue-less-cache';
+            $file="$dir/$key.css";
+            if(!function_exists('apcu_fetch') && is_file($file)) return file_get_contents($file);
+
+            include_once $lessc_file;
+            $less=new \lessc();
+            $css=$less->compile($less_content);
+
+            if(function_exists('apcu_store')){
+                apcu_store($key, $css);
+            }
+            else{
+                // 原子写入：先写临时文件再 rename，避免并发读到半成品
+                if(!is_dir($dir)) @mkdir($dir, 0775, true);
+                $tmp=@tempnam($dir, 'tmp');
+                if($tmp !== false){
+                    $written=file_put_contents($tmp, $css) !== false;
+                    if(!($written && @rename($tmp, $file))) @unlink($tmp);
+                }
+            }
+            return $css;
         }
 
         function compress($content, $type){

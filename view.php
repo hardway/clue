@@ -38,8 +38,16 @@ namespace Clue{
                 array_map(function($f){error_log("[CLUE_DEBUG]     candidate: $f");}, $candidates);
             }
 
+            // 正向命中缓存：命中时仍校验文件存在，文件消失则回退到完整查找；未命中不缓存
+            static $hits=[];
+            $key=md5(implode("\n", $candidates));
+            if(isset($hits[$key]) && file_exists($hits[$key])){
+                return substr($hits[$key], 0, strrpos($hits[$key], '.'));
+            }
+
             foreach($candidates as $path){
             	if(file_exists($path)){
+                    $hits[$key]=$path;
             		return substr($path, 0, strrpos($path, '.'));
             	}
             }

@@ -208,8 +208,8 @@ namespace Clue\Text{
                     break;
                 case 'md':
                 default:
-                    $pd=new \Clue\Text\ParseDown();
-                    return $pd->text($this->content);
+                    // 复用 ParseDown 实例（text() 每次都会重置内部状态）
+                    return \Clue\Text\ParseDown::format($this->content);
                     break;
             }
         }

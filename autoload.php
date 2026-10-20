@@ -155,8 +155,16 @@ namespace Clue{
             array_map(function($f){error_log("[CLUE_DEBUG]     candidate: $f");}, $candidates);
         }
 
+		// 正向命中缓存：命中时仍校验文件存在，文件消失则回退到完整查找；未命中不缓存
+		static $hits=[];
+		$key=implode('|', get_site_path()).'#'.$path;
+		if(isset($hits[$key]) && file_exists($hits[$key]) && !is_dir($hits[$key])) return $hits[$key];
+
 		foreach($candidates as $f){
-			if(file_exists($f) && !is_dir($f)) return $f;
+			if(file_exists($f) && !is_dir($f)){
+				$hits[$key]=$f;
+				return $f;
+			}
 		}
 
 		return null;
