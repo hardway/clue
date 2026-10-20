@@ -27,8 +27,14 @@ class UploadFile{
         return true;
     }
 
+    // 只保留文件名部分，去掉目录成分（防止 ../ 路径穿越），其他文件名保持不变
+    static function safe_name($name){
+        $name=basename(str_replace(["\0", '\\'], ['', '/'], (string)$name));
+        return ($name === '' || $name === '.' || $name === '..') ? 'upload' : $name;
+    }
+
     function save($path){
-        $saveas= is_dir($path) ? $path."/$this->name" : $path;
+        $saveas= is_dir($path) ? $path."/".self::safe_name($this->name) : $path;
         $folder=dirname($saveas);
         if(!is_dir($folder)){
             error_log("INFO: creating folder: $folder");

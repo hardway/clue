@@ -93,7 +93,7 @@ class Sender{
         $headers=$this->headers;
 
         // 检查From, To, Subject必须存在
-        $headers['Subject']=$this->subject;
+        $headers['Subject']=str_replace(["\r", "\n", "\0"], '', (string)$this->subject);
         $headers['From']=$this->sender;
         $headers['To']=implode(";", $this->recipients['to']);
         if(count($this->recipients['cc'])>0){
@@ -295,7 +295,7 @@ class Sender{
         $reply='';
         while (
             !feof($socket) &&
-            ($info=stream_get_meta_data($socket) && !@$info['timed_out']) &&
+            !(($info=stream_get_meta_data($socket)) && $info['timed_out']) &&
             $str=fgets($socket,4096)
         ) {
             $reply.=$str;

@@ -112,7 +112,7 @@ namespace Clue{
             $min_file=tempnam(sys_get_temp_dir(), 'clue');
 
             file_put_contents($raw_file, $js);
-            $cmd=sprintf("java -jar %s --type js -o %s %s", $yui, $min_file, $raw_file);
+            $cmd=sprintf("java -jar %s --type js -o %s %s", escapeshellarg($yui), escapeshellarg($min_file), escapeshellarg($raw_file));
             passthru($cmd);
             $min=file_get_contents($min_file);
 

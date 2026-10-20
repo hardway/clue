@@ -214,15 +214,23 @@ namespace Clue{
             $password = '';
             foreach($sets as $set)
             {
-                $password .= $set[array_rand(str_split($set))];
+                $password .= $set[random_int(0, strlen($set) - 1)];
                 $all .= $set;
             }
 
             $all = str_split($all);
             for($i = 0; $i < $length - count($sets); $i++)
-                $password .= $all[array_rand($all)];
+                $password .= $all[random_int(0, count($all) - 1)];
 
-            $password = str_shuffle($password);
+            // 使用 CSPRNG 洗牌（str_shuffle 基于 Mersenne Twister，不适合密码）
+            $chars = str_split($password);
+            for($i = count($chars) - 1; $i > 0; $i--){
+                $j = random_int(0, $i);
+                $tmp = $chars[$i];
+                $chars[$i] = $chars[$j];
+                $chars[$j] = $tmp;
+            }
+            $password = implode('', $chars);
 
             if(!$add_dashes)
                 return $password;

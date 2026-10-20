@@ -12,7 +12,10 @@ namespace Clue{
         public $layout_vars=[];
 
         static function find_controller($controller){
-            $controller=strtolower($controller);
+            $controller=strtolower((string)$controller);
+
+            // 仅拦截路径穿越与空字节，其他名称保持原有行为
+            if(strpos($controller, '..') !== false || strpos($controller, "\0") !== false || strpos($controller, '\\') !== false) return '';
 
             return site_file("source/control/$controller.php");
         }

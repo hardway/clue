@@ -2,20 +2,45 @@
 // TODO: deprecate default view?
 namespace Clue\Text{
     class Book{
+        public $folder;
+        public $default_view;
+
         function __construct($folder, $default_view='/clue/book/page'){
             $this->folder=rtrim($folder, '/');
             $this->default_view=$default_view;
+        }
+
+        // 路径是否包含 .. 段或空字节（防止目录穿越；不解析符号链接，保持原有行为）
+        static function is_unsafe_path($path){
+            $path=(string)$path;
+            if(strpos($path, "\0") !== false) return true;
+            return in_array('..', explode('/', $path), true);
+        }
+
+        /**
+         * 将相对路径映射到文档目录下的文件路径
+         * 含 .. 或空字节的路径返回 null
+         */
+        function resolve($path, $require_file=false){
+            if(self::is_unsafe_path($path)) return null;
+
+            $target=$this->folder.'/'.ltrim($path, '/');
+            if($require_file && !is_file($target)) return null;
+            return $target;
         }
 
         // 查找原始档所在位置
         function lookup($path){
             if($path=='index') $path="";
 
+            $page_path=null;
             $candidates=["%s", "%s.htm", "%s.md", "%s.txt", "%s/readme.md"];
             foreach($candidates as $c){
-                $page_path=$this->folder.'/'.sprintf($c, $path);
-                if(is_file($page_path)) break;
-                $page_path=null;
+                $real=$this->resolve(sprintf($c, $path), true);
+                if($real){
+                    $page_path=$real;
+                    break;
+                }
             }
 
             if($page_path){
@@ -23,7 +48,7 @@ namespace Clue\Text{
             }
 
             // 如果是目录，则直接返回索引页面
-            if(is_dir($this->folder.'/'.$path)){
+            if($this->resolve($path) && is_dir($this->resolve($path))){
                 $index=$this->index($path);
                 return $index;
             }
@@ -37,6 +62,9 @@ namespace Clue\Text{
 
         // 列出文件夹目录（或使用现有的index.md）
         function index($path=""){
+            // 含 .. 的路径视为文档根目录，防止列出文档目录之外的内容
+            if(self::is_unsafe_path($path)) $path="";
+
             $folder=$this->folder.'/'.$path;
             while(!is_dir($folder) && strpos($folder, $this->folder)===0){
                 $folder=dirname($folder);
@@ -79,8 +107,8 @@ namespace Clue\Text{
         function search($keywords){
             $markdown="Searching `$keywords`\n------\n\n";
 
-            // 简单搜索
-            $ok=exec("grep -ri \"$keywords\" \"$this->folder\"", $result);
+            // 简单搜索：关键词与目录都用 escapeshellarg 传参，防止命令注入；grep 语义保持不变
+            $ok=exec("grep -ri -e ".escapeshellarg($keywords)." -- ".escapeshellarg($this->folder), $result);
 
             if($ok){
                 $found=[];

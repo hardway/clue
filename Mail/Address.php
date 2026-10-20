@@ -23,6 +23,10 @@ class Address{
             $this->name=$name;
         }
 
+        // 去掉 CR/LF/NUL，防止邮件头与 SMTP 命令注入（正常地址不受影响）
+        $this->email=str_replace(["\r", "\n", "\0"], '', (string)$this->email);
+        $this->name=str_replace(["\r", "\n", "\0"], '', (string)$this->name);
+
         $parts = explode('@', $this->email);
         $this->user = $parts[0] ?? '';
         $this->domain = $parts[1] ?? null;

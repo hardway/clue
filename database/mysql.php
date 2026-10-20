@@ -41,7 +41,8 @@ namespace Clue\Database{
                 // 尝试创建数据库
                 $this->dbh=@mysqli_connect($param['host'], $param['username'], $param['password'], null, ($param['port'] ?? null));
                 if($this->dbh){
-                    $this->exec("create database {$param['db']} default character set utf8");
+                    $db_name = '`'.str_replace('`', '``', $param['db']).'`';   // 标识符转义，正常库名不受影响
+                    $this->exec("create database $db_name default character set utf8");
                     $this->dbh=@mysqli_connect($param['host'], $param['username'], $param['password'], $param['db'], ($param['port'] ?? null));
                 }
 
@@ -191,6 +192,12 @@ namespace Clue\Database{
 
         function affected_rows(){
             return mysqli_affected_rows($this->dbh);
+        }
+
+        // 使用连接字符集感知的转义（addslashes 在 GBK/Big5 等多字节字符集下不安全）
+        function escape($data){
+            if(is_string($data) && $this->dbh) return mysqli_real_escape_string($this->dbh, $data);
+            return parent::escape($data);
         }
 
         function exec($sql)

@@ -101,10 +101,12 @@
             // TODO: 支持删除编译文件
             // $content=$builder->compress($content, $builder->type);
             if($compress && preg_match('/\.js$/', $output)){
-                $tmp_file="/tmp/".md5($output);
+                // 使用随机临时文件，避免可预测路径的符号链接攻击
+                $tmp_file=tempnam(sys_get_temp_dir(), 'clue');
                 file_put_contents($tmp_file, $content);
-                $cmd=sprintf("uglifyjs \"%s\" -o \"$output\"", $tmp_file, $output);
+                $cmd=sprintf("uglifyjs %s -o %s", escapeshellarg($tmp_file), escapeshellarg($output));
                 exec($cmd);
+                @unlink($tmp_file);
             }
             else{
                 file_put_contents($output, $content);
