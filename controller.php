@@ -117,31 +117,26 @@ namespace Clue{
         }
 
         function http_error($code, $message){
-            global $app;
-            $app->http_error($code, $message);
+            $this->app->http_error($code, $message);
         }
 
-        function error($message, $context='website'){ global $app; $app->alert($message, $context, 'error'); }
-        function success($message, $context='website'){ global $app; $app->alert($message, $context, 'success'); }
+        function error($message, $context='website'){ $this->app->alert($message, $context, 'error'); }
+        function success($message, $context='website'){ $this->app->alert($message, $context, 'success'); }
 
         protected function redirect($url){
-            global $app;
-            $app->redirect($url);
+            $this->app->redirect($url);
         }
 
         protected function redirect_action($action, $param=array()){
-            global $app;
-            $app->redirect(url_for($this->controller, $action, $param));
+            $this->app->redirect(url_for($this->controller, $action, $param));
         }
 
         protected function redirect_return($default_url=null){
-            global $app;
-            $app->redirect_return($default_url);
+            $this->app->redirect_return($default_url);
         }
 
         protected function redirect_referer($default_url=null){
-            global $app;
-            $app->redirect_referer($default_url);
+            $this->app->redirect_referer($default_url);
         }
 
         protected function is_ajax(){return $this->app->is_ajax();}

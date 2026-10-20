@@ -10,6 +10,13 @@ namespace Clue{
     abstract class Database{
         use \Clue\Logger\LoggerTrait;
 
+        /**
+         * 归一化结果集 mode：只接受 OBJECT / ARRAY_A / ARRAY_N，其余回落到 $default
+         */
+        static function normalize_mode($mode, $default=OBJECT){
+            return ($mode==OBJECT || $mode==ARRAY_A || $mode==ARRAY_N) ? $mode : $default;
+        }
+
         static function create(array $param){
             $dbms=$param['type'];
 

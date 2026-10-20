@@ -259,10 +259,7 @@ namespace Clue\Database{
 
             $result=false;
 
-            $mode=func_get_arg(func_num_args()-1);
-            if($mode!=OBJECT && $mode!=ARRAY_A && $mode!=ARRAY_N){
-                $mode=OBJECT;
-            }
+            $mode=self::normalize_mode(func_get_arg(func_num_args()-1));
 
             // $mode 已被规范化为 OBJECT/ARRAY_A/ARRAY_N 之一
             if ($mode==OBJECT) {
@@ -302,10 +299,7 @@ namespace Clue\Database{
 
             $result=array();
 
-            $mode=func_get_arg(func_num_args()-1);
-            if($mode!=OBJECT && $mode!=ARRAY_A && $mode!=ARRAY_N){
-                $mode=OBJECT;
-            }
+            $mode=self::normalize_mode(func_get_arg(func_num_args()-1));
 
             if ($mode==OBJECT) {
                 while ($r=mysqli_fetch_object($this->_result)) {

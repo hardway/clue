@@ -143,6 +143,16 @@ namespace Clue{
 	 *
 	 * @return $path 文件路径
 	 */
+	/**
+	 * CLUE_DEBUG>1 时输出查找过程（site_file / find_view 共用）
+	 */
+	function debug_lookup($message, array $candidates){
+		if(defined("CLUE_DEBUG") && CLUE_DEBUG>1){
+			error_log("[CLUE_DEBUG] $message");
+			foreach($candidates as $f) error_log("[CLUE_DEBUG]     candidate: $f");
+		}
+	}
+
 	function site_file($path){
 		if(strpos($path, APP_ROOT)===0) return $path;   // 已经是绝对路径，直接返回
 
@@ -150,10 +160,7 @@ namespace Clue{
 
 		$candidates=array_map(function($d) use($path){return $d.'/'.$path;}, get_site_path());
 
-        if(defined("CLUE_DEBUG") && CLUE_DEBUG>1){
-            error_log("[CLUE_DEBUG] looking for site_file: $path");
-            array_map(function($f){error_log("[CLUE_DEBUG]     candidate: $f");}, $candidates);
-        }
+        debug_lookup("looking for site_file: $path", $candidates);
 
 		// 正向命中缓存：命中时仍校验文件存在，文件消失则回退到完整查找；未命中不缓存
 		static $hits=[];

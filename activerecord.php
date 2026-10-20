@@ -109,18 +109,23 @@
             return $found;
         }
 
+        /**
+         * 由数据行构造对象，并记录快照、触发 after_retrieve
+         */
+        static function hydrate($row, $class){
+            $r=new $class($row);
+            $r->_snap_shot();
+            $r->after_retrieve();
+            return $r;
+        }
+
         static function get($id){
             $model=self::model();
             $pkey=$model['columns'][$model['pkey']]['name'];
 
             $row=self::db()->get_row("select * from {$model['table_ref']} where `$pkey`=".(is_int($id) ? $id : self::db()->quote($id)), ARRAY_A);
             if($row){
-                $class=get_called_class();
-                $r=new $class($row);
-                $r->_snap_shot();
-                $r->after_retrieve();
-
-                return $r;
+                return self::hydrate($row, get_called_class());
             }
             else
                 return false;
@@ -241,10 +246,7 @@
 
                     if(is_array($rs)){
                         foreach($rs as $r){
-                            $r=new $class($r);
-                            $r->_snap_shot();
-                            $r->after_retrieve();
-                            $objects[]=$r;
+                            $objects[]=self::hydrate($r, $class);
                         }
                         return $objects;
                     }
@@ -259,10 +261,7 @@
                         return false;
                     }
                     else{
-                        $r=new $class($r);
-                        $r->_snap_shot();
-                        $r->after_retrieve();
-                        return $r;
+                        return self::hydrate($r, $class);
                     }
                     break;
             }
@@ -316,10 +315,7 @@
             $class=get_called_class();
 
             foreach($iter as $r){
-                $r=new $class($r);
-                $r->_snap_shot();
-                $r->after_retrieve();
-                yield $r;
+                yield self::hydrate($r, $class);
             }
         }
 

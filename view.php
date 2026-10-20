@@ -33,10 +33,7 @@ namespace Clue{
                 }
             }
 
-            if(defined("CLUE_DEBUG") && CLUE_DEBUG>1){
-                error_log("[CLUE_DEBUG] looking for view file: $view");
-                array_map(function($f){error_log("[CLUE_DEBUG]     candidate: $f");}, $candidates);
-            }
+            \Clue\debug_lookup("looking for view file: $view", $candidates);
 
             // 正向命中缓存：命中时仍校验文件存在，文件消失则回退到完整查找；未命中不缓存
             static $hits=[];
