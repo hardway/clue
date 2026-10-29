@@ -25,7 +25,7 @@ class DBSession implements \SessionHandlerInterface{
                     useragent varchar(256),
                     created datetime not null,
                     retention int not null default 0,   -- 多少天内可以用cookie恢复
-                    last_update timestamp not null,
+                    last_update timestamp not null default current_timestamp,
                     data text
                 ) DEFAULT CHARSET=utf8
             ");
