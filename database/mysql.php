@@ -14,6 +14,10 @@ namespace Clue\Database{
             if(!extension_loaded('mysqli'))
                 throw new \Exception(__CLASS__.": extension mysqli is missing!");
 
+            // PHP 8.1+ 默认 mysqli_report(MYSQLI_REPORT_ERROR|MYSQLI_REPORT_STRICT)，
+            // 连接/查询失败会抛异常，导致下面的错误处理分支失效，这里恢复返回 false 的旧语义
+            mysqli_report(MYSQLI_REPORT_OFF);
+
             $this->result_mode=MYSQLI_STORE_RESULT;
             $this->config=$param;
             $this->connect();

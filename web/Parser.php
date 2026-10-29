@@ -286,6 +286,7 @@ class Element implements \ArrayAccess{
         return $this->el->hasAttribute($key);
     }
 
+    #[\ReturnTypeWillChange]
     function offsetGet($key){
         return $this->el->getAttribute($key);
     }

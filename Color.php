@@ -5,6 +5,14 @@ namespace Clue;
 
 class Color{
     /**
+     * 判断是否为GD图片
+     * PHP 8起GD图片是GdImage对象，PHP 7是resource
+     */
+    private static function is_gd_image($v){
+        return is_resource($v) || $v instanceof \GdImage;
+    }
+
+    /**
      * XYZ转Adobe RGB
      * REF: http://www.easyrgb.com/en/math.php
      */
@@ -211,7 +219,7 @@ class Color{
      * @param $sensitivity 直方图的高度范围(1-15)，越大越精确，图片匹配难度越大
      */
     static function image_fingerprint($filename, $thumb_width=150, $rate=16, $sensitivity=2){
-        $image=is_resource($filename) ? $filename : @imagecreatefromjpeg($filename);
+        $image=self::is_gd_image($filename) ? $filename : @imagecreatefromjpeg($filename);
         if(!$image) return null;
 
         // Create thumbnail sized copy for fingerprinting
@@ -246,7 +254,7 @@ class Color{
         }
 
         // 清理资源
-        if(!is_resource($filename)) imagedestroy($image);
+        if(!self::is_gd_image($filename)) imagedestroy($image);
         imagedestroy($thumb);
 
         // 16阶灰度直方图作为为指纹
@@ -263,7 +271,7 @@ class Color{
      * @param $tw 缩略图宽度
      */
     static function image_palette($filename, $limit=16, $central_priority=0, $tw=16){
-        $src=is_resource($filename) ? $filename : @imagecreatefromjpeg($filename);
+        $src=self::is_gd_image($filename) ? $filename : @imagecreatefromjpeg($filename);
         if(!$src) return null;
 
         $thumb=imagecreatetruecolor($tw, $tw);
@@ -342,7 +350,7 @@ class Color{
         }
 
         // 清理资源
-        if(!is_resource($filename)) imagedestroy($src);
+        if(!self::is_gd_image($filename)) imagedestroy($src);
 
         return $palette;
     }
@@ -353,9 +361,9 @@ class Color{
      * @param $sensitivy 取值越大，比较越宽松
      */
     static function image_similarity($filename1, $filename2, $tw=16, $sensitivity=10){
-        $src1=is_resource($filename1) ? $filename1 : @imagecreatefromjpeg($filename1);
+        $src1=self::is_gd_image($filename1) ? $filename1 : @imagecreatefromjpeg($filename1);
         if(!$src1) return null; $w1=imagesx($src1); $h1=imagesy($src1);
-        $src2=is_resource($filename2) ? $filename2 : @imagecreatefromjpeg($filename2);
+        $src2=self::is_gd_image($filename2) ? $filename2 : @imagecreatefromjpeg($filename2);
         if(!$src2) return null; $w2=imagesx($src2); $h2=imagesy($src2);
 
         // 生成缩略图

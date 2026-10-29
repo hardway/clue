@@ -17,16 +17,22 @@ class Collection implements \ArrayAccess, \Countable, \IteratorAggregate, \JsonS
         }
     }
 
+    #[\ReturnTypeWillChange]
     function offsetSet($k, $v){return $this->items[$k]=$v;}
 
+    #[\ReturnTypeWillChange]
     function offsetGet($k){return $this->items[$k];}
 
+    #[\ReturnTypeWillChange]
     function offsetExists($k){return isset($this->items[$k]);}
 
+    #[\ReturnTypeWillChange]
     function offsetUnset($k){unset($this->items[$k]);}
 
+    #[\ReturnTypeWillChange]
     function getIterator(){ return new \ArrayIterator($this->items); }
 
+    #[\ReturnTypeWillChange]
     function jsonSerialize(){ return json_encode($this->items); }
     function __toArray(){ return $this->items; }
 
@@ -38,6 +44,7 @@ class Collection implements \ArrayAccess, \Countable, \IteratorAggregate, \JsonS
 
     function avg($key=null){return array_sum($this->items) / count($this->items);}
 
+    #[\ReturnTypeWillChange]
     function count(){return count($this->items);}
 
     function contains($val){return !!array_search($val, $this->items);}
