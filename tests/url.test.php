@@ -91,24 +91,29 @@
 			$this->assertEquals($sub_folder, $paths[0]);
 
 			@define("APP_URL", "/");
-			$this->assertEquals(APP_URL."/asset/missing.js", asset('missing.js'), '不存在的文件，仍然能够得到网址');
+			// asset() 在 Clue 命名空间内解析 APP_URL，其它测试可能已定义 Clue\APP_URL，
+			// 这里以实际生效的常量为基准，避免依赖测试执行顺序
+			$base=defined('Clue\\APP_URL') ? \Clue\APP_URL : APP_URL;
+			$prefix=rtrim($base, '/');
+
+			$this->assertEquals($base."/asset/missing.js", asset('missing.js'), '不存在的文件，仍然能够得到网址');
 
 			$this->temp_file($base_folder.'/asset/base.js', '');
 			$mtime=filemtime($base_folder.'/asset/base.js');
-			$this->assertEquals("/asset/base.js?$mtime", asset('base.js'), '基准测试');
+			$this->assertEquals($prefix."/asset/base.js?$mtime", asset('base.js'), '基准测试');
 
 
 			$this->temp_file($over_folder.'/asset/over.js', '');
 			$mtime=filemtime($over_folder.'/asset/over.js');
-			$this->assertEquals("/asset/over.js?$mtime", asset('over.js'), 'Overlay文件');
+			$this->assertEquals($prefix."/asset/over.js?$mtime", asset('over.js'), 'Overlay文件');
 
 			$this->temp_file($sub_folder.'/asset/sub.js', '');
 			$mtime=filemtime($sub_folder.'/asset/sub.js');
-			$this->assertEquals("/sub/asset/sub.js?$mtime", asset('sub.js'), '映射到子文件夹');
+			$this->assertEquals($prefix."/sub/asset/sub.js?$mtime", asset('sub.js'), '映射到子文件夹');
 
 			$this->temp_file($map_folder.'/asset/map.js', '');
 			$mtime=filemtime($map_folder.'/asset/map.js');
-			$this->assertEquals("/map/asset/map.js?$mtime", asset('map.js'), '映射到其它目录');
+			$this->assertEquals($prefix."/map/asset/map.js?$mtime", asset('map.js'), '映射到其它目录');
 
 			\Clue\Tool::remove_directory($base_folder);
 			\Clue\Tool::remove_directory($over_folder);
