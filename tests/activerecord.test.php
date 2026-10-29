@@ -1,17 +1,13 @@
 <?php
+require_once __DIR__.'/mysql_env.php';
+
 // Guard: only attempt DB connection when MySQL extension is available
 // and this file is loaded in test context
 global $db;
 $db = null;
 if (extension_loaded('mysqli')) {
     try {
-        $db = Clue\Database::create([
-            'type' => 'mysql',
-            'host' => '127.0.0.1',
-            'username' => 'root',
-            'password' => 'root',
-            'db' => 'mysql'
-        ]);
+        $db = Clue\Database::create(clue_test_mysql_config(['db' => 'mysql']));
     } catch (\Throwable $e) {
         // MySQL not available, tests will skip
         $db = null;

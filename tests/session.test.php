@@ -1,7 +1,38 @@
 <?php
+    require_once __DIR__.'/mysql_env.php';
+
     class Test_SESSION extends PHPUnit_Framework_TestCase{
         private $folder='/tmp/test_session';
         private $db;
+
+        static function setUpBeforeClass(){
+            global $db;
+            if(!extension_loaded('mysqli')) return;
+
+            try{
+                if(!$db) $db=Clue\Database::create(clue_test_mysql_config(['db'=>'mysql']));
+
+                // 使用独立的测试库，避免依赖其它测试文件的建库/删库顺序
+                $db->exec("create database if not exists clue_session_test");
+                $db->exec("use clue_session_test");
+                $db->exec("drop table if exists _session");
+            }
+            catch(\Throwable $e){
+                $db=null;
+            }
+        }
+
+        static function tearDownAfterClass(){
+            global $db;
+            if(!$db) return;
+
+            try{
+                $db->exec("drop database if exists clue_session_test");
+            }
+            catch(\Throwable $e){
+                // 清理失败不影响测试结果
+            }
+        }
 
         function setUp():void{
             @mkdir($this->folder, 0775, true);
