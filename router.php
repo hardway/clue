@@ -93,10 +93,13 @@ namespace Clue{
 
             // 只检查 require 后新增的类，避免遍历全部已加载类
             $class=null;
-            $realPath=realpath($path);
+            // phar:// 路径下 realpath() 返回 false，不能只按 realpath 比对，
+            // 否则放在 clue.phar 里的 controller（如 source/control/asset.php）会被误判为无效
+            $realPath=realpath($path) ?: $path;
             foreach(array_diff(get_declared_classes(), $before) as $c){
                 $ref=new \ReflectionClass($c);
-                if($ref->getFileName() === $realPath && $ref->isSubclassOf('Clue\Controller')){
+                $fileName=$ref->getFileName();
+                if(($fileName === $realPath || $fileName === $path) && $ref->isSubclassOf('Clue\Controller')){
                     $class=$c;
                     break;
                 }
